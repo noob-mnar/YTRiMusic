@@ -1,4 +1,4 @@
-RiMusic is a multilingual Android application for streaming music from YouTube Music, available in several languages
+DirMusic is a multilingual Android application for streaming music from YouTube Music, available in several languages
 It was born as an extension of the functionality of ViMusic, which retains the general appearance, colors.
 
 ## ✨ Features
@@ -32,4 +32,4 @@ It was born as an extension of the functionality of ViMusic, which retains the g
 - Check for Updates
 
 Visit it on Github
-https://github.com/fast4x/RiMusic
+https://github.com/dirquel/DirMusic
