@@ -1,6 +1,6 @@
 <div align="center">
   <img src="./app_logo.png" width="300" height="100" />    
-  <p><b>RiMusic</b> is a <b>multilingual</b> Android application for streaming music from YouTube Music</p>
+  <p><b>DirMusic</b> is a <b>multilingual</b> Android application for streaming music from YouTube Music</p>
 </div>
 
 ## ✨ Features
@@ -44,34 +44,24 @@
 </div>
 
 ## 🌐 Languages available
-- **English:** initially forked from ViMusic
-- **Italian:** native, thanks to [@fast4x](https://github.com/fast4x)
-- **German:** native, thanks to [@siggi1984](https://github.com/siggi1984)
-- **Russian:** native, thanks to [@siggi1984](https://github.com/siggi1984)
-- **French:** native, thanks to [@NEVARLeVrai](https://github.com/NEVARLeVrai)
-- **Czech:** native, thanks to [@ikanakova](https://github.com/ikanakova)
-- **Spanish:** native, thanks to [@DanielSevillano](https://github.com/DanielSevillano)
-- **Romanian:** native, thanks to [@OrangeZXZ](https://github.com/OrangeZxZ)
-- **Polish:** native, thanks to [@roklc](https://github.com/roklc)
-- **Turkish:** non native, contribute to improve
-
-## 🔤 Translations
-- Go to [Crowdin](https://crowdin.com/project/rimusic/invite?h=73f0e6b64be1c64a8aebd467d286cf851925330) and help with the translations.
+- **English:**
+- **Italian:**
+- **German:**
+- **Russian:**
+- **French:**
+- **Czech:**
+- **Spanish:**
+- **Romanian:**
+- **Polish:**
+- **Turkish:**
 
 ## 📲 Installation
-[<img src="./assets/images/getItGithub.png" alt="GitHub" height="80">](https://github.com/fast4x/RiMusic/releases/latest)
+[<img src="./assets/images/getItGithub.png" alt="GitHub" height="80">](https://github.com/dirquel/DirMusic/releases/latest)
 [<img src="./assets/images/getItIzzyOnDroid.png" alt="IzzyOnDroid" height="80">](https://apt.izzysoft.de/fdroid/index/apk/it.fast4x.rimusic/)
 
 ## 🤝 Contributing
 **Pull requests are welcome**
 - If you want to **develop new functions**, **fix a bug** or **improve some translations**, fork the repository and send a pull request.
-
-## 🫂 Acknowledgments
-- [**ViMusic**](https://github.com/vfsfitvnm/ViMusic).
-- [**YouTube-Internal-Clients**](https://github.com/zerodytrash/YouTube-Internal-Clients): A python script that discovers hidden YouTube API clients. Just a research project.
-- [**Ionicons**](https://github.com/ionic-team/ionicons): Premium hand-crafted icons built by Ionic, for Ionic apps and web apps everywhere.
-- [**Flaticon**](https://www.flaticon.com/authors/ilham-fitrotul-hayat) App icon based on icon created by Ilham Fitrotul Hayat.
-- **New logo design** thanks to [@ikanakova](https://github.com/ikanakova).
 
 ## ❗ Disclaimer
 This project and its contents are not affiliated with, funded, authorized, endorsed by, or in any way associated with YouTube, Google LLC or any of its affiliates and subsidiaries.
