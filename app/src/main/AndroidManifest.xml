@@ -40,7 +40,7 @@
         android:label="${appName}"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="false"
-        android:theme="@style/Theme.ViMusic.NoActionBar"
+        android:theme="@style/Theme.RiMusic.NoActionBar"
         tools:replace="android:label"
         android:requestLegacyExternalStorage="true"
         android:enableOnBackInvokedCallback="true"
