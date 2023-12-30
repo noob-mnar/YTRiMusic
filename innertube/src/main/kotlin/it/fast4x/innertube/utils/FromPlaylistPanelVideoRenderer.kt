@@ -1,7 +1,7 @@
-package it.vfsfitvnm.innertube.utils
+package it.fast4x.innertube.utils
 
-import it.vfsfitvnm.innertube.Innertube
-import it.vfsfitvnm.innertube.models.PlaylistPanelVideoRenderer
+import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.models.PlaylistPanelVideoRenderer
 
 fun Innertube.SongItem.Companion.from(renderer: PlaylistPanelVideoRenderer): Innertube.SongItem? {
     return Innertube.SongItem(

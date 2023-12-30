@@ -1,9 +1,9 @@
-package it.vfsfitvnm.innertube.utils
+package it.fast4x.innertube.utils
 
-import it.vfsfitvnm.innertube.Innertube
-import it.vfsfitvnm.innertube.models.MusicResponsiveListItemRenderer
-import it.vfsfitvnm.innertube.models.NavigationEndpoint
-import it.vfsfitvnm.innertube.models.Runs
+import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.models.MusicResponsiveListItemRenderer
+import it.fast4x.innertube.models.NavigationEndpoint
+import it.fast4x.innertube.models.Runs
 
 fun Innertube.SongItem.Companion.from(renderer: MusicResponsiveListItemRenderer): Innertube.SongItem? {
     return Innertube.SongItem(

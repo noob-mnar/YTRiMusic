@@ -21,10 +21,10 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.DownloadRequest
 import androidx.media3.exoplayer.offline.DownloadService
 import dagger.hilt.android.qualifiers.ApplicationContext
-import it.vfsfitvnm.innertube.Innertube
-import it.vfsfitvnm.innertube.models.bodies.ContinuationBody
-import it.vfsfitvnm.innertube.requests.playlistPage
-import it.vfsfitvnm.innertube.utils.plus
+import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.models.bodies.ContinuationBody
+import it.fast4x.innertube.requests.playlistPage
+import it.fast4x.innertube.utils.plus
 import it.fast4x.rimusic.BuildConfig
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.service.LOCAL_KEY_PREFIX

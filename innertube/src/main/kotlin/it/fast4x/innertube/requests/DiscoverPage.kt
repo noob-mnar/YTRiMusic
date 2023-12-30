@@ -1,16 +1,16 @@
-package it.vfsfitvnm.innertube.requests
+package it.fast4x.innertube.requests
 
 import io.ktor.client.call.body
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
-import it.vfsfitvnm.innertube.Innertube
-import it.vfsfitvnm.innertube.models.BrowseResponse
-import it.vfsfitvnm.innertube.models.MusicTwoRowItemRenderer
-import it.vfsfitvnm.innertube.models.bodies.BrowseBody
-import it.vfsfitvnm.innertube.models.bodies.BrowseBodyWithLocale
-import it.vfsfitvnm.innertube.models.oddElements
-import it.vfsfitvnm.innertube.models.splitBySeparator
-import it.vfsfitvnm.innertube.utils.runCatchingNonCancellable
+import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.models.BrowseResponse
+import it.fast4x.innertube.models.MusicTwoRowItemRenderer
+import it.fast4x.innertube.models.bodies.BrowseBody
+import it.fast4x.innertube.models.bodies.BrowseBodyWithLocale
+import it.fast4x.innertube.models.oddElements
+import it.fast4x.innertube.models.splitBySeparator
+import it.fast4x.innertube.utils.runCatchingNonCancellable
 
 suspend fun Innertube.discoverPage() = runCatchingNonCancellable {
     val response = client.post(browse) {

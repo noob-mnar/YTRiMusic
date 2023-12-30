@@ -1,20 +1,20 @@
-package it.vfsfitvnm.innertube.requests
+package it.fast4x.innertube.requests
 
 
 import io.ktor.client.call.body
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.util.logging.KtorSimpleLogger
-import it.vfsfitvnm.innertube.Innertube
-import it.vfsfitvnm.innertube.models.BrowseResponse
-import it.vfsfitvnm.innertube.models.MusicCarouselShelfRenderer
-import it.vfsfitvnm.innertube.models.NextResponse
-import it.vfsfitvnm.innertube.models.bodies.BrowseBody
-import it.vfsfitvnm.innertube.models.bodies.NextBody
-import it.vfsfitvnm.innertube.utils.findSectionByStrapline
-import it.vfsfitvnm.innertube.utils.findSectionByTitle
-import it.vfsfitvnm.innertube.utils.from
-import it.vfsfitvnm.innertube.utils.runCatchingNonCancellable
+import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.models.BrowseResponse
+import it.fast4x.innertube.models.MusicCarouselShelfRenderer
+import it.fast4x.innertube.models.NextResponse
+import it.fast4x.innertube.models.bodies.BrowseBody
+import it.fast4x.innertube.models.bodies.NextBody
+import it.fast4x.innertube.utils.findSectionByStrapline
+import it.fast4x.innertube.utils.findSectionByTitle
+import it.fast4x.innertube.utils.from
+import it.fast4x.innertube.utils.runCatchingNonCancellable
 
 
 

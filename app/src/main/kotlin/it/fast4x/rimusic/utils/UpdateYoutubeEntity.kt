@@ -8,11 +8,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.media3.common.util.UnstableApi
-import it.vfsfitvnm.compose.persist.persist
-import it.vfsfitvnm.innertube.Innertube
-import it.vfsfitvnm.innertube.models.bodies.BrowseBody
-import it.vfsfitvnm.innertube.requests.albumPage
-import it.vfsfitvnm.innertube.requests.artistPage
+import it.fast4x.compose.persist.persist
+import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.models.bodies.BrowseBody
+import it.fast4x.innertube.requests.albumPage
+import it.fast4x.innertube.requests.artistPage
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.Artist

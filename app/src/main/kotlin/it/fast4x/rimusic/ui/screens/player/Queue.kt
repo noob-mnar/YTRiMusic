@@ -61,11 +61,11 @@ import androidx.media3.common.Timeline
 import androidx.media3.common.util.Log
 import androidx.media3.exoplayer.offline.Download
 import com.valentinilk.shimmer.shimmer
-import it.vfsfitvnm.compose.reordering.ReorderingLazyColumn
-import it.vfsfitvnm.compose.reordering.animateItemPlacement
-import it.vfsfitvnm.compose.reordering.draggedItem
-import it.vfsfitvnm.compose.reordering.rememberReorderingState
-import it.vfsfitvnm.compose.reordering.reorder
+import it.fast4x.compose.reordering.ReorderingLazyColumn
+import it.fast4x.compose.reordering.animateItemPlacement
+import it.fast4x.compose.reordering.draggedItem
+import it.fast4x.compose.reordering.rememberReorderingState
+import it.fast4x.compose.reordering.reorder
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.UiType

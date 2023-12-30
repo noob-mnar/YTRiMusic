@@ -21,7 +21,7 @@ import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadRequest
 import androidx.media3.exoplayer.offline.DownloadService
 import dagger.hilt.android.qualifiers.ApplicationContext
-import it.vfsfitvnm.innertube.models.Context
+import it.fast4x.innertube.models.Context
 
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalDownloader

@@ -1,4 +1,4 @@
-package it.vfsfitvnm.kugou
+package it.fast4x.kugou
 
 import kotlin.coroutines.cancellation.CancellationException
 

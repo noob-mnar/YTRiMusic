@@ -1,4 +1,4 @@
-package it.vfsfitvnm.compose.persist
+package it.fast4x.compose.persist
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState

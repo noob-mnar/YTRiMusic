@@ -25,11 +25,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.valentinilk.shimmer.shimmer
-import it.vfsfitvnm.compose.persist.persist
-import it.vfsfitvnm.innertube.Innertube
-import it.vfsfitvnm.innertube.models.bodies.BrowseBodyWithLocale
-import it.vfsfitvnm.innertube.requests.BrowseResult
-import it.vfsfitvnm.innertube.requests.browse
+import it.fast4x.compose.persist.persist
+import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.models.bodies.BrowseBodyWithLocale
+import it.fast4x.innertube.requests.BrowseResult
+import it.fast4x.innertube.requests.browse
 import it.fast4x.rimusic.LocalPlayerAwareWindowInsets
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.models.Mood

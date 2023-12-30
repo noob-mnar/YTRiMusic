@@ -1,4 +1,4 @@
-package it.vfsfitvnm.innertube.models
+package it.fast4x.innertube.models
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable

@@ -60,10 +60,10 @@ import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import com.valentinilk.shimmer.shimmer
-import it.vfsfitvnm.compose.persist.persist
-import it.vfsfitvnm.innertube.Innertube
-import it.vfsfitvnm.innertube.models.bodies.BrowseBody
-import it.vfsfitvnm.innertube.requests.playlistPage
+import it.fast4x.compose.persist.persist
+import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.models.bodies.BrowseBody
+import it.fast4x.innertube.requests.playlistPage
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalDownloader
 import it.fast4x.rimusic.LocalPlayerAwareWindowInsets

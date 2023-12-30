@@ -1,4 +1,4 @@
-package it.vfsfitvnm.compose.reordering
+package it.fast4x.compose.reordering
 
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.offset

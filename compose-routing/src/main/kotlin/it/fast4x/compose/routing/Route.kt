@@ -1,6 +1,6 @@
 @file:Suppress("UNCHECKED_CAST")
 
-package it.vfsfitvnm.compose.routing
+package it.fast4x.compose.routing
 
 import android.util.Log
 import androidx.compose.runtime.Composable

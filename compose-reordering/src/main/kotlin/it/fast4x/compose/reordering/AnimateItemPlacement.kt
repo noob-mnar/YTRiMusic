@@ -1,4 +1,4 @@
-package it.vfsfitvnm.compose.reordering
+package it.fast4x.compose.reordering
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.lazy.LazyItemScope

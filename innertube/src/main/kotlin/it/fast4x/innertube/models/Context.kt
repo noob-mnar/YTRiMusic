@@ -1,6 +1,6 @@
-package it.vfsfitvnm.innertube.models
+package it.fast4x.innertube.models
 
-import it.vfsfitvnm.innertube.Innertube
+import it.fast4x.innertube.Innertube
 import kotlinx.serialization.Serializable
 import java.util.Locale
 

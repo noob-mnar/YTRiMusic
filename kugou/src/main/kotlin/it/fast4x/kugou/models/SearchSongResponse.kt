@@ -1,4 +1,4 @@
-package it.vfsfitvnm.kugou.models
+package it.fast4x.kugou.models
 
 import kotlinx.serialization.Serializable
 

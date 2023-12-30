@@ -1,10 +1,10 @@
 package it.fast4x.rimusic.utils
 
 import androidx.media3.common.MediaItem
-import it.vfsfitvnm.innertube.Innertube
-import it.vfsfitvnm.innertube.models.bodies.ContinuationBody
-import it.vfsfitvnm.innertube.models.bodies.NextBody
-import it.vfsfitvnm.innertube.requests.nextPage
+import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.models.bodies.ContinuationBody
+import it.fast4x.innertube.models.bodies.NextBody
+import it.fast4x.innertube.requests.nextPage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

@@ -1,17 +1,17 @@
-package it.vfsfitvnm.innertube.requests
+package it.fast4x.innertube.requests
 
 import io.ktor.client.call.body
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
-import it.vfsfitvnm.innertube.Innertube
-import it.vfsfitvnm.innertube.models.BrowseResponse
-import it.vfsfitvnm.innertube.models.ContinuationResponse
-import it.vfsfitvnm.innertube.models.MusicCarouselShelfRenderer
-import it.vfsfitvnm.innertube.models.MusicShelfRenderer
-import it.vfsfitvnm.innertube.models.bodies.BrowseBody
-import it.vfsfitvnm.innertube.models.bodies.ContinuationBody
-import it.vfsfitvnm.innertube.utils.from
-import it.vfsfitvnm.innertube.utils.runCatchingNonCancellable
+import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.models.BrowseResponse
+import it.fast4x.innertube.models.ContinuationResponse
+import it.fast4x.innertube.models.MusicCarouselShelfRenderer
+import it.fast4x.innertube.models.MusicShelfRenderer
+import it.fast4x.innertube.models.bodies.BrowseBody
+import it.fast4x.innertube.models.bodies.ContinuationBody
+import it.fast4x.innertube.utils.from
+import it.fast4x.innertube.utils.runCatchingNonCancellable
 
 suspend fun Innertube.playlistPage(body: BrowseBody) = runCatchingNonCancellable {
     val response = client.post(browse) {

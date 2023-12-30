@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "it.vfsfitvnm.compose.persist"
+    namespace = "it.fast4x.compose.persist"
     compileSdk = 33
 
     defaultConfig {

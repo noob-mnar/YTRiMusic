@@ -30,8 +30,8 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
-import it.vfsfitvnm.compose.persist.persistList
-import it.vfsfitvnm.innertube.models.NavigationEndpoint
+import it.fast4x.compose.persist.persistList
+import it.fast4x.innertube.models.NavigationEndpoint
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalDownloader
 import it.fast4x.rimusic.LocalPlayerAwareWindowInsets

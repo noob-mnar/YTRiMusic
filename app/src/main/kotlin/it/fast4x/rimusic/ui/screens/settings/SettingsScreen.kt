@@ -26,7 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
-import it.vfsfitvnm.compose.routing.RouteHandler
+import it.fast4x.compose.routing.RouteHandler
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.ui.components.themed.Scaffold
 import it.fast4x.rimusic.ui.components.themed.Switch

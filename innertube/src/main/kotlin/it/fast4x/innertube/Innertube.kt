@@ -1,4 +1,4 @@
-package it.vfsfitvnm.innertube
+package it.fast4x.innertube
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
@@ -19,11 +19,11 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import io.ktor.http.userAgent
 import io.ktor.serialization.kotlinx.json.json
-import it.vfsfitvnm.innertube.models.MusicNavigationButtonRenderer
-import it.vfsfitvnm.innertube.models.NavigationEndpoint
-import it.vfsfitvnm.innertube.models.Runs
-import it.vfsfitvnm.innertube.models.Thumbnail
-import it.vfsfitvnm.innertube.models.YouTubeClient
+import it.fast4x.innertube.models.MusicNavigationButtonRenderer
+import it.fast4x.innertube.models.NavigationEndpoint
+import it.fast4x.innertube.models.Runs
+import it.fast4x.innertube.models.Thumbnail
+import it.fast4x.innertube.models.YouTubeClient
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import java.net.Proxy

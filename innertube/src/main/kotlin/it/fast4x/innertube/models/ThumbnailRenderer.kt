@@ -1,4 +1,4 @@
-package it.vfsfitvnm.innertube.models
+package it.fast4x.innertube.models
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
@@ -16,7 +16,7 @@ data class ThumbnailRenderer(
     ) {
         @Serializable
         data class Thumbnail(
-            val thumbnails: List<it.vfsfitvnm.innertube.models.Thumbnail>?
+            val thumbnails: List<it.fast4x.innertube.models.Thumbnail>?
         )
     }
 }

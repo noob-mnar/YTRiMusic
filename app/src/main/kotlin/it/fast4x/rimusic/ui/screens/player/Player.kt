@@ -65,8 +65,8 @@ import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import coil.compose.AsyncImage
-import it.vfsfitvnm.compose.routing.OnGlobalRoute
-import it.vfsfitvnm.innertube.models.NavigationEndpoint
+import it.fast4x.compose.routing.OnGlobalRoute
+import it.fast4x.innertube.models.NavigationEndpoint
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R

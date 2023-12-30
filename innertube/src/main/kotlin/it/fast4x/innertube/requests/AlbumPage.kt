@@ -1,9 +1,9 @@
-package it.vfsfitvnm.innertube.requests
+package it.fast4x.innertube.requests
 
 import io.ktor.http.Url
-import it.vfsfitvnm.innertube.Innertube
-import it.vfsfitvnm.innertube.models.NavigationEndpoint
-import it.vfsfitvnm.innertube.models.bodies.BrowseBody
+import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.models.NavigationEndpoint
+import it.fast4x.innertube.models.bodies.BrowseBody
 
 suspend fun Innertube.albumPage(body: BrowseBody): Result<Innertube.PlaylistOrAlbumPage>? {
     return playlistPage(body)?.map { album ->

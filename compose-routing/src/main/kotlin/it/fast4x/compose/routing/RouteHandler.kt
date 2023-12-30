@@ -1,4 +1,4 @@
-package it.vfsfitvnm.compose.routing
+package it.fast4x.compose.routing
 
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner

@@ -44,11 +44,11 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
-import it.vfsfitvnm.compose.persist.persist
-import it.vfsfitvnm.compose.persist.persistList
-import it.vfsfitvnm.innertube.Innertube
-import it.vfsfitvnm.innertube.models.bodies.SearchSuggestionsBody
-import it.vfsfitvnm.innertube.requests.searchSuggestions
+import it.fast4x.compose.persist.persist
+import it.fast4x.compose.persist.persistList
+import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.models.bodies.SearchSuggestionsBody
+import it.fast4x.innertube.requests.searchSuggestions
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerAwareWindowInsets
 import it.fast4x.rimusic.R

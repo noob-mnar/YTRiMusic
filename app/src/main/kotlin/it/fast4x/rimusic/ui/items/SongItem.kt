@@ -23,7 +23,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import coil.compose.AsyncImage
-import it.vfsfitvnm.innertube.Innertube
+import it.fast4x.innertube.Innertube
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.ui.components.themed.IconButton
