@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
@@ -51,6 +53,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -234,9 +237,9 @@ inline fun DefaultDialog(
         Column(
             horizontalAlignment = horizontalAlignment,
             modifier = modifier
-                .padding(all = 48.dp)
+                .padding(all = 10.dp)
                 .background(
-                    color = colorPalette.background4,
+                    color = colorPalette.background1,
                     shape = RoundedCornerShape(8.dp)
                 )
                 .padding(horizontal = 24.dp, vertical = 16.dp),
@@ -260,8 +263,8 @@ inline fun <T> ValueSelectorDialog(
     Dialog(onDismissRequest = onDismiss) {
         Column(
             modifier = modifier
-                .padding(all = 48.dp)
-                .background(color = colorPalette.background4, shape = RoundedCornerShape(8.dp))
+                .padding(all = 10.dp)
+                .background(color = colorPalette.background1, shape = RoundedCornerShape(8.dp))
                 .padding(vertical = 16.dp)
         ) {
             BasicText(
@@ -350,14 +353,15 @@ inline fun SelectorDialog(
     title: String,
     values: List<Info>?,
     crossinline onValueSelected: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showItemsIcon: Boolean = false
 ) {
     val (colorPalette, typography) = LocalAppearance.current
 
     Dialog(onDismissRequest = onDismiss) {
         Column(
             modifier = modifier
-                .padding(all = 48.dp)
+                .padding(all = 10.dp)
                 .background(color = colorPalette.background1, shape = RoundedCornerShape(8.dp))
                 .padding(vertical = 16.dp)
         ) {
@@ -387,10 +391,21 @@ inline fun SelectorDialog(
                             .padding(vertical = 12.dp, horizontal = 24.dp)
                             .fillMaxWidth()
                     ) {
-                            BasicText(
-                                text = value.name ?: "Not selectable",
-                                style = typography.xs.medium
+                        if (showItemsIcon)
+                            IconButton(
+                                onClick = {},
+                                icon = R.drawable.playlist,
+                                color = colorPalette.text,
+                                modifier = Modifier
+                                    .size(18.dp)
                             )
+
+                        BasicText(
+                            text = value.name ?: "Not selectable",
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis,
+                            style = typography.xs.medium
+                        )
                     }
                 }
             }
@@ -430,8 +445,8 @@ inline fun InputNumericDialog(
     Dialog(onDismissRequest = onDismiss) {
         Column(
             modifier = modifier
-                .padding(all = 48.dp)
-                .background(color = colorPalette.background4, shape = RoundedCornerShape(8.dp))
+                .padding(all = 10.dp)
+                .background(color = colorPalette.background1, shape = RoundedCornerShape(8.dp))
                 .padding(vertical = 16.dp)
                 .requiredHeight(190.dp)
         ) {
@@ -452,21 +467,21 @@ inline fun InputNumericDialog(
                     modifier = Modifier
                         //.padding(horizontal = 30.dp)
                         .fillMaxWidth(0.7f),
-                        /*
-                        .border(
-                            BorderStroke(
-                                width = 1.dp,
-                                color = if (txtFieldError.value.isEmpty()) colorPalette.textDisabled else colorPalette.red
-                            ),
-
-                            shape = thumbnailShape
+                    /*
+                    .border(
+                        BorderStroke(
+                            width = 1.dp,
+                            color = if (txtFieldError.value.isEmpty()) colorPalette.textDisabled else colorPalette.red
                         ),
-                         */
+
+                        shape = thumbnailShape
+                    ),
+                     */
                     colors = TextFieldDefaults.textFieldColors(
                         placeholderColor = colorPalette.textDisabled,
                         cursorColor = colorPalette.text,
                         textColor = colorPalette.text,
-                        backgroundColor = if (txtFieldError.value.isEmpty()) colorPalette.background4 else colorPalette.red,
+                        backgroundColor = if (txtFieldError.value.isEmpty()) colorPalette.background1 else colorPalette.red,
                         focusedIndicatorColor = colorPalette.accent,
                         unfocusedIndicatorColor = colorPalette.textDisabled
                     ),
@@ -526,7 +541,7 @@ inline fun InputNumericDialog(
                             txtFieldError.value = value_cannot_empty
                             return@DialogTextButton
                         }
-                        if (txtField.value.isNotEmpty() && txtField.value.toInt() < valueMin.toInt() ) {
+                        if (txtField.value.isNotEmpty() && txtField.value.toInt() < valueMin.toInt()) {
                             txtFieldError.value = value_must_be_greater + valueMin
                             return@DialogTextButton
                         }
@@ -547,6 +562,144 @@ inline fun InputNumericDialog(
 }
 
 @Composable
+inline fun InputTextDialog(
+    noinline onDismiss: () -> Unit,
+    title: String,
+    value: String,
+    placeholder: String,
+    crossinline setValue: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val (colorPalette, typography, thumbnailShape) = LocalAppearance.current
+    val txtFieldError = remember { mutableStateOf("") }
+    val txtField = remember { mutableStateOf(value) }
+    val value_cannot_empty = stringResource(R.string.value_cannot_be_empty)
+    val value_must_be_greater = stringResource(R.string.value_must_be_greater_than)
+
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = modifier
+                .padding(all = 10.dp)
+                .background(color = colorPalette.background1, shape = RoundedCornerShape(8.dp))
+                .padding(vertical = 16.dp)
+                .defaultMinSize(Dp.Unspecified, 190.dp)
+        ) {
+            BasicText(
+                text = title,
+                style = typography.s.semiBold,
+                modifier = Modifier
+                    .padding(vertical = 8.dp, horizontal = 24.dp)
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+
+                TextField(
+                    modifier = Modifier
+                        //.padding(horizontal = 30.dp)
+                        .fillMaxWidth(0.7f),
+                    /*
+                    .border(
+                        BorderStroke(
+                            width = 1.dp,
+                            color = if (txtFieldError.value.isEmpty()) colorPalette.textDisabled else colorPalette.red
+                        ),
+
+                        shape = thumbnailShape
+                    ),
+                     */
+                    colors = TextFieldDefaults.textFieldColors(
+                        placeholderColor = colorPalette.textDisabled,
+                        cursorColor = colorPalette.text,
+                        textColor = colorPalette.text,
+                        backgroundColor = if (txtFieldError.value.isEmpty()) colorPalette.background1 else colorPalette.red,
+                        focusedIndicatorColor = colorPalette.accent,
+                        unfocusedIndicatorColor = colorPalette.textDisabled
+                    ),
+                    leadingIcon = {
+/*
+                        Image(
+                            painter = painterResource(R.drawable.app_icon),
+                            contentDescription = null,
+                            colorFilter = ColorFilter.tint(colorPalette.background0),
+                            modifier = Modifier
+                                .width(30.dp)
+                                .height(30.dp)
+                                .clickable(
+                                    indication = rememberRipple(bounded = false),
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    enabled = true,
+                                    onClick = { onDismiss() }
+                                )
+                        )
+
+ */
+
+
+                    },
+                    placeholder = { Text(text = placeholder) },
+                    value = txtField.value,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                    onValueChange = {
+                        txtField.value = it
+                    })
+            }
+
+            Spacer(modifier = Modifier.height(30.dp))
+            /*
+            Row(
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+
+                BasicText(
+                    text = if (txtFieldError.value.isNotEmpty()) txtFieldError.value else "---",
+                    style = typography.xs.medium,
+                    modifier = Modifier
+                        .padding(vertical = 8.dp, horizontal = 24.dp)
+                )
+            }
+             */
+
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                DialogTextButton(
+                    text = stringResource(R.string.confirm),
+                    onClick = {
+                        if (txtField.value.isEmpty()) {
+                            txtFieldError.value = value_cannot_empty
+                            return@DialogTextButton
+                        }
+                        if (txtField.value.isNotEmpty()) {
+                            setValue(txtField.value)
+                            onDismiss()
+                        }
+                    }
+                )
+
+                DialogTextButton(
+                    text = stringResource(R.string.cancel),
+                    onClick = onDismiss,
+                    modifier = Modifier
+                )
+            }
+
+        }
+    }
+
+}
+
+
+
+@Composable
 inline fun GenericDialog(
     noinline onDismiss: () -> Unit,
     title: String,
@@ -560,7 +713,7 @@ inline fun GenericDialog(
         Column(
             modifier = modifier
                 .padding(all = 48.dp)
-                .background(color = colorPalette.background4, shape = RoundedCornerShape(8.dp))
+                .background(color = colorPalette.background1, shape = RoundedCornerShape(8.dp))
                 .padding(vertical = 16.dp)
         ) {
             BasicText(

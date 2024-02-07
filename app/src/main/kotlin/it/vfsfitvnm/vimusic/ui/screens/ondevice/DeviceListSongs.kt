@@ -7,7 +7,9 @@ import android.content.ContentUris
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -164,12 +166,14 @@ fun DeviceListSongs(
             || it.artistsText?.contains(filterCharSequence,true) ?: false
         }
 
+    var searching by rememberSaveable { mutableStateOf(false) }
+
     val thumbnailSizeDp = Dimensions.thumbnails.song
     val thumbnailSize = thumbnailSizeDp.px
 
     val sortOrderIconRotation by animateFloatAsState(
         targetValue = if (sortOrder == SortOrder.Ascending) 0f else 180f,
-        animationSpec = tween(durationMillis = 400, easing = LinearEasing)
+        animationSpec = tween(durationMillis = 400, easing = LinearEasing), label = ""
     )
 
     var thumbnailRoundness by rememberPreference(
@@ -187,17 +191,16 @@ fun DeviceListSongs(
     }
 
     val activity = LocalContext.current as Activity
-    //VisualizerComputer.setupPermissions( LocalContext.current as Activity)
     if (ContextCompat.checkSelfPermission(
             activity,
-            if (isAtLeastAndroid13) Manifest.permission.READ_MEDIA_AUDIO
+            if (Build.VERSION.SDK_INT >= 33) Manifest.permission.READ_MEDIA_AUDIO
             else Manifest.permission.READ_EXTERNAL_STORAGE
         ) != PackageManager.PERMISSION_GRANTED
     ) {
         LocalContext.current.toast("On device require read media permission, grant please.")
         ActivityCompat.requestPermissions(
             activity,
-            arrayOf(if (isAtLeastAndroid13) Manifest.permission.READ_MEDIA_AUDIO
+            arrayOf(if (Build.VERSION.SDK_INT >= 33) Manifest.permission.READ_MEDIA_AUDIO
             else Manifest.permission.READ_EXTERNAL_STORAGE), 41
         )
     } else {
@@ -277,19 +280,14 @@ fun DeviceListSongs(
                         modifier = Modifier
                             .fillMaxWidth()
                     ){
-                    /*
-                    HeaderInfo(
-                       // title = "${songs.size} (${formatAsDuration(totalPlayTimes).dropLast(3)})",
-                        title = "${songs.size}",
-                        icon = painterResource(R.drawable.musical_notes),
-                        spacer = 0
+
+                    HeaderIconButton(
+                        onClick = { searching = !searching },
+                        icon = R.drawable.search_circle,
+                        color = colorPalette.text,
+                        iconSize = 24.dp
                     )
 
-                    Spacer(
-                        modifier = Modifier
-                            .weight(1f)
-                    )
-                    */
                     HeaderIconButton(
                         icon = R.drawable.enqueue,
                         enabled = songs.isNotEmpty(),
@@ -347,18 +345,14 @@ fun DeviceListSongs(
 
                 }
 
-                /*        */
                 Row (
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.Bottom,
                     modifier = Modifier
-                        //.requiredHeight(30.dp)
                         .padding(all = 10.dp)
                         .fillMaxWidth()
                 ) {
-                    var searching by rememberSaveable { mutableStateOf(false) }
-
-                    if (searching) {
+                    AnimatedVisibility(visible = searching) {
                         val focusRequester = remember { FocusRequester() }
                         val focusManager = LocalFocusManager.current
                         val keyboardController = LocalSoftwareKeyboardController.current
@@ -401,6 +395,7 @@ fun DeviceListSongs(
                                 }
                             },
                             modifier = Modifier
+                                .height(30.dp)
                                 .fillMaxWidth()
                                 .background(
                                     colorPalette.background4,
@@ -417,16 +412,8 @@ fun DeviceListSongs(
                                     }
                                 }
                         )
-                    } else {
-                        HeaderIconButton(
-                            onClick = { searching = true },
-                            icon = R.drawable.search_circle,
-                            color = colorPalette.text,
-                            iconSize = 24.dp
-                        )
                     }
                 }
-                /*        */
 
             }
 
@@ -435,7 +422,6 @@ fun DeviceListSongs(
                 key = { _, song -> song.id },
                 contentType = { _, song -> song },
             ) { index, song ->
-
 /*
                 Log.d("mediaItemUri",
                 ContentUris.withAppendedId(
@@ -445,8 +431,6 @@ fun DeviceListSongs(
                 )
 
 */
-
-
                 SongItem(
                     song = song,
                     isDownloaded = true,

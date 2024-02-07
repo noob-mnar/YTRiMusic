@@ -217,11 +217,11 @@ fun ContentType(
 
     VisualizerComputer.setupPermissions( LocalContext.current as Activity )
     val audioComputer = VisualizerComputer()
-    Log.d("mediaItemEqualizer","EXTERNAL audioSession ${binder?.player?.audioSessionId}")
+    //Log.d("mediaItemEqualizer","EXTERNAL audioSession ${binder?.player?.audioSessionId}")
     binder?.player?.audioSessionId?.let {
-        Log.d("mediaItemEqualizer","internal audioSession ${it}")
+        //Log.d("mediaItemEqualizer","internal audioSession ${it}")
         audioComputer.start(audioSessionId = it, onData = { data ->
-            Log.d("mediaItemEqualizer","onData amplitude ${data.amplitude} captureSize ${data.captureSize} rawWaveform ${data.rawWaveform} samplingRate ${data.samplingRate}")
+            //Log.d("mediaItemEqualizer","onData amplitude ${data.amplitude} captureSize ${data.captureSize} rawWaveform ${data.rawWaveform} samplingRate ${data.samplingRate}")
             visualizerData.value = data
         })
     }

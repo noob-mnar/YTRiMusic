@@ -2,6 +2,7 @@ package it.vfsfitvnm.vimusic.ui.screens.playlist
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -81,6 +83,8 @@ import it.vfsfitvnm.vimusic.ui.components.themed.HeaderIconButton
 import it.vfsfitvnm.vimusic.ui.components.themed.HeaderInfo
 import it.vfsfitvnm.vimusic.ui.components.themed.HeaderPlaceholder
 import it.vfsfitvnm.vimusic.ui.components.themed.HeaderWithIcon
+import it.vfsfitvnm.vimusic.ui.components.themed.InputTextDialog
+import it.vfsfitvnm.vimusic.ui.components.themed.InputTextField
 import it.vfsfitvnm.vimusic.ui.components.themed.LayoutWithAdaptiveThumbnail
 import it.vfsfitvnm.vimusic.ui.components.themed.NonQueuedMediaItemMenu
 import it.vfsfitvnm.vimusic.ui.components.themed.SelectorDialog
@@ -95,12 +99,15 @@ import it.vfsfitvnm.vimusic.utils.UiTypeKey
 import it.vfsfitvnm.vimusic.utils.asMediaItem
 import it.vfsfitvnm.vimusic.utils.completed
 import it.vfsfitvnm.vimusic.utils.downloadedStateMedia
+import it.vfsfitvnm.vimusic.utils.durationTextToMillis
 import it.vfsfitvnm.vimusic.utils.enqueue
 import it.vfsfitvnm.vimusic.utils.forcePlayAtIndex
 import it.vfsfitvnm.vimusic.utils.forcePlayFromBeginning
+import it.vfsfitvnm.vimusic.utils.formatAsTime
 import it.vfsfitvnm.vimusic.utils.getDownloadState
 import it.vfsfitvnm.vimusic.utils.isLandscape
 import it.vfsfitvnm.vimusic.utils.manageDownload
+import it.vfsfitvnm.vimusic.utils.medium
 import it.vfsfitvnm.vimusic.utils.rememberPreference
 import it.vfsfitvnm.vimusic.utils.secondary
 import it.vfsfitvnm.vimusic.utils.semiBold
@@ -165,6 +172,8 @@ fun PlaylistSongList(
                         || songItem.asMediaItem.mediaMetadata.artist?.contains(filterCharSequence,true) ?: false
             }
 
+    var searching by rememberSaveable { mutableStateOf(false) }
+
     val songThumbnailSizeDp = Dimensions.thumbnails.song
     val songThumbnailSizePx = songThumbnailSizeDp.px
 
@@ -193,12 +202,19 @@ fun PlaylistSongList(
         mutableStateOf(false)
     }
 
+    var totalPlayTimes = 0L
+    playlistPage?.songsPage?.items?.forEach {
+        totalPlayTimes += it.durationText?.let { it1 ->
+            durationTextToMillis(it1) }?.toLong() ?: 0
+    }
+
     if (isImportingPlaylist) {
-        TextFieldDialog(
-            hintText = stringResource(R.string.enter_the_playlist_name),
-            initialTextInput = playlistPage?.title ?: "",
+        InputTextDialog(
             onDismiss = { isImportingPlaylist = false },
-            onDone = { text ->
+            title = stringResource(R.string.enter_the_playlist_name),
+            value = playlistPage?.title ?: "",
+            placeholder = "https://........",
+            setValue = { text ->
                 query {
                     transaction {
                         val playlistId = Database.insert(Playlist(name = text, browseId = browseId))
@@ -261,6 +277,13 @@ fun PlaylistSongList(
                 Spacer(
                     modifier = Modifier
                         .weight(1f)
+                )
+
+                HeaderIconButton(
+                    onClick = { searching = !searching },
+                    icon = R.drawable.search_circle,
+                    color = colorPalette.text,
+                    iconSize = 24.dp
                 )
 
                 HeaderIconButton(
@@ -422,17 +445,14 @@ fun PlaylistSongList(
                 )
             }
 
-            /*        */
             Row (
-                horizontalArrangement = Arrangement.Start,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.Bottom,
                 modifier = Modifier
                     .padding(all = 10.dp)
                     .fillMaxWidth()
             ) {
-                var searching by rememberSaveable { mutableStateOf(false) }
-
-                if (searching) {
+                AnimatedVisibility(visible = searching) {
                     val focusRequester = remember { FocusRequester() }
                     val focusManager = LocalFocusManager.current
                     val keyboardController = LocalSoftwareKeyboardController.current
@@ -475,6 +495,7 @@ fun PlaylistSongList(
                             }
                         },
                         modifier = Modifier
+                            .height(30.dp)
                             .fillMaxWidth()
                             .background(
                                 colorPalette.background4,
@@ -491,16 +512,9 @@ fun PlaylistSongList(
                                 }
                             }
                     )
-                } else {
-                    HeaderIconButton(
-                        onClick = { searching = true },
-                        icon = R.drawable.search_circle,
-                        color = colorPalette.text,
-                        iconSize = 24.dp
-                    )
                 }
             }
-            /*        */
+
         }
     }
 
@@ -525,6 +539,21 @@ fun PlaylistSongList(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         headerContent()
                         if (!isLandscape) thumbnailContent()
+
+                        playlistPage?.title?.let {
+                            BasicText(
+                                text = it,
+                                style = typography.xs.semiBold,
+                                maxLines = 1
+                            )
+                        }
+                        BasicText(
+                            text = playlistPage?.songsPage?.items?.size.toString() + " "
+                                    +stringResource(R.string.songs)
+                                    + " - " + formatAsTime(totalPlayTimes),
+                            style = typography.xxs.medium,
+                            maxLines = 1
+                        )
                     }
                 }
 

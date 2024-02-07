@@ -78,6 +78,7 @@ import it.vfsfitvnm.vimusic.ui.components.themed.ScrollText
 import it.vfsfitvnm.vimusic.ui.components.themed.SelectorDialog
 import it.vfsfitvnm.vimusic.ui.screens.albumRoute
 import it.vfsfitvnm.vimusic.ui.screens.artistRoute
+import it.vfsfitvnm.vimusic.ui.styling.DefaultDarkColorPalette
 import it.vfsfitvnm.vimusic.ui.styling.LocalAppearance
 import it.vfsfitvnm.vimusic.ui.styling.collapsedPlayerProgressBar
 import it.vfsfitvnm.vimusic.ui.styling.favoritesIcon
@@ -121,7 +122,7 @@ fun Controls(
     modifier: Modifier = Modifier
 ) {
     val (colorPalette, typography) = LocalAppearance.current
-    var colorPaletteName by rememberPreference(colorPaletteNameKey, ColorPaletteName.PureBlack)
+    var colorPaletteName by rememberPreference(colorPaletteNameKey, ColorPaletteName.ModernBlack)
 
     val binder = LocalPlayerServiceBinder.current
     binder?.player ?: return
@@ -220,7 +221,9 @@ fun Controls(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .padding(horizontal = 10.dp)
+                .fillMaxWidth()
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -272,8 +275,10 @@ fun Controls(
 
             if (uiType != UiType.ViMusic)
             IconButton(
-                color = colorPalette.favoritesIcon,
-                icon = if (likedAt == null) R.drawable.heart_outline else R.drawable.heart,
+                color = if (likedAt == null) colorPalette.textDisabled else colorPalette.text,
+                //color = colorPalette.favoritesIcon,
+                icon = R.drawable.heart,
+                //icon = if (likedAt == null) R.drawable.heart_outline else R.drawable.heart,
                 onClick = {
                     val currentMediaItem = binder.player.currentMediaItem
                     query {
@@ -301,13 +306,15 @@ fun Controls(
 
         Spacer(
             modifier = Modifier
-                .height(20.dp)
+                .height(10.dp)
         )
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = if (uiType != UiType.ViMusic) Arrangement.Start else Arrangement.Center,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .padding(horizontal = 10.dp)
+                .fillMaxWidth()
         ) {
 
 
@@ -378,122 +385,122 @@ fun Controls(
 
         }
 
+
         Spacer(
             modifier = Modifier
-                .height(30.dp)
-        )
-
-        if (playerTimelineType != PlayerTimelineType.Default && playerTimelineType != PlayerTimelineType.Wavy)
-            SeekBarCustom(
-                type = playerTimelineType,
-                value = scrubbingPosition ?: position,
-                minimumValue = 0,
-                maximumValue = duration,
-                onDragStart = {
-                    scrubbingPosition = it
-                },
-                onDrag = { delta ->
-                    scrubbingPosition = if (duration != C.TIME_UNSET) {
-                        scrubbingPosition?.plus(delta)?.coerceIn(0, duration)
-                    } else {
-                        null
-                    }
-                },
-                onDragEnd = {
-                    scrubbingPosition?.let(binder.player::seekTo)
-                    scrubbingPosition = null
-                },
-                color = colorPalette.collapsedPlayerProgressBar,
-                backgroundColor = colorPalette.textSecondary,
-                shape = RoundedCornerShape(8.dp),
-            )
-
-        if (playerTimelineType == PlayerTimelineType.Default)
-        SeekBar(
-            value = scrubbingPosition ?: position,
-            minimumValue = 0,
-            maximumValue = duration,
-            onDragStart = {
-                scrubbingPosition = it
-            },
-            onDrag = { delta ->
-                scrubbingPosition = if (duration != C.TIME_UNSET) {
-                    scrubbingPosition?.plus(delta)?.coerceIn(0, duration)
-                } else {
-                    null
-                }
-            },
-            onDragEnd = {
-                scrubbingPosition?.let(binder.player::seekTo)
-                scrubbingPosition = null
-            },
-            color = colorPalette.collapsedPlayerProgressBar,
-            backgroundColor = colorPalette.textSecondary,
-            shape = RoundedCornerShape(8.dp),
+                .height(20.dp)
         )
 
 
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .padding(horizontal = 10.dp)
+                .fillMaxWidth()
+        ) {
+
+            if (playerTimelineType != PlayerTimelineType.Default && playerTimelineType != PlayerTimelineType.Wavy)
+                SeekBarCustom(
+                    type = playerTimelineType,
+                    value = scrubbingPosition ?: position,
+                    minimumValue = 0,
+                    maximumValue = duration,
+                    onDragStart = {
+                        scrubbingPosition = it
+                    },
+                    onDrag = { delta ->
+                        scrubbingPosition = if (duration != C.TIME_UNSET) {
+                            scrubbingPosition?.plus(delta)?.coerceIn(0, duration)
+                        } else {
+                            null
+                        }
+                    },
+                    onDragEnd = {
+                        scrubbingPosition?.let(binder.player::seekTo)
+                        scrubbingPosition = null
+                    },
+                    color = colorPalette.collapsedPlayerProgressBar,
+                    backgroundColor = colorPalette.textSecondary,
+                    shape = RoundedCornerShape(8.dp)
+                )
+
+            if (playerTimelineType == PlayerTimelineType.Default)
+                SeekBar(
+                    value = scrubbingPosition ?: position,
+                    minimumValue = 0,
+                    maximumValue = duration,
+                    onDragStart = {
+                        scrubbingPosition = it
+                    },
+                    onDrag = { delta ->
+                        scrubbingPosition = if (duration != C.TIME_UNSET) {
+                            scrubbingPosition?.plus(delta)?.coerceIn(0, duration)
+                        } else {
+                            null
+                        }
+                    },
+                    onDragEnd = {
+                        scrubbingPosition?.let(binder.player::seekTo)
+                        scrubbingPosition = null
+                    },
+                    color = colorPalette.collapsedPlayerProgressBar,
+                    backgroundColor = colorPalette.textSecondary,
+                    shape = RoundedCornerShape(8.dp),
+                )
 
 
-        if (playerTimelineType == PlayerTimelineType.Wavy) {
-            SeekBarWaved(
-                position = { animatedPosition.value },
-                range = 0f..media.duration.toFloat(),
-                onSeekStarted = {
-                    scrubbingPosition = it.toLong()
 
-                    //isSeeking = true
-                    scope.launch {
-                        animatedPosition.animateTo(it)
-                    }
 
-                },
-                onSeek = { delta ->
-                    scrubbingPosition = if (duration != C.TIME_UNSET) {
-                        scrubbingPosition?.plus(delta)?.coerceIn(0F, duration.toFloat())?.toLong()
-                    } else {
-                        null
-                    }
+            if (playerTimelineType == PlayerTimelineType.Wavy) {
+                SeekBarWaved(
+                    position = { animatedPosition.value },
+                    range = 0f..media.duration.toFloat(),
+                    onSeekStarted = {
+                        scrubbingPosition = it.toLong()
 
-                    if (media.duration != C.TIME_UNSET) {
                         //isSeeking = true
                         scope.launch {
-                            animatedPosition.snapTo(
-                                animatedPosition.value.plus(delta)
-                                    .coerceIn(0f, media.duration.toFloat())
-                            )
+                            animatedPosition.animateTo(it)
                         }
-                    }
 
-                },
-                onSeekFinished = {
-                    scrubbingPosition?.let(binder.player::seekTo)
-                    scrubbingPosition = null
-                    /*
+                    },
+                    onSeek = { delta ->
+                        scrubbingPosition = if (duration != C.TIME_UNSET) {
+                            scrubbingPosition?.plus(delta)?.coerceIn(0F, duration.toFloat())
+                                ?.toLong()
+                        } else {
+                            null
+                        }
+
+                        if (media.duration != C.TIME_UNSET) {
+                            //isSeeking = true
+                            scope.launch {
+                                animatedPosition.snapTo(
+                                    animatedPosition.value.plus(delta)
+                                        .coerceIn(0f, media.duration.toFloat())
+                                )
+                            }
+                        }
+
+                    },
+                    onSeekFinished = {
+                        scrubbingPosition?.let(binder.player::seekTo)
+                        scrubbingPosition = null
+                        /*
                     isSeeking = false
                     animatedPosition.let {
                         binder.player.seekTo(it.targetValue.toLong())
                     }
                      */
-                },
-                color = colorPalette.collapsedPlayerProgressBar,
-                isActive = binder.player.isPlaying,
-                backgroundColor = colorPalette.textSecondary,
-                shape = RoundedCornerShape(8.dp)
-            )
-        }
-/*
-            AnimatedVisibility(
-                durationVisible,
-                enter = fadeIn() + expandVertically { -it },
-                exit = fadeOut() + shrinkVertically { -it }) {
-                Column {
-                    Spacer(Modifier.height(8.dp))
-                    Duration(animatedPosition.value, media.duration)
-                }
+                    },
+                    color = colorPalette.collapsedPlayerProgressBar,
+                    isActive = binder.player.isPlaying,
+                    backgroundColor = colorPalette.textSecondary,
+                    shape = RoundedCornerShape(8.dp)
+                )
             }
-*/
-
+        }
 
         Spacer(
             modifier = Modifier
@@ -501,9 +508,8 @@ fun Controls(
         )
 
 
-        //if (!durationVisible)
         Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
@@ -517,7 +523,7 @@ fun Controls(
 
             if (duration != C.TIME_UNSET) {
                 BasicText(
-                    text = formatAsDuration(duration),
+                    text = " - " + formatAsDuration(duration),
                     style = typography.xxs.semiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -527,7 +533,7 @@ fun Controls(
 
         Spacer(
             modifier = Modifier
-                .weight(1f)
+                .weight(0.5f)
         )
 
         Row(
@@ -563,9 +569,10 @@ fun Controls(
                         .size(26.dp)
                 )
 
+
             IconButton(
                 icon = R.drawable.play_skip_back,
-                color = colorPalette.iconButtonPlayer,
+                color = colorPalette.collapsedPlayerProgressBar, //colorPalette.iconButtonPlayer,
                 onClick = {
                     binder.player.forceSeekToPrevious()
                     //binder.player.seekToPreviousMediaItem()
@@ -577,6 +584,7 @@ fun Controls(
                     .padding(10.dp)
                     .size(26.dp)
             )
+
 
             Box(
                 modifier = Modifier
@@ -594,15 +602,14 @@ fun Controls(
                     }
                     //.background(if (uiType != UiType.RiMusic) colorPalette.background3 else colorPalette.background0)
                     .background(
-                        if (playerPlayButtonType == PlayerPlayButtonType.CircularRibbed && colorPaletteName == ColorPaletteName.Dynamic) colorPalette.background1 else colorPalette.background2
-                        /*
-                        when(playerPlayButtonType){
-                            PlayerPlayButtonType.CircularRibbed -> colorPalette.background0
-                            PlayerPlayButtonType.Default -> colorPalette.background3
-                            PlayerPlayButtonType.Rectangular -> colorPalette.background3 //colorPalette.accent
-                            PlayerPlayButtonType.Square -> colorPalette.background3
+                        when (colorPaletteName) {
+                            ColorPaletteName.Dynamic, ColorPaletteName.Default ->
+                                if(playerPlayButtonType == PlayerPlayButtonType.CircularRibbed)
+                                    colorPalette.background1 else colorPalette.background2
+                            ColorPaletteName.PureBlack, ColorPaletteName.ModernBlack ->
+                                if(playerPlayButtonType == PlayerPlayButtonType.CircularRibbed)
+                                    colorPalette.background1 else colorPalette.background4
                         }
-                         */
                     )
                     .width(if (uiType != UiType.RiMusic) PlayerPlayButtonType.Default.width.dp else playerPlayButtonType.width.dp)
                     .height(if (uiType != UiType.RiMusic) PlayerPlayButtonType.Default.height.dp else playerPlayButtonType.height.dp)
@@ -610,7 +617,12 @@ fun Controls(
                 if (uiType == UiType.RiMusic && playerPlayButtonType == PlayerPlayButtonType.CircularRibbed)
                 Image(
                     painter = painterResource(R.drawable.a13shape),
-                    colorFilter = ColorFilter.tint(colorPalette.background2),
+                    colorFilter = ColorFilter.tint(
+                        when (colorPaletteName) {
+                            ColorPaletteName.PureBlack, ColorPaletteName.ModernBlack -> colorPalette.background4
+                            else -> colorPalette.background2
+                        }
+                    ),
                     modifier = Modifier.fillMaxSize()
                         .rotate(rotationAngle),
                     contentDescription = "Background Image",
@@ -620,18 +632,19 @@ fun Controls(
                 Image(
                     painter = painterResource(if (shouldBePlaying) R.drawable.pause else R.drawable.play),
                     contentDescription = null,
-                    colorFilter = if (playerPlayButtonType == PlayerPlayButtonType.CircularRibbed) ColorFilter.tint(colorPalette.iconButtonPlayer) else ColorFilter.tint(colorPalette.text),
+                    colorFilter = ColorFilter.tint(colorPalette.collapsedPlayerProgressBar), //if (playerPlayButtonType == PlayerPlayButtonType.CircularRibbed) ColorFilter.tint(colorPalette.iconButtonPlayer) else ColorFilter.tint(colorPalette.text),
                     modifier = Modifier
-
+                        .rotate(rotationAngle)
                         .align(Alignment.Center)
-                        .size(26.dp)
+                        .size(30.dp)
                 )
             }
 
 
+
             IconButton(
                 icon = R.drawable.play_skip_forward,
-                color = colorPalette.iconButtonPlayer,
+                color = colorPalette.collapsedPlayerProgressBar, //colorPalette.iconButtonPlayer,
                 onClick = {
                     binder.player.forceSeekToNext()
                     if (effectRotationEnabled) isRotated = !isRotated
@@ -641,6 +654,30 @@ fun Controls(
                     .padding(10.dp)
                     .size(26.dp)
             )
+            /*
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(playPauseRoundness))
+                    .clickable {
+                        if (effectRotationEnabled) isRotated = !isRotated
+                        binder.player.forceSeekToNext()
+                    }
+                    //.background( colorPalette.background2 )
+                    .width(if (uiType != UiType.RiMusic) PlayerPlayButtonType.Default.width.dp else playerPlayButtonType.width.dp)
+                    .height(if (uiType != UiType.RiMusic) PlayerPlayButtonType.Default.height.dp else playerPlayButtonType.height.dp)
+            ) {
+
+                Image(
+                    painter = painterResource(R.drawable.play_skip_forward),
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(colorPalette.collapsedPlayerProgressBar), //ColorFilter.tint(colorPalette.iconButtonPlayer),
+                    modifier = Modifier
+                        .rotate(rotationAngle)
+                        .align(Alignment.Center)
+                        .size(36.dp)
+                )
+            }
+             */
 
             if (uiType != UiType.RiMusic)
             IconButton(

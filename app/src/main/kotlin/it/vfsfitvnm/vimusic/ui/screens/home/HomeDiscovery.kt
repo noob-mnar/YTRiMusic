@@ -7,6 +7,7 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,6 +33,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -64,7 +66,7 @@ import it.vfsfitvnm.vimusic.ui.styling.Dimensions
 import it.vfsfitvnm.vimusic.ui.styling.LocalAppearance
 import it.vfsfitvnm.vimusic.ui.styling.px
 import it.vfsfitvnm.vimusic.ui.styling.shimmer
-import it.vfsfitvnm.vimusic.utils.SnapLayoutInfoProvider
+//import it.vfsfitvnm.vimusic.utils.SnapLayoutInfoProvider
 import it.vfsfitvnm.vimusic.utils.UiTypeKey
 import it.vfsfitvnm.vimusic.utils.center
 import it.vfsfitvnm.vimusic.utils.isLandscape
@@ -75,7 +77,7 @@ import it.vfsfitvnm.vimusic.utils.thumbnailRoundnessKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 
-
+@ExperimentalMaterialApi
 @SuppressLint("SuspiciousIndentation")
 @UnstableApi
 @OptIn(ExperimentalFoundationApi::class, ExperimentalAnimationApi::class)
@@ -122,7 +124,7 @@ fun HomeDiscovery(
 
     BoxWithConstraints {
         val moodItemWidthFactor = if (isLandscape && maxWidth * 0.475f >= 320.dp) 0.475f else 0.9f
-
+/*
         val snapLayoutInfoProvider = remember(lazyGridState) {
             SnapLayoutInfoProvider(
                 lazyGridState = lazyGridState,
@@ -140,7 +142,7 @@ fun HomeDiscovery(
                 }
             )
         }
-
+*/
         //val itemWidth = maxWidth * moodItemWidthFactor
 
         Column(
@@ -234,7 +236,7 @@ fun HomeDiscovery(
                     LazyHorizontalGrid(
                         state = lazyGridState,
                         rows = GridCells.Fixed(8),
-                        flingBehavior = rememberSnapFlingBehavior(snapLayoutInfoProvider),
+                        flingBehavior = ScrollableDefaults.flingBehavior(),
                         contentPadding = endPaddingValues,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -274,7 +276,7 @@ fun HomeDiscovery(
                 LazyHorizontalGrid(
                     state = lazyGridState,
                     rows = GridCells.Fixed(4),
-                    flingBehavior = rememberSnapFlingBehavior(snapLayoutInfoProvider),
+                    flingBehavior = ScrollableDefaults.flingBehavior(),
                     contentPadding = endPaddingValues,
                     modifier = Modifier
                         .fillMaxWidth()

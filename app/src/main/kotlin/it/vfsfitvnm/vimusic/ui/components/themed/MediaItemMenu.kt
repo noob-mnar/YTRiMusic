@@ -6,9 +6,11 @@ import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.with
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -26,11 +28,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.Text
+import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -45,6 +51,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -77,6 +84,7 @@ import it.vfsfitvnm.vimusic.ui.styling.px
 import it.vfsfitvnm.vimusic.utils.addNext
 import it.vfsfitvnm.vimusic.utils.asMediaItem
 import it.vfsfitvnm.vimusic.utils.downloadedStateMedia
+import it.vfsfitvnm.vimusic.utils.durationToMillis
 import it.vfsfitvnm.vimusic.utils.enqueue
 import it.vfsfitvnm.vimusic.utils.forcePlay
 import it.vfsfitvnm.vimusic.utils.formatAsDuration
@@ -85,12 +93,14 @@ import it.vfsfitvnm.vimusic.utils.manageDownload
 import it.vfsfitvnm.vimusic.utils.medium
 import it.vfsfitvnm.vimusic.utils.playlistSortByKey
 import it.vfsfitvnm.vimusic.utils.playlistSortOrderKey
+import it.vfsfitvnm.vimusic.utils.positionAndDurationState
 import it.vfsfitvnm.vimusic.utils.rememberPreference
 import it.vfsfitvnm.vimusic.utils.semiBold
 import it.vfsfitvnm.vimusic.utils.thumbnail
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.withContext
+import kotlin.math.absoluteValue
 
 @ExperimentalTextApi
 @ExperimentalAnimationApi
@@ -353,6 +363,7 @@ fun MediaItemMenu(
 
     downloadState = getDownloadState(mediaItem.mediaId)
     val isDownloaded = if (!isLocal) downloadedStateMedia(mediaItem.mediaId) else true
+    /*
     var artistsList by persistList<Artist?>("home/artists")
     var artistIds = remember { mutableListOf("") }
 
@@ -367,25 +378,56 @@ fun MediaItemMenu(
                 if (info.id.isNotEmpty()) artistIds.add(info.id)
             }
             Database.getArtistsList(artistIds).collect { artistsList = it }
-
-            Database.likedAt(mediaItem.mediaId).collect { likedAt = it }
         }
+    }
+    */
+    LaunchedEffect(Unit, mediaItem.mediaId) {
+        Database.likedAt(mediaItem.mediaId).collect { likedAt = it }
     }
 
     var showCircularSlider by remember {
         mutableStateOf(false)
     }
 
+    var showDialogChangeSongTitle by remember {
+        mutableStateOf(false)
+    }
+
+    var songSaved by remember {
+        mutableStateOf(0)
+    }
+    LaunchedEffect(Unit, mediaItem.mediaId) {
+        withContext(Dispatchers.IO) {
+            songSaved = Database.songExist(mediaItem.mediaId)
+        }
+    }
+
+    if (showDialogChangeSongTitle)
+        InputTextDialog(
+            onDismiss = { showDialogChangeSongTitle = false },
+            title = stringResource(R.string.update_title),
+            value = mediaItem.mediaMetadata.title.toString(),
+            placeholder = stringResource(R.string.title),
+            setValue = {
+                if (it.isNotEmpty()) {
+                    query {
+                        Database.updateSongTitle(mediaItem.mediaId, it)
+                    }
+                    //context.toast("Song Saved $it")
+                }
+            }
+        )
+
     AnimatedContent(
         targetState = isViewingPlaylists,
         transitionSpec = {
             val animationSpec = tween<IntOffset>(400)
-            val slideDirection =
-                if (targetState) AnimatedContentScope.SlideDirection.Left else AnimatedContentScope.SlideDirection.Right
+            val slideDirection = if (targetState) AnimatedContentTransitionScope.SlideDirection.Left
+            else AnimatedContentTransitionScope.SlideDirection.Right
 
-            slideIntoContainer(slideDirection, animationSpec) with
+            slideIntoContainer(slideDirection, animationSpec) togetherWith
                     slideOutOfContainer(slideDirection, animationSpec)
-        }
+        }, label = ""
     ) { currentIsViewingPlaylists ->
         if (currentIsViewingPlaylists) {
             val sortBy by rememberPreference(playlistSortByKey, PlaylistSortBy.DateAdded)
@@ -399,6 +441,17 @@ fun MediaItemMenu(
             }
 
             if (isCreatingNewPlaylist && onAddToPlaylist != null) {
+                InputTextDialog(
+                    onDismiss = { isCreatingNewPlaylist = false },
+                    title = stringResource(R.string.enter_the_playlist_name),
+                    value = "",
+                    placeholder = stringResource(R.string.enter_the_playlist_name),
+                    setValue = { text ->
+                        onDismiss()
+                        onAddToPlaylist(Playlist(name = text), 0)
+                    }
+                )
+                /*
                 TextFieldDialog(
                     hintText = "Enter the playlist name",
                     onDismiss = { isCreatingNewPlaylist = false },
@@ -407,6 +460,7 @@ fun MediaItemMenu(
                         onAddToPlaylist(Playlist(name = text), 0)
                     }
                 )
+                 */
             }
 
             BackHandler {
@@ -511,8 +565,10 @@ fun MediaItemMenu(
 
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         IconButton(
-                            icon = if (likedAt == null) R.drawable.heart_outline else R.drawable.heart,
-                            color = colorPalette.favoritesIcon,
+                            //icon = if (likedAt == null) R.drawable.heart_outline else R.drawable.heart,
+                            icon = R.drawable.heart,
+                            //color = colorPalette.favoritesIcon,
+                            color = if (likedAt == null) colorPalette.textDisabled else colorPalette.text,
                             onClick = {
                                 query {
                                     if (Database.like(
@@ -541,7 +597,7 @@ fun MediaItemMenu(
                     }
 
                 }
-
+/*
                 if (artistsList.isNotEmpty())
                     Row(
                         horizontalArrangement = Arrangement.Center,
@@ -587,24 +643,22 @@ fun MediaItemMenu(
                         .height(1.dp)
                         .fillMaxWidth(1f)
                 )
-
+*/
                 Spacer(
                     modifier = Modifier
                         .height(8.dp)
                 )
 
-                /*
-                onStartRadio?.let { onStartRadio ->
+                  if (!isLocal && songSaved > 0) {
                     MenuEntry(
-                        icon = R.drawable.radio,
-                        text = stringResource(R.string.start_radio),
+                        icon = R.drawable.pencil,
+                        text = stringResource(R.string.update_title),
                         onClick = {
-                            onDismiss()
-                            onStartRadio()
+                            showDialogChangeSongTitle = true
                         }
                     )
                 }
-                 */
+
                 if (!isLocal) onStartRadio?.let { onStartRadio ->
                     MenuEntry(
                         icon = R.drawable.radio,
@@ -674,18 +728,13 @@ fun MediaItemMenu(
                         ?: flowOf(null))
                         .collectAsState(initial = null)
 
-                    /*
                     val positionAndDuration = binder?.player?.positionAndDurationState()
-                    val progress =
-                        positionAndDuration?.value?.first?.toFloat()
-                            ?.div(positionAndDuration.value.second.absoluteValue)
 
-                    val timeRemaining = (progress?.let { it1 ->
-                        positionAndDuration?.value!!.first.absoluteValue.minus(
-                            it1.absoluteValue)
-                    })?.toInt()!!
-                    */
+                    var timeRemaining by remember { mutableIntStateOf(0) }
 
+                    if (positionAndDuration != null) {
+                        timeRemaining = positionAndDuration.value.second.toInt() - positionAndDuration.value.first.toInt()
+                    }
 
                     if (isShowingSleepTimerDialog) {
                         if (sleepTimerMillisLeft != null) {
@@ -721,7 +770,7 @@ fun MediaItemMenu(
                                         alignment = Alignment.CenterHorizontally
                                     ),
                                     modifier = Modifier
-                                        .padding(vertical = 16.dp)
+                                        .padding(vertical = 10.dp)
                                 ) {
                                     if (!showCircularSlider) {
                                         Box(
@@ -785,14 +834,26 @@ fun MediaItemMenu(
                                 Row(
                                     horizontalArrangement = Arrangement.SpaceEvenly,
                                     modifier = Modifier
+                                        .padding(bottom = 20.dp)
                                         .fillMaxWidth()
                                 ) {
-                                    /*
-                                    if (timeRemaining != null) {
-                                        //BasicText(text = AnnotatedString(formatAsDuration(timeRemaining.toLong() )))
-                                        BasicText(text = AnnotatedString(formatAsDuration(timeRemaining.toLong())))
-                                    }
-                                    */
+                                    SecondaryTextButton(
+                                        text = stringResource(R.string.set_to) + " "
+                                                + formatAsDuration(timeRemaining.toLong())
+                                                + " " + stringResource(R.string.end_of_song),
+                                        onClick = {
+                                            binder?.startSleepTimer(timeRemaining.toLong())
+                                            isShowingSleepTimerDialog = false
+                                        }
+                                    )
+                                }
+
+                                Row(
+                                    horizontalArrangement = Arrangement.SpaceEvenly,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                ) {
+
                                     IconButton(
                                         onClick = { showCircularSlider = !showCircularSlider },
                                         icon = R.drawable.time,

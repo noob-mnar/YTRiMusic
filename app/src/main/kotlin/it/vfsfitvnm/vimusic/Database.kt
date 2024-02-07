@@ -64,6 +64,16 @@ import kotlinx.coroutines.flow.Flow
 interface Database {
     companion object : Database by DatabaseInitializer.Instance.database
 
+    @Transaction
+    @Query("UPDATE Song SET title = :title WHERE id = :id")
+    fun updateSongTitle(id: String, title: String): Int
+    @Query("UPDATE Album SET thumbnailUrl = :thumb WHERE id = :id")
+    fun updateAlbumCover(id: String, thumb: String): Int
+    @Query("UPDATE Album SET authorsText = :artist WHERE id = :id")
+    fun updateAlbumAuthors(id: String, artist: String): Int
+
+    @Query("UPDATE Album SET title = :title WHERE id = :id")
+    fun updateAlbumTitle(id: String, title: String): Int
 
     @Transaction
     @Query("SELECT * FROM Artist WHERE id in (:idsList)")
@@ -74,6 +84,9 @@ interface Database {
     @Query("SELECT * FROM Song WHERE id in (:idsList) ")
     @RewriteQueriesToDropUnusedColumns
     fun getSongsList(idsList: List<String>): Flow<List<Song>>
+
+    @Query("SELECT thumbnailUrl FROM Song WHERE id in (:idsList) ")
+    fun getSongsListThumbnailUrls(idsList: List<String>): Flow<List<String?>>
 
     @Transaction
     @Query("SELECT * FROM Song WHERE ROWID='wooowww' ")
@@ -118,12 +131,12 @@ interface Database {
     fun songsFavoritesByPlayTimeDesc(): Flow<List<Song>>
 
     @Transaction
-    @Query("SELECT * FROM Song WHERE likedAt IS NOT NULL ORDER BY title")
+    @Query("SELECT * FROM Song WHERE likedAt IS NOT NULL ORDER BY title COLLATE NOCASE ASC")
     @RewriteQueriesToDropUnusedColumns
     fun songsFavoritesByTitleAsc(): Flow<List<Song>>
 
     @Transaction
-    @Query("SELECT * FROM Song WHERE likedAt IS NOT NULL ORDER BY title DESC")
+    @Query("SELECT * FROM Song WHERE likedAt IS NOT NULL ORDER BY title COLLATE NOCASE DESC")
     @RewriteQueriesToDropUnusedColumns
     fun songsFavoritesByTitleDesc(): Flow<List<Song>>
 
@@ -137,6 +150,17 @@ interface Database {
     @RewriteQueriesToDropUnusedColumns
     fun songsFavoritesByRowIdDesc(): Flow<List<Song>>
 
+    @Transaction
+    @Query("SELECT DISTINCT S.* FROM Song S LEFT JOIN Event E ON E.songId=S.id " +
+            "WHERE likedAt IS NOT NULL AND S.id NOT LIKE '$LOCAL_KEY_PREFIX%' " +
+            "ORDER BY E.timestamp DESC")
+    fun songsFavoritesByDatePlayedDesc(): Flow<List<Song>>
+
+    @Transaction
+    @Query("SELECT DISTINCT S.* FROM Song S LEFT JOIN Event E ON E.songId=S.id " +
+            "WHERE likedAt IS NOT NULL AND S.id NOT LIKE '$LOCAL_KEY_PREFIX%' " +
+            "ORDER BY E.timestamp")
+    fun songsFavoritesByDatePlayedAsc(): Flow<List<Song>>
 
     fun songsFavorites(sortBy: SongSortBy, sortOrder: SortOrder): Flow<List<Song>> {
         return when (sortBy) {
@@ -152,8 +176,15 @@ interface Database {
                 SortOrder.Ascending -> songsFavoritesByRowIdAsc()
                 SortOrder.Descending -> songsFavoritesByRowIdDesc()
             }
+            SongSortBy.DatePlayed -> when (sortOrder) {
+                SortOrder.Ascending -> songsFavoritesByDatePlayedAsc()
+                SortOrder.Descending -> songsFavoritesByDatePlayedDesc()
+            }
         }
     }
+
+    @Query("SELECT thumbnailUrl FROM Song WHERE likedAt IS NOT NULL AND id NOT LIKE '$LOCAL_KEY_PREFIX%'  LIMIT 4")
+    fun preferitesThumbnailUrls(): Flow<List<String?>>
 
     @Transaction
     //@Query("SELECT Song.*, contentLength FROM Song JOIN Format ON id = songId WHERE songId = :songId and (contentLength = totalPlayTimeMs)")
@@ -186,7 +217,7 @@ interface Database {
 
     fun songsOffline(sortBy: SongSortBy, sortOrder: SortOrder): Flow<List<SongWithContentLength>> {
         return when (sortBy) {
-            SongSortBy.PlayTime -> when (sortOrder) {
+            SongSortBy.PlayTime, SongSortBy.DatePlayed -> when (sortOrder) {
                 SortOrder.Ascending -> songsOfflineByPlayTimeAsc()
                 SortOrder.Descending -> songsOfflineByPlayTimeDesc()
             }
@@ -198,8 +229,12 @@ interface Database {
                 SortOrder.Ascending -> songsOfflineByRowIdAsc()
                 SortOrder.Descending -> songsOfflineByRowIdDesc()
             }
+
         }
     }
+
+    @Query("SELECT thumbnailUrl FROM Song JOIN Format ON id = songId WHERE contentLength IS NOT NULL AND totalPlayTimeMs > 0  LIMIT 4")
+    fun offlineThumbnailUrls(): Flow<List<String?>>
 
 
     @Transaction
@@ -215,13 +250,13 @@ interface Database {
     fun songsByRowIdDesc(): Flow<List<Song>>
 
     @Transaction
-    @Query("SELECT * FROM Song WHERE totalPlayTimeMs > 0 ORDER BY title ASC")
+    @Query("SELECT * FROM Song WHERE totalPlayTimeMs > 0 ORDER BY title COLLATE NOCASE ASC")
     //@Query("SELECT * FROM Song ORDER BY title ASC")
     @RewriteQueriesToDropUnusedColumns
     fun songsByTitleAsc(): Flow<List<Song>>
 
     @Transaction
-    @Query("SELECT * FROM Song WHERE totalPlayTimeMs > 0 ORDER BY title DESC")
+    @Query("SELECT * FROM Song WHERE totalPlayTimeMs > 0 ORDER BY title COLLATE NOCASE DESC")
     //@Query("SELECT * FROM Song ORDER BY title DESC")
     @RewriteQueriesToDropUnusedColumns
     fun songsByTitleDesc(): Flow<List<Song>>
@@ -240,6 +275,20 @@ interface Database {
     @RewriteQueriesToDropUnusedColumns
     fun songsByPlayTimeDesc(): Flow<List<Song>>
 
+    @Transaction
+    @Query("SELECT DISTINCT S.* FROM Song S " +
+            "LEFT JOIN Event E ON E.songId=S.id " +
+            "WHERE S.totalPlayTimeMs > 0 AND S.id NOT LIKE '$LOCAL_KEY_PREFIX%' " +
+            "ORDER BY E.timestamp DESC")
+    fun songsByDatePlayedDesc(): Flow<List<Song>>
+
+    @Transaction
+    @Query("SELECT DISTINCT S.* FROM Song S " +
+            "LEFT JOIN Event E ON E.songId=S.id " +
+            "WHERE S.totalPlayTimeMs > 0 AND S.id NOT LIKE '$LOCAL_KEY_PREFIX%' " +
+            "ORDER BY E.timestamp")
+    fun songsByDatePlayedAsc(): Flow<List<Song>>
+
     fun songs(sortBy: SongSortBy, sortOrder: SortOrder): Flow<List<Song>> {
         return when (sortBy) {
             SongSortBy.PlayTime -> when (sortOrder) {
@@ -253,6 +302,10 @@ interface Database {
             SongSortBy.DateAdded -> when (sortOrder) {
                 SortOrder.Ascending -> songsByRowIdAsc()
                 SortOrder.Descending -> songsByRowIdDesc()
+            }
+            SongSortBy.DatePlayed -> when (sortOrder) {
+                SortOrder.Ascending -> songsByDatePlayedAsc()
+                SortOrder.Descending -> songsByDatePlayedDesc()
             }
         }
     }
@@ -340,7 +393,7 @@ interface Database {
     @RewriteQueriesToDropUnusedColumns
     fun albumSongs(albumId: String): Flow<List<Song>>
 
-    @Query("SELECT * FROM Album WHERE bookmarkedAt IS NOT NULL ORDER BY title ASC")
+    @Query("SELECT * FROM Album WHERE bookmarkedAt IS NOT NULL ORDER BY title COLLATE NOCASE ASC")
     fun albumsByTitleAsc(): Flow<List<Album>>
 
     @Query("SELECT * FROM Album WHERE bookmarkedAt IS NOT NULL ORDER BY year ASC")
@@ -349,7 +402,7 @@ interface Database {
     @Query("SELECT * FROM Album WHERE bookmarkedAt IS NOT NULL ORDER BY bookmarkedAt ASC")
     fun albumsByRowIdAsc(): Flow<List<Album>>
 
-    @Query("SELECT * FROM Album WHERE bookmarkedAt IS NOT NULL ORDER BY title DESC")
+    @Query("SELECT * FROM Album WHERE bookmarkedAt IS NOT NULL ORDER BY title COLLATE NOCASE DESC")
     fun albumsByTitleDesc(): Flow<List<Album>>
 
     @Query("SELECT * FROM Album WHERE bookmarkedAt IS NOT NULL ORDER BY year DESC")
@@ -379,7 +432,7 @@ interface Database {
     fun incrementTotalPlayTimeMs(id: String, addition: Long)
 
     @Transaction
-    @Query("SELECT max(position) FROM SongPlaylistMap WHERE playlistId = :id")
+    @Query("SELECT max(position) maxPos FROM SongPlaylistMap WHERE playlistId = :id")
     fun getSongMaxPositionToPlaylist(id: Long): Int
 
 
@@ -387,22 +440,34 @@ interface Database {
     @Query("SELECT * FROM Playlist WHERE id = :id")
     fun playlistWithSongs(id: Long): Flow<PlaylistWithSongs?>
 
+    @RewriteQueriesToDropUnusedColumns
+    @Transaction
+    @Query(
+        """
+        SELECT * FROM SortedSongPlaylistMap SPLM
+        INNER JOIN Song on Song.id = SPLM.songId
+        WHERE playlistId = :id
+        ORDER BY SPLM.position
+        """
+    )
+    fun playlistSongs(id: Long): Flow<List<Song>?>
+
 
     @Transaction
     @Query("SELECT SP.position FROM Song S INNER JOIN songplaylistmap SP ON S.id=SP.songId WHERE SP.playlistId=:id AND S.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY SP.position DESC")
     fun songsPositionPlaylistDesc(id: Long): Flow<List<Int>>
 
     @Transaction
-    @Query("SELECT S.* FROM Song S INNER JOIN songplaylistmap SP ON S.id=SP.songId WHERE SP.playlistId=:id AND S.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY S.artistsText")
+    @Query("SELECT S.* FROM Song S INNER JOIN songplaylistmap SP ON S.id=SP.songId WHERE SP.playlistId=:id AND S.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY S.artistsText COLLATE NOCASE ASC")
     fun songsPlaylistByArtistAsc(id: Long): Flow<List<Song>>
     @Transaction
-    @Query("SELECT S.* FROM Song S INNER JOIN songplaylistmap SP ON S.id=SP.songId WHERE SP.playlistId=:id AND S.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY S.artistsText DESC")
+    @Query("SELECT S.* FROM Song S INNER JOIN songplaylistmap SP ON S.id=SP.songId WHERE SP.playlistId=:id AND S.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY S.artistsText COLLATE NOCASE DESC")
     fun songsPlaylistByArtistDesc(id: Long): Flow<List<Song>>
     @Transaction
-    @Query("SELECT S.* FROM Song S INNER JOIN songplaylistmap SP ON S.id=SP.songId WHERE SP.playlistId=:id AND S.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY S.title")
+    @Query("SELECT S.* FROM Song S INNER JOIN songplaylistmap SP ON S.id=SP.songId WHERE SP.playlistId=:id AND S.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY S.title COLLATE NOCASE ASC")
     fun songsPlaylistByTitleAsc(id: Long): Flow<List<Song>>
     @Transaction
-    @Query("SELECT S.* FROM Song S INNER JOIN songplaylistmap SP ON S.id=SP.songId WHERE SP.playlistId=:id AND S.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY S.title DESC")
+    @Query("SELECT S.* FROM Song S INNER JOIN songplaylistmap SP ON S.id=SP.songId WHERE SP.playlistId=:id AND S.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY S.title COLLATE NOCASE DESC")
     fun songsPlaylistByTitleDesc(id: Long): Flow<List<Song>>
     @Transaction
     @Query("SELECT S.* FROM Song S INNER JOIN songplaylistmap SP ON S.id=SP.songId WHERE SP.playlistId=:id AND S.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY SP.position")
@@ -433,6 +498,22 @@ interface Database {
             "ORDER BY E.timestamp DESC")
     fun songsPlaylistByDatePlayedDesc(id: Long): Flow<List<Song>>
 
+    @Transaction
+    @Query("SELECT DISTINCT S.* FROM Song S INNER JOIN songplaylistmap SP ON S.id=SP.songId " +
+            "LEFT JOIN songalbummap SA ON SA.songId=SP.songId " +
+            "LEFT JOIN Album A ON A.Id=SA.albumId " +
+            "WHERE SP.playlistId=:id AND S.id NOT LIKE '$LOCAL_KEY_PREFIX%' " +
+            "ORDER BY CAST(A.year AS INTEGER) DESC")
+    fun songsPlaylistByAlbumYearDesc(id: Long): Flow<List<Song>>
+
+    @Transaction
+    @Query("SELECT DISTINCT S.* FROM Song S INNER JOIN songplaylistmap SP ON S.id=SP.songId " +
+            "LEFT JOIN songalbummap SA ON SA.songId=SP.songId " +
+            "LEFT JOIN Album A ON A.Id=SA.albumId " +
+            "WHERE SP.playlistId=:id AND S.id NOT LIKE '$LOCAL_KEY_PREFIX%' " +
+            "ORDER BY CAST(A.year AS INTEGER)")
+    fun songsPlaylistByAlbumYearAsc(id: Long): Flow<List<Song>>
+
     fun songsPlaylist(id: Long, sortBy: PlaylistSongSortBy, sortOrder: SortOrder): Flow<List<Song>> {
         return when (sortBy) {
             PlaylistSongSortBy.PlayTime -> when (sortOrder) {
@@ -455,6 +536,10 @@ interface Database {
                 SortOrder.Ascending -> songsPlaylistByDatePlayedAsc(id)
                 SortOrder.Descending -> songsPlaylistByDatePlayedDesc(id)
             }
+            PlaylistSongSortBy.AlbumYear -> when (sortOrder) {
+                SortOrder.Ascending -> songsPlaylistByAlbumYearAsc(id)
+                SortOrder.Descending -> songsPlaylistByAlbumYearDesc(id)
+            }
 
         }
     }
@@ -470,7 +555,7 @@ interface Database {
 
     @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
     @Transaction
-    @Query("SELECT id, name, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist ORDER BY name ASC")
+    @Query("SELECT id, name, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist ORDER BY name COLLATE NOCASE ASC")
     fun playlistPreviewsByNameAsc(): Flow<List<PlaylistPreview>>
 
     @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
@@ -485,7 +570,7 @@ interface Database {
 
     @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
     @Transaction
-    @Query("SELECT id, name, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist ORDER BY name DESC")
+    @Query("SELECT id, name, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist ORDER BY name COLLATE NOCASE DESC")
     fun playlistPreviewsByNameDesc(): Flow<List<PlaylistPreview>>
 
     @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
@@ -535,7 +620,7 @@ interface Database {
     @Query("SELECT Song.*, contentLength FROM Song JOIN Format ON id = songId WHERE contentLength IS NOT NULL AND totalPlayTimeMs > 0 ORDER BY Song.ROWID DESC")
     fun songsWithContentLength(): Flow<List<SongWithContentLength>>
 
-
+    @Transaction
     @Query("""
         UPDATE SongPlaylistMap SET position = 
           CASE 
@@ -575,14 +660,14 @@ interface Database {
  */
 
     @Transaction
+    @Query("SELECT Song.* FROM Event JOIN Song ON Song.id = songId WHERE Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' GROUP BY songId ORDER BY SUM(CAST(playTime AS REAL) / (((:now - timestamp) / 86400000) + 1)) DESC LIMIT 1")
+    @RewriteQueriesToDropUnusedColumns
+    fun trendingReal(now: Long = System.currentTimeMillis()): Flow<List<Song>>
+
+    @Transaction
     @Query("SELECT Song.* FROM Event JOIN Song ON Song.id = songId WHERE Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' GROUP BY songId ORDER BY SUM(playTime) DESC LIMIT :limit")
     @RewriteQueriesToDropUnusedColumns
     fun trending(limit: Int = 3): Flow<List<Song>>
-
-    @Transaction
-    @Query("SELECT Song.* FROM Event JOIN Song ON Song.id = songId WHERE Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' GROUP BY songId ORDER BY timestamp DESC LIMIT :limit")
-    @RewriteQueriesToDropUnusedColumns
-    fun lastPlayed( limit: Int = 3 ): Flow<List<Song>>
 
     @Transaction
     @Query("SELECT Song.* FROM Event JOIN Song ON Song.id = songId WHERE (:now - Event.timestamp) <= :period AND Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' GROUP BY songId ORDER BY SUM(playTime) DESC LIMIT :limit")
@@ -592,6 +677,11 @@ interface Database {
         now: Long = System.currentTimeMillis(),
         period: Long
     ): Flow<List<Song>>
+
+    @Transaction
+    @Query("SELECT Song.* FROM Event JOIN Song ON Song.id = songId WHERE playTime > 0 and Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' GROUP BY songId ORDER BY timestamp DESC LIMIT :limit")
+    @RewriteQueriesToDropUnusedColumns
+    fun lastPlayed( limit: Int = 3 ): Flow<List<Song>>
 
     @Query("SELECT COUNT (*) FROM Event")
     fun eventsCount(): Flow<Int>
@@ -923,16 +1013,19 @@ abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
 object Converters {
 
     @TypeConverter
+    @JvmStatic
     fun fromString(stringListString: String): List<String> {
         return stringListString.split(",").map { it }
     }
 
     @TypeConverter
+    @JvmStatic
     fun toString(stringList: List<String>): String {
         return stringList.joinToString(separator = ",")
     }
 
     @TypeConverter
+    @JvmStatic
     @UnstableApi
     fun mediaItemFromByteArray(value: ByteArray?): MediaItem? {
         return value?.let { byteArray ->
@@ -949,6 +1042,7 @@ object Converters {
     }
 
     @TypeConverter
+    @JvmStatic
     @UnstableApi
     fun mediaItemToByteArray(mediaItem: MediaItem?): ByteArray? {
         return mediaItem?.toBundle()?.let { persistableBundle ->
@@ -962,6 +1056,7 @@ object Converters {
     }
 }
 
+@Suppress("UnusedReceiverParameter")
 val Database.internal: RoomDatabase
     get() = DatabaseInitializer.Instance
 

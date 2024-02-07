@@ -22,7 +22,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
@@ -30,6 +32,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicText
@@ -46,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -61,8 +65,6 @@ import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.exoplayer.offline.Download
 import com.valentinilk.shimmer.shimmer
-import it.vfsfitvnm.compose.reordering.ReorderingLazyColumn
-import it.vfsfitvnm.compose.reordering.animateItemPlacement
 import it.vfsfitvnm.compose.reordering.draggedItem
 import it.vfsfitvnm.compose.reordering.rememberReorderingState
 import it.vfsfitvnm.compose.reordering.reorder
@@ -118,6 +120,8 @@ fun Queue(
 
     val horizontalBottomPaddingValues = windowInsets
         .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom).asPaddingValues()
+    //val bottomPaddingValues = windowInsets
+    //    .only(WindowInsetsSides.Bottom).asPaddingValues()
 
     val context = LocalContext.current
 
@@ -125,7 +129,8 @@ fun Queue(
         state = layoutState,
         modifier = modifier,
         collapsedContent = {
-/*
+
+
             Box(
                 modifier = Modifier
                     .drawBehind { drawRect(backgroundColorProvider()) }
@@ -133,19 +138,19 @@ fun Queue(
                     .padding(horizontalBottomPaddingValues)
             ) {
                 Image(
-                    painter = painterResource(R.drawable.chevron_up),
+                    painter = painterResource(R.drawable.horizontal_bold_line),
                     contentDescription = null,
                     colorFilter = ColorFilter.tint(colorPalette.text),
                     modifier = Modifier
+                        .absoluteOffset(0.dp,-10.dp)
                         .align(Alignment.TopCenter)
-                        .size(18.dp)
+                        .size(30.dp)
                 )
 
                 content()
             }
-*/
 
-           content()
+            //content()
         }
     ) {
         val binder = LocalPlayerServiceBinder.current
@@ -236,9 +241,25 @@ fun Queue(
                     .background(colorPalette.background1)
                     .weight(1f)
             ) {
+                Box(
+                    modifier = Modifier
+                        .drawBehind { drawRect(backgroundColorProvider()) }
+                        .fillMaxSize()
+                        .padding(horizontalBottomPaddingValues)
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.horizontal_bold_line),
+                        contentDescription = null,
+                        colorFilter = ColorFilter.tint(colorPalette.text),
+                        modifier = Modifier
+                            .absoluteOffset(0.dp,-10.dp)
+                            .align(Alignment.TopCenter)
+                            .size(30.dp)
+                    )
+                }
 
-                ReorderingLazyColumn(
-                    reorderingState = reorderingState,
+                LazyColumn(
+                    state = reorderingState.lazyListState,
                     contentPadding = windowInsets
                         .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
                         .asPaddingValues(),
@@ -329,7 +350,7 @@ fun Queue(
                                     IconButton(
                                         icon = R.drawable.reorder,
                                         color = colorPalette.textDisabled,
-                                        //indication = rippleIndication,
+                                        indication = rippleIndication,
                                         onClick = {},
                                         modifier = Modifier
                                             .reorder(
@@ -388,11 +409,11 @@ fun Queue(
                                     )
 
                                 }
-                                .animateItemPlacement(reorderingState = reorderingState)
                                 .draggedItem(
                                     reorderingState = reorderingState,
                                     index = window.firstPeriodIndex
                                 )
+                                //.animateItemPlacement()
                         )
                     }
 
@@ -439,20 +460,20 @@ fun Queue(
                     .clickable(onClick = layoutState::collapseSoft)
                     .background(colorPalette.background1)
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 20.dp)
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
                     .padding(horizontalBottomPaddingValues)
                     .height(40.dp) //bottom bar queue
             ) {
-                /*
                 Image(
-                    painter = painterResource(R.drawable.chevron_down),
+                    painter = painterResource(R.drawable.horizontal_bold_line),
                     contentDescription = null,
                     colorFilter = ColorFilter.tint(colorPalette.text),
                     modifier = Modifier
+                        .absoluteOffset(0.dp,-10.dp)
                         .align(Alignment.TopCenter)
-                        .size(18.dp)
+                        .size(30.dp)
                 )
-                 */
+
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,

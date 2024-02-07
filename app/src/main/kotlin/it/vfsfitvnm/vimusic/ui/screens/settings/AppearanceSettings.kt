@@ -56,6 +56,12 @@ import it.vfsfitvnm.vimusic.utils.playerThumbnailSizeKey
 import it.vfsfitvnm.vimusic.utils.playerTimelineTypeKey
 import it.vfsfitvnm.vimusic.utils.playerVisualizerTypeKey
 import it.vfsfitvnm.vimusic.utils.rememberPreference
+import it.vfsfitvnm.vimusic.utils.showButtonPlayerAddToPlaylistKey
+import it.vfsfitvnm.vimusic.utils.showButtonPlayerArrowKey
+import it.vfsfitvnm.vimusic.utils.showButtonPlayerDownloadKey
+import it.vfsfitvnm.vimusic.utils.showButtonPlayerLoopKey
+import it.vfsfitvnm.vimusic.utils.showButtonPlayerLyricsKey
+import it.vfsfitvnm.vimusic.utils.showButtonPlayerShuffleKey
 import it.vfsfitvnm.vimusic.utils.showDownloadButtonBackgroundPlayerKey
 import it.vfsfitvnm.vimusic.utils.showLikeButtonBackgroundPlayerKey
 import it.vfsfitvnm.vimusic.utils.thumbnailRoundnessKey
@@ -74,7 +80,7 @@ fun AppearanceSettings() {
     val context = LocalContext.current
     val coroutineScope = CoroutineScope(Dispatchers.IO) + Job()
 
-    var colorPaletteName by rememberPreference(colorPaletteNameKey, ColorPaletteName.PureBlack)
+    var colorPaletteName by rememberPreference(colorPaletteNameKey, ColorPaletteName.ModernBlack)
     var colorPaletteMode by rememberPreference(colorPaletteModeKey, ColorPaletteMode.System)
     var thumbnailRoundness by rememberPreference(
         thumbnailRoundnessKey,
@@ -112,6 +118,14 @@ fun AppearanceSettings() {
     var thumbnailTapEnabled by rememberPreference(thumbnailTapEnabledKey, false)
     var fontType by rememberPreference(fontTypeKey, FontType.Rubik)
 
+    var showButtonPlayerAddToPlaylist by rememberPreference(showButtonPlayerAddToPlaylistKey, true)
+    var showButtonPlayerArrow by rememberPreference(showButtonPlayerArrowKey, false)
+    var showButtonPlayerDownload by rememberPreference(showButtonPlayerDownloadKey, true)
+    var showButtonPlayerLoop by rememberPreference(showButtonPlayerLoopKey, true)
+    var showButtonPlayerLyrics by rememberPreference(showButtonPlayerLyricsKey, true)
+    var showButtonPlayerShuffle by rememberPreference(showButtonPlayerShuffleKey, true)
+
+
     Column(
         modifier = Modifier
             .background(colorPalette.background0)
@@ -146,6 +160,7 @@ fun AppearanceSettings() {
                     playerTimelineType = PlayerTimelineType.Default
                     playerVisualizerType = PlayerVisualizerType.Disabled
                     playerThumbnailSize = PlayerThumbnailSize.Medium
+                    thumbnailTapEnabled = true
                 } else {
                     disablePlayerHorizontalSwipe = false
                     disableIconButtonOnTop = false
@@ -320,6 +335,51 @@ fun AppearanceSettings() {
             text = stringResource(R.string.by_tapping_on_the_thumbnail),
             isChecked = thumbnailTapEnabled,
             onCheckedChange = { thumbnailTapEnabled = it }
+        )
+
+        SettingsGroupSpacer()
+        SettingsEntryGroupText(title = stringResource(R.string.action_bar_button))
+
+        SwitchSettingEntry(
+            title = stringResource(R.string.action_bar_show_download_button),
+            text = "",
+            isChecked = showButtonPlayerDownload,
+            onCheckedChange = { showButtonPlayerDownload = it }
+        )
+
+        SwitchSettingEntry(
+            title = stringResource(R.string.action_bar_show_add_to_playlist_button),
+            text = "",
+            isChecked = showButtonPlayerAddToPlaylist,
+            onCheckedChange = { showButtonPlayerAddToPlaylist = it }
+        )
+
+        SwitchSettingEntry(
+            title = stringResource(R.string.action_bar_show_loop_button),
+            text = "",
+            isChecked = showButtonPlayerLoop,
+            onCheckedChange = { showButtonPlayerLoop = it }
+        )
+
+        SwitchSettingEntry(
+            title = stringResource(R.string.action_bar_show_shuffle_button),
+            text = "",
+            isChecked = showButtonPlayerShuffle,
+            onCheckedChange = { showButtonPlayerShuffle = it }
+        )
+
+        SwitchSettingEntry(
+            title = stringResource(R.string.action_bar_show_lyrics_button),
+            text = "",
+            isChecked = showButtonPlayerLyrics,
+            onCheckedChange = { showButtonPlayerLyrics = it }
+        )
+
+        SwitchSettingEntry(
+            title = stringResource(R.string.action_bar_show_arrow_button),
+            text = "",
+            isChecked = showButtonPlayerArrow,
+            onCheckedChange = { showButtonPlayerArrow = it }
         )
 
         SettingsGroupSpacer()

@@ -62,6 +62,7 @@ import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.analytics.PlaybackStats
 import androidx.media3.exoplayer.analytics.PlaybackStatsListener
 import androidx.media3.exoplayer.audio.AudioRendererEventListener
+import androidx.media3.exoplayer.audio.DefaultAudioOffloadSupportProvider
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink.DefaultAudioProcessorChain
 import androidx.media3.exoplayer.audio.MediaCodecAudioRenderer
@@ -125,6 +126,7 @@ import it.vfsfitvnm.vimusic.utils.trackLoopEnabledKey
 import it.vfsfitvnm.vimusic.utils.volumeNormalizationKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -201,8 +203,10 @@ class PlayerService : InvincibleService(),
                     PlaybackState.ACTION_REWIND
         ).addCustomAction(
             /* action = */ "DOWNLOAD",
-            /* name   = */ "Download",
-            /* icon   = */ if (isDownloadedState.value || isCachedState.value || isDownloadedAction) R.drawable.downloaded_to else R.drawable.download_to
+            /* name   = */
+            "Download",
+            /* icon   = */
+            if (isDownloadedState.value || isCachedState.value) R.drawable.downloaded_to else R.drawable.download_to
 
         ).addCustomAction(
             /* action = */ "LIKE",
@@ -223,8 +227,10 @@ class PlayerService : InvincibleService(),
                     PlaybackState.ACTION_REWIND
         ).addCustomAction(
             /* action = */ "DOWNLOAD",
-            /* name   = */ "Download",
-            /* icon   = */ if (isDownloadedState.value || isCachedState.value || isDownloadedAction) R.drawable.downloaded_to else R.drawable.download_to
+            /* name   = */
+            "Download",
+            /* icon   = */
+            if (isDownloadedState.value || isCachedState.value) R.drawable.downloaded_to else R.drawable.download_to
 
         )
 
@@ -283,6 +289,7 @@ class PlayerService : InvincibleService(),
     private lateinit var audioQualityFormat: AudioQualityFormat
 
     private val mediaItemState = MutableStateFlow<MediaItem?>(null)
+
     @FlowPreview
     private val isLikedState = mediaItemState
         .flatMapMerge { item ->
@@ -291,25 +298,32 @@ class PlayerService : InvincibleService(),
         .map { it != null }
         .stateIn(coroutineScope, SharingStarted.Eagerly, false)
 
-    private var isDownloadedAction = false
     private val mediaDownloadedItemState = MutableStateFlow<MediaItem?>(null)
+
+    @ExperimentalCoroutinesApi
     @FlowPreview
     private val isDownloadedState = mediaDownloadedItemState
         .flatMapMerge { item ->
-            item?.mediaId?.let { flowOf(
-                downloadCache.isCached(it,0, Database.formatContentLength(it))
-            ) } ?: flowOf(false)
+            item?.mediaId?.let {
+                flowOf(
+                    downloadCache.isCached(it, 0, Database.formatContentLength(it))
+                )
+            } ?: flowOf(false)
         }
         .map { it }
         .stateIn(coroutineScope, SharingStarted.Eagerly, false)
 
     private val mediaCachedItemState = MutableStateFlow<MediaItem?>(null)
+
+    @ExperimentalCoroutinesApi
     @FlowPreview
     private val isCachedState = mediaCachedItemState
         .flatMapMerge { item ->
-            item?.mediaId?.let { flowOf(
-                cache.isCached(it,0, Database.formatContentLength(it))
-            ) } ?: flowOf(false)
+            item?.mediaId?.let {
+                flowOf(
+                    cache.isCached(it, 0, Database.formatContentLength(it))
+                )
+            } ?: flowOf(false)
         }
         .map { it }
         .stateIn(coroutineScope, SharingStarted.Eagerly, false)
@@ -353,7 +367,7 @@ class PlayerService : InvincibleService(),
         val exoPlayerCustomCache = preferences.getInt(exoPlayerCustomCacheKey, 32)
 
         val cacheEvictor = when (val size =
-            preferences.getEnum(exoPlayerDiskCacheMaxSizeKey, ExoPlayerDiskCacheMaxSize.`2GB`)) {
+            preferences.getEnum(exoPlayerDiskCacheMaxSizeKey, ExoPlayerDiskCacheMaxSize.`32MB`)) {
             ExoPlayerDiskCacheMaxSize.Unlimited -> NoOpCacheEvictor()
             ExoPlayerDiskCacheMaxSize.Custom -> LeastRecentlyUsedCacheEvictor(exoPlayerCustomCache.toLong())
             else -> LeastRecentlyUsedCacheEvictor(size.bytes)
@@ -363,7 +377,7 @@ class PlayerService : InvincibleService(),
         val downloadDirectory = getExternalFilesDir(null) ?: filesDir
         var cacheDirName = "rimusic_cache"
         val cacheSize =
-            preferences.getEnum(exoPlayerDiskCacheMaxSizeKey, ExoPlayerDiskCacheMaxSize.`2GB`)
+            preferences.getEnum(exoPlayerDiskCacheMaxSizeKey, ExoPlayerDiskCacheMaxSize.`32MB`)
 
 
         if (cacheSize == ExoPlayerDiskCacheMaxSize.Disabled) cacheDirName = "rimusic_no_cache"
@@ -625,8 +639,6 @@ class PlayerService : InvincibleService(),
     @UnstableApi
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
 
-        isDownloadedAction = false
-
         mediaItemState.update { mediaItem }
         mediaDownloadedItemState.update { mediaItem }
         mediaCachedItemState.update { mediaItem }
@@ -865,11 +877,11 @@ class PlayerService : InvincibleService(),
             withContext(Dispatchers.Main) {
                 if (showLikeButton && showDownloadButton)
                     mediaSession.setPlaybackState(
-                    stateBuilder
-                        .setState(player.androidPlaybackState, player.currentPosition, 1f)
-                        .setBufferedPosition(player.bufferedPosition)
-                        .build()
-                )
+                        stateBuilder
+                            .setState(player.androidPlaybackState, player.currentPosition, 1f)
+                            .setBufferedPosition(player.bufferedPosition)
+                            .build()
+                    )
                 if (showLikeButton && !showDownloadButton)
                     mediaSession.setPlaybackState(
                         stateBuilderWithLikeOnly
@@ -1002,6 +1014,7 @@ class PlayerService : InvincibleService(),
         }
     }
 
+    @FlowPreview
     override fun notification(): Notification? {
         if (player.currentMediaItem == null) return null
 
@@ -1049,36 +1062,36 @@ class PlayerService : InvincibleService(),
                 if (player.shouldBePlaying) pauseIntent else playIntent
             )
             .addAction(R.drawable.play_skip_forward, "Skip forward", nextIntent)
-                if (showLikeButton && showDownloadButton) {
-                //Prior Android 11
-                builder
-                    .addAction(
-                        if (isDownloadedState.value || isCachedState.value || isDownloadedAction) R.drawable.downloaded_to else R.drawable.download_to,
-                        "Download", downloadIntent
-                    )
-                    .addAction(
-                        if (isLikedState.value) R.drawable.heart else R.drawable.heart_outline,
-                        "Like",
-                        likeIntent
-                    )
-            }
+        if (showLikeButton && showDownloadButton) {
             //Prior Android 11
-            if (showLikeButton && !showDownloadButton) {
+            builder
+                .addAction(
+                    if (isDownloadedState.value || isCachedState.value) R.drawable.downloaded_to else R.drawable.download_to,
+                    "Download", downloadIntent
+                )
+                .addAction(
+                    if (isLikedState.value) R.drawable.heart else R.drawable.heart_outline,
+                    "Like",
+                    likeIntent
+                )
+        }
+        //Prior Android 11
+        if (showLikeButton && !showDownloadButton) {
             builder
                 .addAction(
                     if (isLikedState.value) R.drawable.heart else R.drawable.heart_outline,
                     "Like",
                     likeIntent
                 )
-            }
-            //Prior Android 11
-            if (!showLikeButton && showDownloadButton) {
+        }
+        //Prior Android 11
+        if (!showLikeButton && showDownloadButton) {
             builder
                 .addAction(
-                    if (isDownloadedState.value || isCachedState.value || isDownloadedAction) R.drawable.downloaded_to else R.drawable.download_to,
+                    if (isDownloadedState.value || isCachedState.value) R.drawable.downloaded_to else R.drawable.download_to,
                     "Download", downloadIntent
                 )
-            }
+        }
 
 
         bitmapProvider.load(mediaMetadata.artworkUri) { bitmap ->
@@ -1088,7 +1101,6 @@ class PlayerService : InvincibleService(),
 
         return builder.build()
     }
-
 
 
     private fun createNotificationChannel() {
@@ -1128,12 +1140,15 @@ class PlayerService : InvincibleService(),
     }
 
 
-    private fun okHttpClient() : OkHttpClient {
-        ProxyPreferences.preference?.let{
+    private fun okHttpClient(): OkHttpClient {
+        ProxyPreferences.preference?.let {
             return OkHttpClient.Builder()
-                .proxy(Proxy(it.proxyMode,
-                    InetSocketAddress(it.proxyHost,it.proxyPort)
-                ))
+                .proxy(
+                    Proxy(
+                        it.proxyMode,
+                        InetSocketAddress(it.proxyHost, it.proxyPort)
+                    )
+                )
                 .connectTimeout(Duration.ofSeconds(16))
                 .readTimeout(Duration.ofSeconds(8))
                 .build()
@@ -1152,17 +1167,18 @@ class PlayerService : InvincibleService(),
         upstreamDataSourceFactory = CacheDataSource.Factory()
             .setCache(cache)
             .setUpstreamDataSourceFactory(
-                OkHttpDataSource.Factory(okHttpClient())
-                    .setUserAgent("Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0")
-                /*
                 DefaultDataSource.Factory(
                     this,
+                    OkHttpDataSource.Factory(okHttpClient())
+                        .setUserAgent("Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0")
+                    /*
                     DefaultHttpDataSource.Factory()
                         .setConnectTimeoutMs(16000)
                         .setReadTimeoutMs(8000)
                         .setUserAgent("Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0")
+
+                     */
                 )
-                 */
             )
     ) { !it.isLocal }
 
@@ -1206,7 +1222,7 @@ class PlayerService : InvincibleService(),
 
                     val url = when (val status = body.playabilityStatus?.status) {
                         //"OK" -> body.streamingData?.highestQualityFormat?.let { format ->
-                        "OK" -> when(audioQualityFormat) {
+                        "OK" -> when (audioQualityFormat) {
                             AudioQualityFormat.Auto -> body.streamingData?.autoMaxQualityFormat
                             AudioQualityFormat.High -> body.streamingData?.highestQualityFormat
                             AudioQualityFormat.Medium -> body.streamingData?.mediumQualityFormat
@@ -1277,7 +1293,7 @@ class PlayerService : InvincibleService(),
         val audioSink = DefaultAudioSink.Builder()
             .setEnableFloatOutput(false)
             .setEnableAudioTrackPlaybackParams(false)
-            .setOffloadMode(DefaultAudioSink.OFFLOAD_MODE_DISABLED)
+            .setAudioOffloadSupportProvider(DefaultAudioOffloadSupportProvider(applicationContext))
             .setAudioProcessorChain(
                 DefaultAudioProcessorChain(
                     emptyArray(),
@@ -1405,9 +1421,8 @@ class PlayerService : InvincibleService(),
             context = this,
             songId = mediaItem.mediaId,
             songTitle = mediaItem.mediaMetadata.title.toString(),
-            downloadState = isDownloadedAction //isDownloadedState.value
+            downloadState = isDownloadedState.value
         )
-        isDownloadedAction = !isDownloadedAction
 
     }.let { }
 
@@ -1447,10 +1462,11 @@ class PlayerService : InvincibleService(),
                 Action.play.value -> player.play()
                 Action.next.value -> player.forceSeekToNext()
                 Action.previous.value -> player.forceSeekToPrevious()
-                Action.like.value ->  {
+                Action.like.value -> {
                     toggleLikeAction()
                     refreshPlayer()
                 }
+
                 Action.download.value -> {
                     toggleDownloadAction()
                     refreshPlayer()

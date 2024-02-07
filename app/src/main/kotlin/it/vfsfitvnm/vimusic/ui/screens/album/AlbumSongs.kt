@@ -25,6 +25,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,8 +34,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.media3.common.MediaItem
+import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
+import it.vfsfitvnm.compose.persist.persist
 import it.vfsfitvnm.compose.persist.persistList
 import it.vfsfitvnm.vimusic.Database
 import it.vfsfitvnm.vimusic.LocalPlayerAwareWindowInsets
@@ -43,7 +46,9 @@ import it.vfsfitvnm.vimusic.R
 import it.vfsfitvnm.vimusic.enums.PlaylistSortBy
 import it.vfsfitvnm.vimusic.enums.SortOrder
 import it.vfsfitvnm.vimusic.enums.UiType
+import it.vfsfitvnm.vimusic.models.Album
 import it.vfsfitvnm.vimusic.models.Info
+import it.vfsfitvnm.vimusic.models.Playlist
 import it.vfsfitvnm.vimusic.models.Song
 import it.vfsfitvnm.vimusic.models.SongPlaylistMap
 import it.vfsfitvnm.vimusic.query
@@ -52,11 +57,14 @@ import it.vfsfitvnm.vimusic.transaction
 import it.vfsfitvnm.vimusic.ui.components.LocalMenuState
 import it.vfsfitvnm.vimusic.ui.components.ShimmerHost
 import it.vfsfitvnm.vimusic.ui.components.themed.ConfirmationDialog
+import it.vfsfitvnm.vimusic.ui.components.themed.CustomDialog
 import it.vfsfitvnm.vimusic.ui.components.themed.FloatingActionsContainerWithScrollToTop
 import it.vfsfitvnm.vimusic.ui.components.themed.HeaderIconButton
+import it.vfsfitvnm.vimusic.ui.components.themed.InputTextDialog
 import it.vfsfitvnm.vimusic.ui.components.themed.LayoutWithAdaptiveThumbnail
 import it.vfsfitvnm.vimusic.ui.components.themed.NonQueuedMediaItemMenu
 import it.vfsfitvnm.vimusic.ui.components.themed.SelectorDialog
+import it.vfsfitvnm.vimusic.ui.components.themed.TextFieldDialog
 import it.vfsfitvnm.vimusic.ui.items.SongItem
 import it.vfsfitvnm.vimusic.ui.items.SongItemPlaceholder
 import it.vfsfitvnm.vimusic.ui.styling.Dimensions
@@ -66,14 +74,18 @@ import it.vfsfitvnm.vimusic.utils.asMediaItem
 import it.vfsfitvnm.vimusic.utils.center
 import it.vfsfitvnm.vimusic.utils.color
 import it.vfsfitvnm.vimusic.utils.downloadedStateMedia
+import it.vfsfitvnm.vimusic.utils.durationTextToMillis
 import it.vfsfitvnm.vimusic.utils.enqueue
 import it.vfsfitvnm.vimusic.utils.forcePlayAtIndex
 import it.vfsfitvnm.vimusic.utils.forcePlayFromBeginning
+import it.vfsfitvnm.vimusic.utils.formatAsTime
 import it.vfsfitvnm.vimusic.utils.getDownloadState
 import it.vfsfitvnm.vimusic.utils.isLandscape
 import it.vfsfitvnm.vimusic.utils.manageDownload
+import it.vfsfitvnm.vimusic.utils.medium
 import it.vfsfitvnm.vimusic.utils.rememberPreference
 import it.vfsfitvnm.vimusic.utils.semiBold
+import it.vfsfitvnm.vimusic.utils.toast
 import kotlinx.coroutines.Dispatchers
 @ExperimentalTextApi
 @SuppressLint("SuspiciousIndentation")
@@ -92,9 +104,13 @@ fun AlbumSongs(
     val uiType  by rememberPreference(UiTypeKey, UiType.RiMusic)
 
     var songs by persistList<Song>("album/$browseId/songs")
+    var album by persist<Album?>("album/$browseId")
 
     LaunchedEffect(Unit) {
         Database.albumSongs(browseId).collect { songs = it }
+    }
+    LaunchedEffect(Unit) {
+        Database.album(browseId).collect { album = it }
     }
 
     val playlistPreviews by remember {
@@ -138,6 +154,27 @@ fun AlbumSongs(
         mutableStateOf(false)
     }
 
+    var showSelectCustomizeAlbumDialog by remember {
+        mutableStateOf(false)
+    }
+    var showDialogChangeAlbumTitle by remember {
+        mutableStateOf(false)
+    }
+    var showDialogChangeAlbumAuthors by remember {
+        mutableStateOf(false)
+    }
+    var showDialogChangeAlbumCover by remember {
+        mutableStateOf(false)
+    }
+    var isCreatingNewPlaylist by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var totalPlayTimes = 0L
+    songs.forEach {
+        totalPlayTimes += it.durationText?.let { it1 ->
+            durationTextToMillis(it1) }?.toLong() ?: 0
+    }
+
     LayoutWithAdaptiveThumbnail(thumbnailContent = thumbnailContent) {
         Box {
             LazyColumn(
@@ -162,6 +199,22 @@ fun AlbumSongs(
                                     showConfirmDownloadAllDialog = true
                                 }
                             )
+
+                            if (isCreatingNewPlaylist)
+                                InputTextDialog(
+                                    onDismiss = { isCreatingNewPlaylist = false },
+                                    title = stringResource(R.string.new_playlist),
+                                    value = "",
+                                    placeholder = stringResource(R.string.new_playlist),
+                                    setValue = {
+                                        if (it.isNotEmpty()) {
+                                            query {
+                                                Database.insert(Playlist(name = it))
+                                            }
+                                            //context.toast("Song Saved $it")
+                                        }
+                                    }
+                                )
 
                             if (showConfirmDownloadAllDialog) {
                                 ConfirmationDialog(
@@ -268,17 +321,19 @@ fun AlbumSongs(
 
                             if (showAddPlaylistSelectDialog)
                                 SelectorDialog(
-                                    title = stringResource(R.string.add_in_playlist),
+                                    title = stringResource(R.string.playlists),
                                     onDismiss = { showAddPlaylistSelectDialog = false },
                                     values = listOf(
+                                        Info("n", stringResource(R.string.new_playlist)),
                                         Info("a", stringResource(R.string.add_all_in_playlist)),
                                         Info("s", stringResource(R.string.add_selected_in_playlist))
                                     ),
                                     onValueSelected = {
-                                        if (it == "a") {
-                                            showPlaylistSelectDialog = true
-                                        } else selectItems = true
-
+                                        when (it) {
+                                            "a" -> showPlaylistSelectDialog = true
+                                            "n" -> isCreatingNewPlaylist = true
+                                            else -> selectItems = true
+                                        }
                                         showAddPlaylistSelectDialog = false
                                     }
                                 )
@@ -289,10 +344,11 @@ fun AlbumSongs(
                                 SelectorDialog(
                                     title = stringResource(R.string.playlists),
                                     onDismiss = { showPlaylistSelectDialog = false },
+                                    showItemsIcon = true,
                                     values = playlistPreviews.map {
                                         Info(
                                             it.playlist.id.toString(),
-                                            "${it.playlist.name} (${it.songCount})"
+                                            "${it.playlist.name} \n ${it.songCount} ${stringResource(R.string.songs)}"
                                         )
                                     },
                                     onValueSelected = {
@@ -358,11 +414,100 @@ fun AlbumSongs(
                                     }
                                 )
 
+                            HeaderIconButton(
+                                icon = R.drawable.pencil,
+                                color = colorPalette.text,
+                                onClick = {
+                                    showSelectCustomizeAlbumDialog = true
+                                }
+                            )
+
+                            if (showSelectCustomizeAlbumDialog)
+                                SelectorDialog(
+                                    title = stringResource(R.string.customize_album),
+                                    onDismiss = { showSelectCustomizeAlbumDialog = false },
+                                    values = listOf(
+                                        Info("t", stringResource(R.string.update_title)),
+                                        Info("a", stringResource(R.string.update_authors)),
+                                        Info("c", stringResource(R.string.update_cover))
+                                    ),
+                                    onValueSelected = {
+                                        when (it) {
+                                            "t" -> showDialogChangeAlbumTitle = true
+                                            "a" -> showDialogChangeAlbumAuthors = true
+                                            "c" -> showDialogChangeAlbumCover = true
+                                        }
+                                        showSelectCustomizeAlbumDialog = false
+                                    }
+                                )
+
+                            if (showDialogChangeAlbumTitle)
+                                InputTextDialog(
+                                    onDismiss = { showDialogChangeAlbumTitle = false },
+                                    title = stringResource(R.string.update_title),
+                                    value = album?.title.toString(),
+                                    placeholder = stringResource(R.string.title),
+                                    setValue = {
+                                        if (it.isNotEmpty()) {
+                                            query {
+                                                Database.updateAlbumTitle(browseId, it)
+                                            }
+                                            //context.toast("Album Saved $it")
+                                        }
+                                    }
+                                )
+                            if (showDialogChangeAlbumAuthors)
+                                InputTextDialog(
+                                    onDismiss = { showDialogChangeAlbumAuthors = false },
+                                    title = stringResource(R.string.update_authors),
+                                    value = album?.authorsText.toString(),
+                                    placeholder = stringResource(R.string.authors),
+                                    setValue = {
+                                        if (it.isNotEmpty()) {
+                                            query {
+                                                Database.updateAlbumAuthors(browseId, it)
+                                            }
+                                            //context.toast("Album Saved $it")
+                                        }
+                                    }
+                                )
+
+                            if (showDialogChangeAlbumCover)
+                                InputTextDialog(
+                                    onDismiss = { showDialogChangeAlbumCover = false },
+                                    title = stringResource(R.string.update_cover),
+                                    value = album?.thumbnailUrl.toString(),
+                                    placeholder = stringResource(R.string.cover),
+                                    setValue = {
+                                        if (it.isNotEmpty()) {
+                                            query {
+                                                Database.updateAlbumCover(browseId, it)
+                                            }
+                                            //context.toast("Album Saved $it")
+                                        }
+                                    }
+                                )
+
                         }
 
                         if (!isLandscape) {
                             thumbnailContent()
                         }
+
+                        album?.title?.let {
+                            BasicText(
+                                text = it,
+                                style = typography.xs.semiBold,
+                                maxLines = 1
+                            )
+                        }
+                        BasicText(
+                            text = songs.size.toString() + " "
+                                    +stringResource(R.string.songs)
+                                    + " - " + formatAsTime(totalPlayTimes),
+                            style = typography.xxs.medium,
+                            maxLines = 1
+                        )
                     }
                 }
 

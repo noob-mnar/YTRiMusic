@@ -6,14 +6,14 @@ plugins {
 
 android {
     android.buildFeatures.buildConfig=true
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "it.fast4x.rimusic"
         minSdk = 21
-        targetSdk = 33
-        versionCode = 14
-        versionName = "0.6.18"
+        targetSdk = 34
+        versionCode = 16
+        versionName = "0.6.20"
         buildConfigField("String", "VERSION_NAME", "\"$versionName\"")
     }
 
@@ -51,10 +51,6 @@ android {
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
-        //sourceCompatibility = JavaVersion.VERSION_1_8
-        //targetCompatibility = JavaVersion.VERSION_1_8
-        //sourceCompatibility = JavaVersion.VERSION_11
-        //targetCompatibility = JavaVersion.VERSION_11
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -65,8 +61,6 @@ android {
 
     kotlinOptions {
         freeCompilerArgs += "-Xcontext-receivers"
-        //jvmTarget = "1.8"
-        //jvmTarget = "11"
         jvmTarget = "17"
     }
 
@@ -97,7 +91,6 @@ dependencies {
     implementation(projects.composePersist)
     implementation(projects.composeRouting)
     implementation(projects.composeReordering)
-
     implementation(libs.compose.activity)
     implementation(libs.compose.foundation)
     implementation(libs.compose.ui)
@@ -105,36 +98,23 @@ dependencies {
     implementation(libs.compose.ripple)
     implementation(libs.compose.shimmer)
     implementation(libs.compose.coil)
-
     implementation(libs.palette)
-
     implementation(libs.exoplayer)
-
     implementation(libs.room)
-    implementation("androidx.media3:media3-datasource-okhttp:1.1.1")
     kapt(libs.room.compiler)
-
     implementation(projects.innertube)
     implementation(projects.kugou)
 
-    implementation("androidx.core:core-splashscreen:1.0.0-beta02")
-
-    
-    val appcompat_version = "1.6.1"
-
-    implementation("androidx.appcompat:appcompat:$appcompat_version")
-    // For loading and tinting drawables on older versions of the platform
-    implementation("androidx.appcompat:appcompat-resources:$appcompat_version")
-
+    val appcompatVersion = "1.6.1"
+    implementation("androidx.appcompat:appcompat:$appcompatVersion")
+    implementation("androidx.appcompat:appcompat-resources:$appcompatVersion")
+    implementation("androidx.core:core-splashscreen:1.0.1")
+    implementation("androidx.media3:media3-datasource-okhttp:1.2.1")
+    implementation("androidx.compose.material:material:1.6.0")
     implementation("com.github.therealbush:translator:1.0.2")
+    implementation("io.github.azhon:appupdate:4.3.2")
 
-    implementation("io.github.gautamchibde:audiovisualizer:2.2.7")
 
-    implementation("androidx.compose.material:material:1.1.0")
-
-    //implementation("androidx.compose.foundation:foundation:1.4.0")
-    // Fix Duplicate class
-    //implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.8.0"))
-
+    //End
     coreLibraryDesugaring(libs.desugaring)
 }

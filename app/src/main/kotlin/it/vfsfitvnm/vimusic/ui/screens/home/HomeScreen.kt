@@ -2,6 +2,7 @@ package it.vfsfitvnm.vimusic.ui.screens.home
 
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,7 +55,7 @@ import it.vfsfitvnm.vimusic.utils.pauseSearchHistoryKey
 import it.vfsfitvnm.vimusic.utils.preferences
 import it.vfsfitvnm.vimusic.utils.rememberPreference
 
-
+@ExperimentalMaterialApi
 @ExperimentalTextApi
 @ExperimentalFoundationApi
 @ExperimentalAnimationApi
@@ -65,7 +66,7 @@ fun HomeScreen(
     onPlaylistUrl: (String) -> Unit
 ) {
     val (colorPalette, typography) = LocalAppearance.current
-    var newVersion = ""
+    //var newVersion = ""
     var showNewversionDialog by remember { mutableStateOf(true) }
     val uriHandler = LocalUriHandler.current
 
@@ -175,7 +176,8 @@ fun HomeScreen(
 
 
             Scaffold(
-                topIconButtonId = if (newVersion == "") R.drawable.settings else R.drawable.update,
+                //topIconButtonId = if (newVersion == "") R.drawable.settings else R.drawable.update,
+                topIconButtonId = R.drawable.settings,
                 onTopIconButtonClick = { settingsRoute() },
                 topIconButton2Id = R.drawable.stats_chart,
                 onTopIconButton2Click = { statisticsTypeRoute(StatisticsType.Today) },
@@ -246,7 +248,7 @@ fun HomeScreen(
         }
     }
 
-    newVersion =  isAvailableUpdate()
+    //newVersion =  isAvailableUpdate()
 
     /*
 if (showNewversionDialog)

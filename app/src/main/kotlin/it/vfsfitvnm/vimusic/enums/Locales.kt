@@ -10,14 +10,15 @@ enum class Languages {
     ChineseSimplified,
     ChineseTraditional,
     Czech,
+    Finnish,
     French,
-    //FrenchEmo,
     German,
     Greek,
     Hebrew,
     Hungarian,
     Italian,
     Indonesian,
+    Japanese,
     Korean,
     Odia,
     Persian,
@@ -29,7 +30,8 @@ enum class Languages {
     Russian,
     Spanish,
     Turkish,
-    Ukrainian;
+    Ukrainian,
+    Vietnamese;
 
     var code: String = "en"
         get() = when (this) {
@@ -41,8 +43,10 @@ enum class Languages {
             ChineseTraditional -> "zh-TW"
             English -> "en"
             Esperanto -> "eo"
+            Finnish -> "fi"
             Italian -> "it"
             Indonesian -> "in"
+            Japanese -> "ja"
             Korean -> "ko"
             Czech -> "cs"
             German -> "de"
@@ -51,7 +55,6 @@ enum class Languages {
             Hungarian -> "hu"
             Spanish -> "es"
             French -> "fr"
-            //FrenchEmo -> "fr-FR"
             Odia -> "or"
             Persian -> "fa"
             Polish -> "pl"
@@ -62,6 +65,7 @@ enum class Languages {
             Russian -> "ru"
             Turkish -> "tr"
             Ukrainian -> "uk"
+            Vietnamese -> "vi"
         }
 
 

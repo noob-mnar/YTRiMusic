@@ -1,6 +1,7 @@
 package it.vfsfitvnm.vimusic.ui.screens.localplaylist
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -9,11 +10,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -25,12 +26,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -60,19 +63,19 @@ import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import it.vfsfitvnm.compose.persist.persist
 import it.vfsfitvnm.compose.persist.persistList
-import it.vfsfitvnm.compose.reordering.ReorderingLazyColumn
-import it.vfsfitvnm.compose.reordering.animateItemPlacement
 import it.vfsfitvnm.compose.reordering.draggedItem
 import it.vfsfitvnm.compose.reordering.rememberReorderingState
 import it.vfsfitvnm.compose.reordering.reorder
+import it.vfsfitvnm.compose.reordering.animateItemPlacement
 import it.vfsfitvnm.innertube.Innertube
 import it.vfsfitvnm.innertube.models.bodies.BrowseBody
+import it.vfsfitvnm.innertube.models.bodies.NextBody
 import it.vfsfitvnm.innertube.requests.playlistPage
+import it.vfsfitvnm.innertube.requests.relatedSongs
 import it.vfsfitvnm.vimusic.Database
 import it.vfsfitvnm.vimusic.LocalPlayerAwareWindowInsets
 import it.vfsfitvnm.vimusic.LocalPlayerServiceBinder
@@ -81,8 +84,8 @@ import it.vfsfitvnm.vimusic.enums.PlaylistSongSortBy
 import it.vfsfitvnm.vimusic.enums.SortOrder
 import it.vfsfitvnm.vimusic.enums.ThumbnailRoundness
 import it.vfsfitvnm.vimusic.enums.UiType
+import it.vfsfitvnm.vimusic.models.Playlist
 import it.vfsfitvnm.vimusic.models.PlaylistPreview
-import it.vfsfitvnm.vimusic.models.PlaylistWithSongs
 import it.vfsfitvnm.vimusic.models.Song
 import it.vfsfitvnm.vimusic.models.SongPlaylistMap
 import it.vfsfitvnm.vimusic.query
@@ -96,6 +99,7 @@ import it.vfsfitvnm.vimusic.ui.components.themed.HeaderWithIcon
 import it.vfsfitvnm.vimusic.ui.components.themed.IconButton
 import it.vfsfitvnm.vimusic.ui.components.themed.IconInfo
 import it.vfsfitvnm.vimusic.ui.components.themed.InPlaylistMediaItemMenu
+import it.vfsfitvnm.vimusic.ui.components.themed.InputTextDialog
 import it.vfsfitvnm.vimusic.ui.components.themed.Menu
 import it.vfsfitvnm.vimusic.ui.components.themed.MenuEntry
 import it.vfsfitvnm.vimusic.ui.components.themed.TextFieldDialog
@@ -114,10 +118,12 @@ import it.vfsfitvnm.vimusic.utils.completed
 import it.vfsfitvnm.vimusic.utils.downloadedStateMedia
 import it.vfsfitvnm.vimusic.utils.durationTextToMillis
 import it.vfsfitvnm.vimusic.utils.enqueue
+import it.vfsfitvnm.vimusic.utils.forcePlay
 import it.vfsfitvnm.vimusic.utils.forcePlayAtIndex
 import it.vfsfitvnm.vimusic.utils.forcePlayFromBeginning
 import it.vfsfitvnm.vimusic.utils.formatAsTime
 import it.vfsfitvnm.vimusic.utils.getDownloadState
+import it.vfsfitvnm.vimusic.utils.isRecommendationEnabledKey
 import it.vfsfitvnm.vimusic.utils.launchYouTubeMusic
 import it.vfsfitvnm.vimusic.utils.manageDownload
 import it.vfsfitvnm.vimusic.utils.playlistSongSortByKey
@@ -129,10 +135,12 @@ import it.vfsfitvnm.vimusic.utils.songSortOrderKey
 import it.vfsfitvnm.vimusic.utils.thumbnailRoundnessKey
 import it.vfsfitvnm.vimusic.utils.toast
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
+@ExperimentalMaterialApi
 @ExperimentalTextApi
 @SuppressLint("SuspiciousIndentation")
 @ExperimentalAnimationApi
@@ -159,13 +167,43 @@ fun LocalPlaylistSongs(
     var filter: String? by rememberSaveable { mutableStateOf(null) }
 
     LaunchedEffect(Unit, filter, sortOrder, sortBy) {
-        Database.songsPlaylist(playlistId, sortBy, sortOrder).filterNotNull().collect{ playlistSongs = it }
+        Database.songsPlaylist(playlistId, sortBy, sortOrder).filterNotNull()
+            .collect{ playlistSongs = it }
     }
 
     LaunchedEffect(Unit) {
         Database.singlePlaylistPreview(playlistId).collect { playlistPreview = it }
     }
 
+    //**** SMART RECOMMENDATION
+    var isRecommendationEnabled by rememberPreference(isRecommendationEnabledKey, false)
+    var relatedSongsRecommendationResult by persist<Result<Innertube.RelatedSongs?>?>(tag = "home/relatedSongsResult")
+    var songBaseRecommendation by persist<Song?>("home/songBaseRecommendation")
+    var positionsRecommendationList = arrayListOf<Int>()
+    if (isRecommendationEnabled) {
+        LaunchedEffect(Unit,isRecommendationEnabled) {
+            Database.songsPlaylist(playlistId, sortBy, sortOrder).distinctUntilChanged()
+                .collect { songs ->
+                    val song = songs.firstOrNull()
+                    if (relatedSongsRecommendationResult == null || songBaseRecommendation?.id != song?.id) {
+                        relatedSongsRecommendationResult =
+                            Innertube.relatedSongs(NextBody(videoId = (song?.id ?: "HZnNt9nnEhw")))
+                    }
+                    songBaseRecommendation = song
+                }
+        }
+        //relatedSongsRecommendationResult?.getOrNull()?.songs?.toString()?.let { Log.d("mediaItem", "related  $it") }
+        //Log.d("mediaItem","related size "+relatedSongsRecommendationResult?.getOrNull()?.songs?.size.toString())
+        //val numRelated = relatedSongsResult?.getOrNull()?.songs?.size ?: 0
+        //val relatedMax = playlistSongs.size
+        if (relatedSongsRecommendationResult != null) {
+            for (index in 0..19) {
+                positionsRecommendationList.add((0..playlistSongs.size).random())
+            }
+        }
+        //Log.d("mediaItem","positionsList "+positionsRecommendationList.toString())
+        //**** SMART RECOMMENDATION
+    }
 
     var filterCharSequence: CharSequence
     filterCharSequence = filter.toString()
@@ -177,6 +215,7 @@ fun LocalPlaylistSongs(
                         || songItem.asMediaItem.mediaMetadata.artist?.contains(filterCharSequence,true) ?: false
             }
 
+    var searching by rememberSaveable { mutableStateOf(false) }
 
     var totalPlayTimes = 0L
     playlistSongs.forEach {
@@ -185,14 +224,14 @@ fun LocalPlaylistSongs(
     }
 
 
-    var thumbnailRoundness by rememberPreference(
+    val thumbnailRoundness by rememberPreference(
         thumbnailRoundnessKey,
         ThumbnailRoundness.Heavy
     )
 
     val sortOrderIconRotation by animateFloatAsState(
         targetValue = if (sortOrder == SortOrder.Ascending) 0f else 180f,
-        animationSpec = tween(durationMillis = 400, easing = LinearEasing)
+        animationSpec = tween(durationMillis = 400, easing = LinearEasing), label = ""
     )
 
     val lazyListState = rememberLazyListState()
@@ -214,6 +253,18 @@ fun LocalPlaylistSongs(
     }
 
     if (isRenaming) {
+        InputTextDialog(
+            onDismiss = { isRenaming = false },
+            title = stringResource(R.string.enter_the_playlist_name),
+            value = playlistPreview?.playlist?.name ?: "",
+            placeholder = stringResource(R.string.enter_the_playlist_name),
+            setValue = { text ->
+                query {
+                    playlistPreview?.playlist?.copy(name = text)?.let(Database::update)
+                }
+            }
+        )
+        /*
         TextFieldDialog(
             hintText = stringResource(R.string.enter_the_playlist_name),
             initialTextInput = playlistPreview?.playlist?.name ?: "",
@@ -224,6 +275,8 @@ fun LocalPlaylistSongs(
                 }
             }
         )
+
+         */
     }
 
     var isDeleting by rememberSaveable {
@@ -281,8 +334,8 @@ fun LocalPlaylistSongs(
 
 
     Box {
-        ReorderingLazyColumn(
-            reorderingState = reorderingState,
+        LazyColumn(
+            state = reorderingState.lazyListState,
             contentPadding = LocalPlayerAwareWindowInsets.current
                 .only(WindowInsetsSides.Vertical + WindowInsetsSides.End).asPaddingValues(),
             modifier = Modifier
@@ -350,6 +403,13 @@ fun LocalPlaylistSongs(
                             title = formatAsTime(totalPlayTimes),
                             icon = painterResource(R.drawable.time)
                         )
+                        if (isRecommendationEnabled) {
+                            Spacer(modifier = Modifier.height(5.dp))
+                            IconInfo(
+                                title = positionsRecommendationList.distinct().size.toString(),
+                                icon = painterResource(R.drawable.smart_shuffle)
+                            )
+                        }
                         Spacer(modifier = Modifier.height(30.dp))
                     }
 
@@ -489,6 +549,15 @@ fun LocalPlaylistSongs(
                     )
 
                     HeaderIconButton(
+                        icon = R.drawable.smart_shuffle,
+                        enabled = true,
+                        color = if (isRecommendationEnabled) colorPalette.text else colorPalette.textDisabled,
+                        onClick = {
+                            isRecommendationEnabled = !isRecommendationEnabled
+                        }
+                    )
+
+                    HeaderIconButton(
                         icon = R.drawable.shuffle,
                         enabled = playlistSongs.isNotEmpty() == true,
                         color = if (playlistSongs.isNotEmpty() == true) colorPalette.text else colorPalette.textDisabled,
@@ -504,11 +573,18 @@ fun LocalPlaylistSongs(
                         }
                     )
 
+
                     HeaderIconButton(
                         icon = if (isReorderDisabled) R.drawable.locked else R.drawable.unlocked,
                         enabled = playlistSongs.isNotEmpty() == true,
                         color = if (playlistSongs.isNotEmpty() == true) colorPalette.text else colorPalette.textDisabled,
-                        onClick = { isReorderDisabled = !isReorderDisabled }
+                        onClick = {
+                            if (sortBy == PlaylistSongSortBy.Position && sortOrder == SortOrder.Ascending) {
+                                isReorderDisabled = !isReorderDisabled
+                            } else {
+                                context.toast("Playlist sorting only possible for ascending position")
+                            }
+                        }
                     )
 
                     HeaderIconButton(
@@ -633,9 +709,73 @@ fun LocalPlaylistSongs(
                         .padding(all = 10.dp)
                         .fillMaxHeight()
                 ) {
-                    var searching by rememberSaveable { mutableStateOf(false) }
+                    HeaderIconButton(
+                        onClick = { searching = !searching },
+                        icon = R.drawable.search_circle,
+                        color = colorPalette.text,
+                        iconSize = 24.dp
+                    )
 
-                    if (searching) {
+                    Spacer(
+                        modifier = Modifier
+                            .weight(1f)
+                    )
+
+                    HeaderIconButton(
+                        icon = R.drawable.calendar,
+                        color = if (sortBy == PlaylistSongSortBy.AlbumYear) colorPalette.text else colorPalette.textDisabled,
+                        onClick = { sortBy = PlaylistSongSortBy.AlbumYear }
+                    )
+
+                    HeaderIconButton(
+                        icon = R.drawable.up_right_arrow,
+                        color = if (sortBy == PlaylistSongSortBy.DatePlayed) colorPalette.text else colorPalette.textDisabled,
+                        onClick = { sortBy = PlaylistSongSortBy.DatePlayed }
+                    )
+
+                    HeaderIconButton(
+                        icon = R.drawable.position,
+                        color = if (sortBy == PlaylistSongSortBy.Position) colorPalette.text else colorPalette.textDisabled,
+                        onClick = { sortBy = PlaylistSongSortBy.Position }
+                    )
+
+                    HeaderIconButton(
+                        icon = R.drawable.trending,
+                        color = if (sortBy == PlaylistSongSortBy.PlayTime) colorPalette.text else colorPalette.textDisabled,
+                        onClick = { sortBy = PlaylistSongSortBy.PlayTime }
+                    )
+
+                    HeaderIconButton(
+                        icon = R.drawable.text,
+                        color = if (sortBy == PlaylistSongSortBy.Title) colorPalette.text else colorPalette.textDisabled,
+                        onClick = { sortBy = PlaylistSongSortBy.Title }
+                    )
+
+                    HeaderIconButton(
+                        icon = R.drawable.person,
+                        color = if (sortBy == PlaylistSongSortBy.Artist) colorPalette.text else colorPalette.textDisabled,
+                        onClick = { sortBy = PlaylistSongSortBy.Artist }
+                    )
+
+                    HeaderIconButton(
+                        icon = R.drawable.arrow_up,
+                        color = colorPalette.text,
+                        onClick = { sortOrder = !sortOrder },
+                        modifier = Modifier
+                            .graphicsLayer { rotationZ = sortOrderIconRotation }
+                    )
+
+                }
+
+
+                Row (
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.Bottom,
+                    modifier = Modifier
+                        .padding(all = 10.dp)
+                        .fillMaxWidth()
+                ) {
+                    AnimatedVisibility(visible = searching) {
                         val focusRequester = remember { FocusRequester() }
                         val focusManager = LocalFocusManager.current
                         val keyboardController = LocalSoftwareKeyboardController.current
@@ -678,7 +818,8 @@ fun LocalPlaylistSongs(
                                 }
                             },
                             modifier = Modifier
-                                .fillMaxWidth(0.5F)
+                                .height(30.dp)
+                                .fillMaxWidth()
                                 .background(
                                     colorPalette.background4,
                                     shape = thumbnailRoundness.shape()
@@ -694,61 +835,8 @@ fun LocalPlaylistSongs(
                                     }
                                 }
                         )
-                    } else {
-                        HeaderIconButton(
-                            onClick = { searching = true },
-                            icon = R.drawable.search_circle,
-                            color = colorPalette.text,
-                            iconSize = 24.dp
-                        )
                     }
-
-                    Spacer(
-                        modifier = Modifier
-                            .weight(1f)
-                    )
-
-                    HeaderIconButton(
-                        icon = R.drawable.playlist_played,
-                        color = if (sortBy == PlaylistSongSortBy.DatePlayed) colorPalette.text else colorPalette.textDisabled,
-                        onClick = { sortBy = PlaylistSongSortBy.DatePlayed }
-                    )
-
-                    HeaderIconButton(
-                        icon = R.drawable.up_right_arrow,
-                        color = if (sortBy == PlaylistSongSortBy.Position) colorPalette.text else colorPalette.textDisabled,
-                        onClick = { sortBy = PlaylistSongSortBy.Position }
-                    )
-
-                    HeaderIconButton(
-                        icon = R.drawable.trending,
-                        color = if (sortBy == PlaylistSongSortBy.PlayTime) colorPalette.text else colorPalette.textDisabled,
-                        onClick = { sortBy = PlaylistSongSortBy.PlayTime }
-                    )
-
-                    HeaderIconButton(
-                        icon = R.drawable.text,
-                        color = if (sortBy == PlaylistSongSortBy.Title) colorPalette.text else colorPalette.textDisabled,
-                        onClick = { sortBy = PlaylistSongSortBy.Title }
-                    )
-
-                    HeaderIconButton(
-                        icon = R.drawable.person,
-                        color = if (sortBy == PlaylistSongSortBy.Artist) colorPalette.text else colorPalette.textDisabled,
-                        onClick = { sortBy = PlaylistSongSortBy.Artist }
-                    )
-
-                    HeaderIconButton(
-                        icon = R.drawable.arrow_up,
-                        color = colorPalette.text,
-                        onClick = { sortOrder = !sortOrder },
-                        modifier = Modifier
-                            .graphicsLayer { rotationZ = sortOrderIconRotation }
-                    )
-
                 }
-                /*        */
-
 
 
 
@@ -757,103 +845,132 @@ fun LocalPlaylistSongs(
             itemsIndexed(
                 //items = playlistWithSongs?.songs ?: emptyList(),
                 items = playlistSongs ?: emptyList(),
-
                 key = { _, song -> song.id },
                 contentType = { _, song -> song },
             ) { index, song ->
 
+                if (index in positionsRecommendationList.distinct()) {
+                    val songRecommended = relatedSongsRecommendationResult?.getOrNull()?.songs?.shuffled()
+                        ?.lastOrNull()
+                    val duration = songRecommended?.durationText
+                    songRecommended?.asMediaItem?.let {
+                        SongItem(
+                            song = it,
+                            duration = duration,
+                            isRecommended = true,
+                            thumbnailSizeDp = thumbnailSizeDp,
+                            thumbnailSizePx = thumbnailSizePx,
+                            isDownloaded = false,
+                            onDownloadClick = {},
+                            downloadState = Download.STATE_STOPPED,
+                            trailingContent = {},
+                            onThumbnailContent = {},
+                            modifier = Modifier
+                                .clickable {
+                                    binder?.stopRadio()
+                                    binder?.player?.forcePlay(it)
+                                }
+
+                        )
+                    }
+                }
+                
                 val isLocal by remember { derivedStateOf { song.asMediaItem.isLocal } }
                 downloadState = getDownloadState(song.asMediaItem.mediaId)
                 val isDownloaded = if (!isLocal) downloadedStateMedia(song.asMediaItem.mediaId) else true
                 //if (isDownloaded && !listDownloadedMedia.contains(song)) listDownloadedMedia.add(song)
                 //if (!isDownloaded) listDownloadedMedia.dropWhile {  it.asMediaItem.mediaId == song.asMediaItem.mediaId } else listDownloadedMedia.add(song)
                 //Log.d("mediaItem", "loop items listDownloadedMedia ${listDownloadedMedia.distinct().size} ${listDownloadedMedia.distinct()}")
-                SongItem(
-                    song = song,
-                    isDownloaded = isDownloaded,
-                    onDownloadClick = {
-                        binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                        query {
-                            Database.insert(
-                                Song(
-                                    id = song.asMediaItem.mediaId,
-                                    title = song.asMediaItem.mediaMetadata.title.toString(),
-                                    artistsText = song.asMediaItem.mediaMetadata.artist.toString(),
-                                    thumbnailUrl = song.thumbnailUrl,
-                                    durationText = null
-                                )
-                            )
-                        }
-
-                        if (!isLocal) {
-                            manageDownload(
-                                context = context,
-                                songId = song.asMediaItem.mediaId,
-                                songTitle = song.asMediaItem.mediaMetadata.title.toString(),
-                                downloadState = isDownloaded
-                            )
-                        }
-                        //if (isDownloaded) listDownloadedMedia.dropWhile { it.asMediaItem.mediaId == song.asMediaItem.mediaId } else listDownloadedMedia.add(song)
-                        //Log.d("mediaItem", "manageDownload click isDownloaded ${isDownloaded} listDownloadedMedia ${listDownloadedMedia.distinct().size}")
-                    },
-                    downloadState = downloadState,
-                    thumbnailSizePx = thumbnailSizePx,
-                    thumbnailSizeDp = thumbnailSizeDp,
-                    trailingContent = {
-                        if (!isReorderDisabled) {
-                            IconButton(
-                                icon = R.drawable.reorder,
-                                color = colorPalette.textDisabled,
-                                indication = rippleIndication,
-                                onClick = {},
-                                modifier = Modifier
-                                    .reorder(reorderingState = reorderingState, index = index)
-                                    .size(18.dp)
-                            )
-                        }
-                    },
-                    onThumbnailContent = if (sortBy == PlaylistSongSortBy.PlayTime) ({
-                        BasicText(
-                            text = song.formattedTotalPlayTime,
-                            style = typography.xxs.semiBold.center.color(colorPalette.onOverlay),
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    brush = Brush.verticalGradient(
-                                        colors = listOf(Color.Transparent, colorPalette.overlay)
-                                    ),
-                                    shape = thumbnailShape
-                                )
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                                .align(Alignment.BottomCenter)
-                        )
-                    }) else null,
-                    modifier = Modifier
-                        .combinedClickable(
-                            onLongClick = {
-                                menuState.display {
-                                    InPlaylistMediaItemMenu(
-                                        playlistId = playlistId,
-                                        positionInPlaylist = index,
-                                        song = song,
-                                        onDismiss = menuState::hide
+                    SongItem(
+                        song = song,
+                        isDownloaded = isDownloaded,
+                        onDownloadClick = {
+                            binder?.cache?.removeResource(song.asMediaItem.mediaId)
+                            query {
+                                Database.insert(
+                                    Song(
+                                        id = song.asMediaItem.mediaId,
+                                        title = song.asMediaItem.mediaMetadata.title.toString(),
+                                        artistsText = song.asMediaItem.mediaMetadata.artist.toString(),
+                                        thumbnailUrl = song.thumbnailUrl,
+                                        durationText = null
                                     )
-                                }
-                            },
-                            onClick = {
-                                playlistSongs
-                                    .map(Song::asMediaItem)
-                                    .let { mediaItems ->
-                                        binder?.stopRadio()
-                                        binder?.player?.forcePlayAtIndex(mediaItems, index)
-                                    }
+                                )
                             }
-                        )
-                        .animateItemPlacement(reorderingState = reorderingState)
-                        .draggedItem(reorderingState = reorderingState, index = index)
-                )
+
+                            if (!isLocal) {
+                                manageDownload(
+                                    context = context,
+                                    songId = song.asMediaItem.mediaId,
+                                    songTitle = song.asMediaItem.mediaMetadata.title.toString(),
+                                    downloadState = isDownloaded
+                                )
+                            }
+                            //if (isDownloaded) listDownloadedMedia.dropWhile { it.asMediaItem.mediaId == song.asMediaItem.mediaId } else listDownloadedMedia.add(song)
+                            //Log.d("mediaItem", "manageDownload click isDownloaded ${isDownloaded} listDownloadedMedia ${listDownloadedMedia.distinct().size}")
+                        },
+                        downloadState = downloadState,
+                        thumbnailSizePx = thumbnailSizePx,
+                        thumbnailSizeDp = thumbnailSizeDp,
+                        trailingContent = {
+                            if (!isReorderDisabled) {
+                                IconButton(
+                                    icon = R.drawable.reorder,
+                                    color = colorPalette.textDisabled,
+                                    indication = rippleIndication,
+                                    onClick = {},
+                                    modifier = Modifier
+                                        .reorder(
+                                            reorderingState = reorderingState,
+                                            index = index
+                                        )
+                                        .size(18.dp)
+                                )
+                            }
+                        },
+                        onThumbnailContent = if (sortBy == PlaylistSongSortBy.PlayTime) ({
+                            BasicText(
+                                text = song.formattedTotalPlayTime,
+                                style = typography.xxs.semiBold.center.color(colorPalette.onOverlay),
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        brush = Brush.verticalGradient(
+                                            colors = listOf(Color.Transparent, colorPalette.overlay)
+                                        ),
+                                        shape = thumbnailShape
+                                    )
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    .align(Alignment.BottomCenter)
+                            )
+                        }) else null,
+                        modifier = Modifier
+                            .combinedClickable(
+                                onLongClick = {
+                                    menuState.display {
+                                        InPlaylistMediaItemMenu(
+                                            playlistId = playlistId,
+                                            positionInPlaylist = index,
+                                            song = song,
+                                            onDismiss = menuState::hide
+                                        )
+                                    }
+                                },
+                                onClick = {
+                                    playlistSongs
+                                        .map(Song::asMediaItem)
+                                        .let { mediaItems ->
+                                            binder?.stopRadio()
+                                            binder?.player?.forcePlayAtIndex(mediaItems, index)
+                                        }
+                                }
+                            )
+                            //.animateItemPlacement(reorderingState)
+                            .draggedItem(reorderingState = reorderingState, index = index)
+                    )
+
             }
         }
 
@@ -877,4 +994,10 @@ fun LocalPlaylistSongs(
 
     }
 }
+
+
+
+
+
+
 

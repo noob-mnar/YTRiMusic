@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -42,12 +43,14 @@ import it.vfsfitvnm.vimusic.enums.ThumbnailRoundness
 import it.vfsfitvnm.vimusic.ui.components.themed.HeaderWithIcon
 import it.vfsfitvnm.vimusic.ui.styling.LocalAppearance
 import it.vfsfitvnm.vimusic.ui.styling.shimmer
+import it.vfsfitvnm.vimusic.utils.SwipeToReveal
 import it.vfsfitvnm.vimusic.utils.audioQualityFormatKey
 import it.vfsfitvnm.vimusic.utils.closeWithBackButtonKey
 import it.vfsfitvnm.vimusic.utils.closebackgroundPlayerKey
 import it.vfsfitvnm.vimusic.utils.exoPlayerMinTimeForEventKey
 import it.vfsfitvnm.vimusic.utils.isAtLeastAndroid6
 import it.vfsfitvnm.vimusic.utils.isAvailableUpdate
+import it.vfsfitvnm.vimusic.utils.isEnabledDiscoveryLangCodeKey
 import it.vfsfitvnm.vimusic.utils.languageAppKey
 import it.vfsfitvnm.vimusic.utils.maxStatisticsItemsKey
 import it.vfsfitvnm.vimusic.utils.persistentQueueKey
@@ -60,7 +63,8 @@ import it.vfsfitvnm.vimusic.utils.thumbnailRoundnessKey
 import it.vfsfitvnm.vimusic.utils.toast
 import it.vfsfitvnm.vimusic.utils.volumeNormalizationKey
 
-@androidx.annotation.OptIn(androidx.core.os.BuildCompat.PrereleaseSdkCheck::class)
+
+
 @ExperimentalAnimationApi
 @UnstableApi
 @Composable
@@ -94,7 +98,7 @@ fun  UiSettings() {
     val activityResultLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { }
 
-    val newVersion = isAvailableUpdate()
+    //val newVersion = isAvailableUpdate()
     var thumbnailRoundness by rememberPreference(
         thumbnailRoundnessKey,
         ThumbnailRoundness.Heavy
@@ -107,6 +111,8 @@ fun  UiSettings() {
     )
 
     var showStatsListeningTime by rememberPreference(showStatsListeningTimeKey,   true)
+
+    var isEnabledDiscoveryLangCode by rememberPreference(isEnabledDiscoveryLangCodeKey,   true)
 
     Column(
         modifier = Modifier
@@ -128,6 +134,7 @@ fun  UiSettings() {
             onClick = {}
         )
 
+/*
         SettingsGroupSpacer()
         if (newVersion != "") {
             //SettingsEntryGroupText(title = "Update available")
@@ -156,6 +163,8 @@ fun  UiSettings() {
             )
         }
 
+ */
+
         SettingsGroupSpacer()
         SettingsEntryGroupText(title = stringResource(R.string.languages))
 
@@ -176,13 +185,14 @@ fun  UiSettings() {
                     Languages.Czech -> stringResource(R.string.czech)
                     Languages.English -> stringResource(R.string.english)
                     Languages.Esperanto -> stringResource(R.string.esperanto)
+                    Languages.Finnish -> stringResource(R.string.lang_finnish)
                     Languages.French -> stringResource(R.string.french)
-                    //Languages.FrenchEmo -> stringResource(R.string.french_emoticons_fran_ais)
                     Languages.German -> stringResource(R.string.german)
                     Languages.Greek -> stringResource(R.string.greek)
                     Languages.Hebrew -> stringResource(R.string.lang_hebrew)
                     Languages.Hungarian -> stringResource(R.string.hungarian)
                     Languages.Indonesian -> stringResource(R.string.indonesian)
+                    Languages.Japanese -> stringResource(R.string.lang_japanese)
                     Languages.Korean -> stringResource(R.string.korean)
                     Languages.Italian -> stringResource(R.string.italian)
                     Languages.Odia -> stringResource(R.string.odia)
@@ -196,9 +206,20 @@ fun  UiSettings() {
                     Languages.Spanish -> stringResource(R.string.spanish)
                     Languages.Turkish -> stringResource(R.string.turkish)
                     Languages.Ukrainian -> stringResource(R.string.lang_ukrainian)
+                    Languages.Vietnamese -> "Vietnamese"
                 }
             }
         )
+
+        SwitchSettingEntry(
+            title = stringResource(R.string.enable_language_in_discovery),
+            text = stringResource(R.string.if_possible_allows_discovery_content_language),
+            isChecked = isEnabledDiscoveryLangCode,
+            onCheckedChange = {
+                isEnabledDiscoveryLangCode = it
+            }
+        )
+        SettingsDescription(text = stringResource(R.string.restarting_rimusic_is_required))
 
         SettingsGroupSpacer()
         SettingsEntryGroupText(stringResource(R.string.player))
@@ -339,8 +360,8 @@ fun  UiSettings() {
         )
 
         SwitchSettingEntry(
-            title = "Listening time",
-            text = "Shows the number of songs heard and their listening time",
+            title = stringResource(R.string.listening_time),
+            text = stringResource(R.string.shows_the_number_of_songs_heard_and_their_listening_time),
             isChecked = showStatsListeningTime,
             onCheckedChange = {
                 showStatsListeningTime = it

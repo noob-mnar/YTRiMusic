@@ -7,10 +7,12 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.content.SharedPreferences
 import android.graphics.Bitmap
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.view.WindowManager
 import android.widget.Toast
 import android.window.OnBackInvokedDispatcher
 import androidx.activity.compose.setContent
@@ -32,6 +34,7 @@ import androidx.compose.foundation.layout.add
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ripple.LocalRippleTheme
 import androidx.compose.material.ripple.RippleAlpha
 import androidx.compose.material.ripple.RippleTheme
@@ -69,6 +72,8 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
+import com.azhon.appupdate.manager.DownloadManager
+import com.azhon.appupdate.util.ApkUtil.Companion.getVersionCode
 import com.valentinilk.shimmer.LocalShimmerTheme
 import com.valentinilk.shimmer.defaultShimmerTheme
 import it.vfsfitvnm.compose.persist.PersistMap
@@ -77,6 +82,8 @@ import it.vfsfitvnm.innertube.Innertube
 import it.vfsfitvnm.innertube.models.bodies.BrowseBody
 import it.vfsfitvnm.innertube.requests.playlistPage
 import it.vfsfitvnm.innertube.requests.song
+import it.vfsfitvnm.innertube.utils.LocalePreferenceItem
+import it.vfsfitvnm.innertube.utils.LocalePreferences
 import it.vfsfitvnm.innertube.utils.ProxyPreferenceItem
 import it.vfsfitvnm.innertube.utils.ProxyPreferences
 import it.vfsfitvnm.vimusic.enums.AudioQualityFormat
@@ -118,6 +125,8 @@ import it.vfsfitvnm.vimusic.utils.getEnum
 import it.vfsfitvnm.vimusic.utils.intent
 import it.vfsfitvnm.vimusic.utils.isAtLeastAndroid6
 import it.vfsfitvnm.vimusic.utils.isAtLeastAndroid8
+import it.vfsfitvnm.vimusic.utils.isEnabledDiscoveryLangCodeKey
+import it.vfsfitvnm.vimusic.utils.isKeepScreenOnEnabledKey
 import it.vfsfitvnm.vimusic.utils.isProxyEnabledKey
 import it.vfsfitvnm.vimusic.utils.languageAppKey
 import it.vfsfitvnm.vimusic.utils.playerThumbnailSizeKey
@@ -126,6 +135,12 @@ import it.vfsfitvnm.vimusic.utils.preferences
 import it.vfsfitvnm.vimusic.utils.proxyHostnameKey
 import it.vfsfitvnm.vimusic.utils.proxyModeKey
 import it.vfsfitvnm.vimusic.utils.proxyPortKey
+import it.vfsfitvnm.vimusic.utils.showButtonPlayerAddToPlaylistKey
+import it.vfsfitvnm.vimusic.utils.showButtonPlayerArrowKey
+import it.vfsfitvnm.vimusic.utils.showButtonPlayerDownloadKey
+import it.vfsfitvnm.vimusic.utils.showButtonPlayerLoopKey
+import it.vfsfitvnm.vimusic.utils.showButtonPlayerLyricsKey
+import it.vfsfitvnm.vimusic.utils.showButtonPlayerShuffleKey
 import it.vfsfitvnm.vimusic.utils.showLikeButtonBackgroundPlayerKey
 import it.vfsfitvnm.vimusic.utils.thumbnailRoundnessKey
 import it.vfsfitvnm.vimusic.utils.useSystemFontKey
@@ -140,8 +155,10 @@ import okhttp3.Callback
 import okhttp3.OkHttpClient
 import okhttp3.Response
 import org.json.JSONException
+import org.json.JSONObject
 import java.io.File
 import java.net.Proxy
+import java.util.Locale
 
 
 @UnstableApi
@@ -153,6 +170,10 @@ class MainActivity : AppCompatActivity(), PersistMapOwner {
     var request = OkHttpRequest(client)
 
     var isConnected = false
+    var updatedProductName = ""
+    var updatedVersionName = ""
+    var updatedVersionCode = 0
+
 
 
     private val serviceConnection = object : ServiceConnection {
@@ -177,10 +198,10 @@ class MainActivity : AppCompatActivity(), PersistMapOwner {
         bindService(intent<PlayerService>(), serviceConnection, Context.BIND_AUTO_CREATE)
     }
 
-
+    @ExperimentalMaterialApi
     @ExperimentalTextApi
     @UnstableApi
-    @androidx.annotation.OptIn(androidx.core.os.BuildCompat.PrereleaseSdkCheck::class)
+    //@androidx.annotation.OptIn(androidx.core.os.BuildCompat.PrereleaseSdkCheck::class)
     @OptIn(ExperimentalFoundationApi::class, ExperimentalAnimationApi::class)
     @ExperimentalComposeUiApi
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -194,7 +215,7 @@ class MainActivity : AppCompatActivity(), PersistMapOwner {
 
 
         if (!preferences.getBoolean(closeWithBackButtonKey, false))
-        if (BuildCompat.isAtLeastT()) {
+        if (Build.VERSION.SDK_INT >= 33) {
             onBackInvokedDispatcher.registerOnBackInvokedCallback(
                 OnBackInvokedDispatcher.PRIORITY_DEFAULT
             ) {
@@ -211,6 +232,9 @@ class MainActivity : AppCompatActivity(), PersistMapOwner {
         val launchedFromNotification = intent?.extras?.getBoolean("expandPlayerBottomSheet") == true
 
         with(preferences){
+            if(getBoolean(isKeepScreenOnEnabledKey,false)) {
+                window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            }
             if(getBoolean(isProxyEnabledKey,false)) {
                 val hostName = getString(proxyHostnameKey,null)
                 val proxyPort = getInt(proxyPortKey, 8080)
@@ -219,6 +243,8 @@ class MainActivity : AppCompatActivity(), PersistMapOwner {
                     ProxyPreferences.preference = ProxyPreferenceItem(hName,proxyPort,proxyMode)
                 }
             }
+            if(getBoolean(isEnabledDiscoveryLangCodeKey,true))
+                LocalePreferences.preference = LocalePreferenceItem(Locale.getDefault().toLanguageTag(),"")
         }
 
         //Log.d("mediaItemLang",LocaleListCompat.getDefault().get(0).toString())
@@ -227,18 +253,20 @@ class MainActivity : AppCompatActivity(), PersistMapOwner {
 
         setContent {
 
+            val urlVersion = "https://raw.githubusercontent.com/fast4x/RiMusic/master/updatedVersion/updatedVersion.ver"
+            val urlVersionCode = "https://raw.githubusercontent.com/fast4x/RiMusic/master/updatedVersion/updatedVersionCode.ver"
+            //val urlVersionCode = "https://rimusic.xyz/update/updatedVersionCode.ver"
 
-            val url = "https://raw.githubusercontent.com/fast4x/RiMusic/master/updatedVersion/updatedVersion.ver"
-            /*  */
-            request.GET(url, object: Callback {
+            request.GET(urlVersion, object: Callback {
                 override fun onResponse(call: Call, response: Response) {
                     val responseData = response.body?.string()
                     runOnUiThread{
                         try {
+                            isConnected = true
                             val newVersion = responseData.let { it.toString() }
                             val file = File(filesDir, "RiMusicUpdatedVersion.ver")
                             file.writeText(newVersion)
-                            isConnected = true
+
                             //this@MainActivity
                         } catch (e: JSONException) {
                             e.printStackTrace()
@@ -252,6 +280,53 @@ class MainActivity : AppCompatActivity(), PersistMapOwner {
                 }
             })
 
+            request.GET(urlVersionCode, object: Callback {
+                override fun onResponse(call: Call, response: Response) {
+                    val responseData = response.body?.string()
+                    runOnUiThread{
+                        try {
+                            val json = responseData?.let { JSONObject(it) }
+                            if (json != null) {
+                                updatedProductName = json.getString("productName")
+                                updatedVersionName = json.getString("versionName")
+                                updatedVersionCode = json.getInt("versionCode")
+                            }
+                        } catch (e: JSONException) {
+                            e.printStackTrace()
+                        }
+                    }
+
+                }
+
+                override fun onFailure(call: Call, e: java.io.IOException) {
+                    Log.d("UpdatedVersionCode","Check failure")
+                }
+            })
+
+
+            if (isConnected && updatedVersionCode > 0) {
+                val manager = DownloadManager.Builder(this).run {
+                    apkUrl("https://github.com/fast4x/RiMusic/releases/download/v${updatedVersionName}/app-release.apk")
+                    //apkUrl("https://rimusic.xyz/update/v${BuildConfig.VERSION_NAME}/app-release.apk")
+                    apkName("app-release.apk")
+                    smallIcon(R.mipmap.ic_launcher)
+                    //If this parameter is set, it will automatically determine whether to show dialog
+                    apkVersionCode(updatedVersionCode) //with Int.MIN_VALUE start download immediately
+                    apkVersionName(updatedVersionName)
+                    //apkSize("5MB")
+                    apkDescription(getString(R.string.update_now))
+                    //Optional parameters...
+                    showNewerToast(false)
+                    enableLog(false)
+                    jumpInstallPage(true)
+                    //dialogButtonTextColor(Color.Green)
+                    showNotification(true)
+                    showBgdToast(false)
+                    forcedUpgrade(false)
+                    build()
+                }
+                manager.download()
+            }
 
 
             val coroutineScope = rememberCoroutineScope()
@@ -264,7 +339,7 @@ class MainActivity : AppCompatActivity(), PersistMapOwner {
                 stateSaver = Appearance.Companion
             ) {
                 with(preferences) {
-                    val colorPaletteName = getEnum(colorPaletteNameKey, ColorPaletteName.PureBlack)
+                    val colorPaletteName = getEnum(colorPaletteNameKey, ColorPaletteName.ModernBlack)
                     val colorPaletteMode = getEnum(colorPaletteModeKey, ColorPaletteMode.System)
                     val thumbnailRoundness =
                         getEnum(thumbnailRoundnessKey, ThumbnailRoundness.Heavy)
@@ -355,7 +430,13 @@ class MainActivity : AppCompatActivity(), PersistMapOwner {
                             playerVisualizerTypeKey,
                             UiTypeKey,
                             disablePlayerHorizontalSwipeKey,
-                            audioQualityFormatKey
+                            audioQualityFormatKey,
+                            showButtonPlayerArrowKey,
+                            showButtonPlayerAddToPlaylistKey,
+                            showButtonPlayerDownloadKey,
+                            showButtonPlayerLoopKey,
+                            showButtonPlayerLyricsKey,
+                            showButtonPlayerShuffleKey
                             -> {
                                 this@MainActivity.recreate()
                             }
@@ -418,7 +499,7 @@ class MainActivity : AppCompatActivity(), PersistMapOwner {
                 with(preferences) {
                     registerOnSharedPreferenceChangeListener(listener)
 
-                    val colorPaletteName = getEnum(colorPaletteNameKey, ColorPaletteName.PureBlack)
+                    val colorPaletteName = getEnum(colorPaletteNameKey, ColorPaletteName.ModernBlack)
                     if (colorPaletteName == ColorPaletteName.Dynamic) {
                         setDynamicPalette(getEnum(colorPaletteModeKey, ColorPaletteMode.System))
                     }
