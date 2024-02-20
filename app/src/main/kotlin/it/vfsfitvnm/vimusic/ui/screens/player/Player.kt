@@ -765,12 +765,16 @@ fun Player(
                                 when (direction) {
                                     0 -> {
                                         //right swipe code here
-                                        binder.player.seekToPreviousMediaItem()
+                                        if (!disablePlayerHorizontalSwipe) {
+                                            binder.player.seekToPreviousMediaItem()
+                                        }
                                         //Log.d("mediaItem","Swipe to RIGHT")
                                     }
                                     1 -> {
                                         // left swipe code here
-                                        binder.player.forceSeekToNext()
+                                        if (!disablePlayerHorizontalSwipe) {
+                                            binder.player.forceSeekToNext()
+                                        }
                                         //Log.d("mediaItem","Swipe to LEFT")
                                     }
 

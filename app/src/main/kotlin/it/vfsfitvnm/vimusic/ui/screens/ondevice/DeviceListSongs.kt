@@ -654,7 +654,6 @@ fun Context.musicFilesAsFlow(sortBy: OnDeviceSongSortBy, order: SortOrder, conte
                             val exclude = blacklist.contains(relativePath)
 
                             if (!exclude) {
-                                println(relativePath)
                                 val albumUri = ContentUris.withAppendedId(albumUriBase, albumId)
                                 val durationText =
                                     duration.milliseconds.toComponents { minutes, seconds, _ ->
