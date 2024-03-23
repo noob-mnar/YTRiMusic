@@ -443,7 +443,7 @@ fun HomePlaylists(
             if (showOnDevicePlaylist)
                 item(key = "ondevice") {
                     PlaylistItem(
-                        icon = R.drawable.musical_notes,
+                        icon = R.drawable.device,
                         colorTint = colorPalette.favoritesIcon,
                         name = stringResource(R.string.on_device),
                         songCount = null,

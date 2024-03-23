@@ -129,7 +129,7 @@ fun OtherSettings() {
     ) {
         HeaderWithIcon(
             title = stringResource(R.string.tab_miscellaneous),
-            iconId = R.drawable.equalizer,
+            iconId = R.drawable.miscellaneous,
             enabled = false,
             showIcon = true,
             modifier = Modifier,

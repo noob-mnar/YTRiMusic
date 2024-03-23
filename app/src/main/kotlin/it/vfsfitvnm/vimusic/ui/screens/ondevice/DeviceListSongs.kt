@@ -338,7 +338,7 @@ fun DeviceListSongs(
                 ) {
                     if (filteredSongs.isEmpty())
                         PlaylistItem(
-                            icon = R.drawable.musical_notes,
+                            icon = R.drawable.device,
                             colorTint = colorPalette.favoritesIcon,
                             name = stringResource(R.string.on_device),
                             songCount = null,

@@ -238,7 +238,7 @@ fun  UiSettings() {
     ) {
         HeaderWithIcon(
             title = stringResource(R.string.user_interface),
-            iconId = R.drawable.app_icon,
+            iconId = R.drawable.user_interface,
             enabled = false,
             showIcon = true,
             modifier = Modifier,
