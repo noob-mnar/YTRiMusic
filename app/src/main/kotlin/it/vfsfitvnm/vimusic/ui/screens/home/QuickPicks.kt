@@ -302,12 +302,12 @@ fun QuickPicks(
             relatedPageResult?.getOrNull()?.let { related ->
                 LazyHorizontalGrid(
                     state = quickPicksLazyGridState,
-                    rows = GridCells.Fixed(2),
+                    rows = GridCells.Fixed(3),
                     flingBehavior = ScrollableDefaults.flingBehavior(),
                     contentPadding = endPaddingValues,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(Dimensions.itemsVerticalPadding * 3 * 6)
+                        .height(Dimensions.itemsVerticalPadding * 3 * 9)
                         //.height((songThumbnailSizeDp + Dimensions.itemsVerticalPadding * 2) * 4)
                 ) {
                     trending?.let { song ->
@@ -493,7 +493,7 @@ fun QuickPicks(
                 }
 
 
-                discoverPage?.getOrNull()?.let { page ->
+                /*discoverPage?.getOrNull()?.let { page ->
                     var newReleaseAlbumsFiltered by persistList<Innertube.AlbumItem>("discovery/newalbumsartist")
                     page.newReleaseAlbums.forEach { album ->
                         preferitesArtists.forEach { artist ->
@@ -552,7 +552,7 @@ fun QuickPicks(
                         }
                     }
 
-                }
+                } */
 
                 if (showRelatedAlbums)
                     related.albums?.let { albums ->
