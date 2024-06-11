@@ -72,6 +72,7 @@ import it.fast4x.rimusic.utils.iconLikeTypeKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.trackLoopEnabledKey
+import androidx.compose.ui.graphics.Color
 
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
@@ -300,7 +301,7 @@ fun ControlsEssential(
                                 else colorPalette.background1
                             }
 
-                            PlayerPlayButtonType.Disabled -> colorPalette.background1
+                            PlayerPlayButtonType.Disabled -> Color.Transparent
                             else -> {
                                 if (isGradientBackgroundEnabled) colorPalette.background1
                                 else colorPalette.background2
@@ -344,7 +345,7 @@ fun ControlsEssential(
             modifier = Modifier
                 .rotate(rotationAngle)
                 .align(Alignment.Center)
-                .size(30.dp)
+                .size(if (playerPlayButtonType == PlayerPlayButtonType.Disabled) 40.dp else 30.dp)
         )
 
         val fmtSpeed = "%.1fx".format(playbackSpeed).replace(",", ".")

@@ -464,34 +464,25 @@ fun AppearanceSettings() {
                 },
             )
 
-        AnimatedVisibility(
-            visible = playerControlsType == PlayerControlsType.Essential,
-            enter = fadeIn(tween(100)),
-            exit = fadeOut(tween(100)),
-        ) {
-            if (filter.isNullOrBlank() || stringResource(R.string.play_button).contains(
-                    filterCharSequence,
-                    true
-                )
-            )
-                EnumValueSelectorSettingsEntry(
-                    title = stringResource(R.string.play_button),
-                    selectedValue = playerPlayButtonType,
-                    onValueSelected = {
-                        playerPlayButtonType = it
-                        lastPlayerPlayButtonType = it
+
+             EnumValueSelectorSettingsEntry(
+                 title = stringResource(R.string.play_button),
+                 selectedValue = playerPlayButtonType,
+                 onValueSelected = {
+                     playerPlayButtonType = it
+                     lastPlayerPlayButtonType = it
                     },
                     valueText = {
                         when (it) {
-                            PlayerPlayButtonType.Disabled -> stringResource(R.string.vt_disabled)
-                            PlayerPlayButtonType.Default -> stringResource(R.string._default)
-                            PlayerPlayButtonType.Rectangular -> stringResource(R.string.rectangular)
-                            PlayerPlayButtonType.Square -> stringResource(R.string.square)
-                            PlayerPlayButtonType.CircularRibbed -> stringResource(R.string.circular_ribbed)
+                           PlayerPlayButtonType.Disabled -> stringResource(R.string.vt_disabled)
+                           PlayerPlayButtonType.Default -> stringResource(R.string._default)
+                           PlayerPlayButtonType.Rectangular -> stringResource(R.string.rectangular)
+                           PlayerPlayButtonType.Square -> stringResource(R.string.square)
+                           PlayerPlayButtonType.CircularRibbed -> stringResource(R.string.circular_ribbed)
                         }
                     },
                 )
-        }
+
 
         if (filter.isNullOrBlank() || stringResource(R.string.play_button).contains(
                 filterCharSequence,
