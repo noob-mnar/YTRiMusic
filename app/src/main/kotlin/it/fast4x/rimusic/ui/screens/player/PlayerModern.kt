@@ -1010,7 +1010,7 @@ fun PlayerModern(
                     .fillMaxWidth(if (isLandscape) 0.8f else 1f)
                     .clickable { showQueue = true }
                     .background(colorPalette.background2.copy(
-                        alpha = if (transparentBackgroundActionBarPlayer) 0.1f else 0.7f
+                        alpha = if (transparentBackgroundActionBarPlayer) 0.0f else 0.7f
                     ))
                     .pointerInput(Unit) {
                         detectVerticalDragGestures(
@@ -1031,7 +1031,8 @@ fun PlayerModern(
                             verticalAlignment = Alignment.Bottom,
                             horizontalArrangement = Arrangement.SpaceBetween,
                             modifier = Modifier
-                                .background(colorPalette.background2.copy(alpha = 0.3f))
+                                .background(colorPalette.background2.copy(
+                                    alpha = if (transparentBackgroundActionBarPlayer) 0.0f else 0.3f))
                                 .padding(horizontal = 12.dp)
                                 .fillMaxWidth()
                         ) {
