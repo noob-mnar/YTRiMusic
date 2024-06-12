@@ -60,6 +60,10 @@ import it.fast4x.rimusic.utils.getLikedIcon
 import it.fast4x.rimusic.utils.getUnlikedIcon
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.semiBold
+import it.fast4x.rimusic.enums.PlayerControlsType
+import it.fast4x.rimusic.ui.screens.player.components.controls.ControlsEssential
+import it.fast4x.rimusic.ui.screens.player.components.controls.ControlsModern
+import it.fast4x.rimusic.utils.playerControlsTypeKey
 
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
@@ -76,7 +80,7 @@ fun InfoAlbumAndArtistModern(
     onCollapse: () -> Unit,
     disableScrollingText: Boolean = false
 ){
-
+    val playerControlsType by rememberPreference(playerControlsTypeKey, PlayerControlsType.Modern)
     val (colorPalette, typography) = LocalAppearance.current
     var effectRotationEnabled by rememberPreference(effectRotationKey, true)
     var isRotated by rememberSaveable { mutableStateOf(false) }
@@ -143,6 +147,7 @@ fun InfoAlbumAndArtistModern(
             //}
         }
 
+        if (playerControlsType == PlayerControlsType.Modern)
             IconButton(
                 color = colorPalette.favoritesIcon,
                 icon = if (likedAt == null) getUnlikedIcon() else getLikedIcon(),

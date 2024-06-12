@@ -73,6 +73,10 @@ import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.trackLoopEnabledKey
 import androidx.compose.ui.graphics.Color
+import it.fast4x.rimusic.enums.PlayerControlsType
+import it.fast4x.rimusic.ui.screens.player.components.controls.ControlsEssential
+import it.fast4x.rimusic.ui.screens.player.components.controls.ControlsModern
+import it.fast4x.rimusic.utils.playerControlsTypeKey
 
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
@@ -89,11 +93,12 @@ fun InfoAlbumAndArtistEssential(
     onCollapse: () -> Unit,
     disableScrollingText: Boolean = false
 ) {
-
+    val playerControlsType by rememberPreference(playerControlsTypeKey, PlayerControlsType.Modern)
     val (colorPalette, typography) = LocalAppearance.current
     var effectRotationEnabled by rememberPreference(effectRotationKey, true)
     var isRotated by rememberSaveable { mutableStateOf(false) }
     var showSelectDialog by remember { mutableStateOf(false) }
+
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -132,8 +137,35 @@ fun InfoAlbumAndArtistEssential(
                 maxLines = 1,
                 modifier = modifierTitle
             )
+
+        if (playerControlsType == PlayerControlsType.Modern)
+            IconButton(
+                    color = colorPalette.favoritesIcon,
+                    icon = if (likedAt == null) getUnlikedIcon() else getLikedIcon(),
+                    onClick = {
+                        val currentMediaItem = binder.player.currentMediaItem
+                        query {
+                            if (Database.like(
+                                    mediaId,
+                                    if (likedAt == null) System.currentTimeMillis() else null
+                                ) == 0
+                            ) {
+                                currentMediaItem
+                                    ?.takeIf { it.mediaId == mediaId }
+                                    ?.let {
+                                        Database.insert(currentMediaItem, Song::toggleLike)
+                                    }
+                            }
+                        }
+                        if (effectRotationEnabled) isRotated = !isRotated
+                    },
+                    modifier = Modifier
+                        .padding(start = 5.dp)
+                        .size(24.dp)
+                )
             //}
         }
+
 
     }
 
@@ -188,6 +220,7 @@ fun InfoAlbumAndArtistEssential(
             modifier = modifierArtist
 
         )
+
 
     }
 
