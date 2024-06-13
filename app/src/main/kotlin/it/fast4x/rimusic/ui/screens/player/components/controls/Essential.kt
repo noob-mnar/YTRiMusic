@@ -123,11 +123,11 @@ fun InfoAlbumAndArtistEssential(
                         onCollapse()
                     }
                 }
-            if (!disableScrollingText) modifierTitle = modifierTitle.basicMarquee()
 
             if (playerControlsType == PlayerControlsType.Modern)
                 Spacer(modifier = Modifier.weight(0.1f))
 
+            if (!disableScrollingText) modifierTitle = modifierTitle.basicMarquee()
             BasicText(
                 text = title ?: "",
                 style = TextStyle(
