@@ -139,7 +139,7 @@ fun InfoAlbumAndArtistEssential(
                     fontFamily = typography.l.bold.fontFamily
                 ),
                 maxLines = 1,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f).then(modifierTitle)
             )
 
         if (playerControlsType == PlayerControlsType.Modern)
