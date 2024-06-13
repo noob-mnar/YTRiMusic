@@ -78,6 +78,7 @@ import it.fast4x.rimusic.ui.screens.player.components.controls.ControlsEssential
 import it.fast4x.rimusic.ui.screens.player.components.controls.ControlsModern
 import it.fast4x.rimusic.utils.playerControlsTypeKey
 
+
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 fun InfoAlbumAndArtistEssential(
@@ -110,7 +111,7 @@ fun InfoAlbumAndArtistEssential(
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
+            horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier.fillMaxWidth()
         ) {
 
@@ -124,6 +125,9 @@ fun InfoAlbumAndArtistEssential(
                 }
             if (!disableScrollingText) modifierTitle = modifierTitle.basicMarquee()
 
+            if (playerControlsType == PlayerControlsType.Modern)
+                Spacer(modifier = Modifier.weight(0.1f))
+
             BasicText(
                 text = title ?: "",
                 style = TextStyle(
@@ -135,7 +139,7 @@ fun InfoAlbumAndArtistEssential(
                     fontFamily = typography.l.bold.fontFamily
                 ),
                 maxLines = 1,
-                modifier = modifierTitle
+                modifier = Modifier.weight(1f)
             )
 
         if (playerControlsType == PlayerControlsType.Modern)
@@ -159,7 +163,7 @@ fun InfoAlbumAndArtistEssential(
                         }
                         if (effectRotationEnabled) isRotated = !isRotated
                     },
-                    modifier = Modifier
+                        modifier = Modifier.weight(0.1f)
                         .padding(start = 5.dp)
                         .size(24.dp)
                 )
