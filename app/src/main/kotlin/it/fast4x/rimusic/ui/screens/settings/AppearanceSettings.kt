@@ -394,6 +394,7 @@ fun AppearanceSettings() {
             showthumbnail = true
         if (!visualizerEnabled) showvisthumbnail = false
         if (expandedlyrics) expandedplayer = false
+        if (showlyricsthumbnail) expandedlyrics = false
         if (filter.isNullOrBlank() || stringResource(R.string.show_player_top_actions_bar).contains(
                 filterCharSequence,
                 true
