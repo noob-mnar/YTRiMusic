@@ -606,8 +606,6 @@
     <string name="timelinesize">Размер таймлайна</string>
     <string name="actionspacedevenly">Равномерное распределение кнопок на панели действий</string>
     <string name="expandedplayer">Развернутый плеер</string>
-    <string name="expandedlyrics">Развернутый просмотр текстов песен</string>
-    <string name="expandedlyricsinfo">Работает только при отключении превью текстов песен</string>
     <string name="info_connect_your_piped_account_first">Сначала подключите учетную запись Piped или отключите синхронизацию Piped</string>
     <string name="piped_playlists">Piped</string>
     <string name="lang_bengali">Бенгальский (বাংলা)</string>
@@ -617,7 +615,6 @@
     <string name="fluidtheme">\"Жидкая\" тема</string>
     <string name="blackgradient">Черный градиент снизу</string>
     <string name="glow">Свечение</string>
-    <string name="bottomgradient">Показать нижний градиент</string>
     <string name="textoutline">Включить обводку текста</string>
     <string name="set_cache_location">Cache location</string>
     <string name="info_private_cache_location_can_t_cleaned">Private cache location, can\'t be cleaned by the system</string>

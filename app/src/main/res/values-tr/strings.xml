@@ -606,8 +606,6 @@
     <string name="timelinesize">Oynatıcı Zaman Çizgisi Boyutu</string>
     <string name="actionspacedevenly">Eşit Aralıklı</string>
     <string name="expandedplayer">Genişletilmiş Oynatıcı</string>
-    <string name="expandedlyrics">Genişletilmiş şarkı sözleri görünümü</string>
-    <string name="expandedlyricsinfo">Sadece şarkı sözlerinin küçük resmi kapalıyken çalışır</string>
     <string name="info_connect_your_piped_account_first">Önce piped hesabını bağla yoksa piped senkronizasyonu nu devre dışı bırak</string>
     <string name="piped_playlists">Piped</string>
     <string name="lang_bengali">Bengali</string>
@@ -617,7 +615,6 @@
     <string name="fluidtheme">Akışkan Tema</string>
     <string name="blackgradient">Altta Siyah Gradyan</string>
     <string name="glow">Parıltı</string>
-    <string name="bottomgradient">Alt Gradyanı Göster</string>
     <string name="textoutline">Metin Anahattını Etkinleştir</string>
     <string name="set_cache_location">Cache location</string>
     <string name="info_private_cache_location_can_t_cleaned">Private cache location, can\'t be cleaned by the system</string>

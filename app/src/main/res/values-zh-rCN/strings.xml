@@ -606,8 +606,6 @@
     <string name="timelinesize">播放器时间线大小</string>
     <string name="actionspacedevenly">平均分布间距</string>
     <string name="expandedplayer">扩展的播放器</string>
-    <string name="expandedlyrics">扩展的歌词视图</string>
-    <string name="expandedlyricsinfo">只有在歌词缩略图被禁用时才可以执行</string>
     <string name="info_connect_your_piped_account_first">首先连接您的上游渠道帐户或禁用上游渠道同步</string>
     <string name="piped_playlists">上游渠道</string>
     <string name="lang_bengali">孟加拉语</string>
@@ -621,7 +619,6 @@
     <string name="fluidtheme">液态主题</string>
     <string name="blackgradient">底部黑色渐变</string>
     <string name="glow">发光</string>
-    <string name="bottomgradient">显示底部渐变效果</string>
     <string name="textoutline">启用文本轮廓</string>
     <string name="thumbnailtype">Thumbnail Type</string>
 </resources>

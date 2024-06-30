@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,6 +62,8 @@ import it.fast4x.rimusic.utils.DisposableListener
 import it.fast4x.rimusic.utils.clickLyricsTextKey
 import it.fast4x.rimusic.utils.currentWindow
 import it.fast4x.rimusic.utils.doubleShadowDrop
+import it.fast4x.rimusic.utils.expandedlyricsKey
+import it.fast4x.rimusic.utils.expandedplayerKey
 import it.fast4x.rimusic.utils.intent
 import it.fast4x.rimusic.utils.isLandscape
 import it.fast4x.rimusic.utils.playerControlsTypeKey
@@ -88,6 +91,8 @@ fun Thumbnail(
     onMaximize: () -> Unit,
     onDoubleTap: () -> Unit,
     showthumbnail: Boolean,
+    expandedplayer: Boolean,
+    onexpandedplayer: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -128,6 +133,7 @@ fun Thumbnail(
 
     val clickLyricsText by rememberPreference(clickLyricsTextKey, ClickLyricsText.FullScreen)
     var showvisthumbnail by rememberPreference(showvisthumbnailKey, true)
+    var expandedlyrics by rememberPreference(expandedlyricsKey,false)
 
     player.DisposableListener {
         object : Player.Listener {
@@ -215,7 +221,7 @@ fun Thumbnail(
         Box(
             modifier = modifierUiType
         ) {
-            if (showthumbnail)
+            if (showthumbnail){
                 if ((!isShowingLyrics && !isShowingEqualizer) || (isShowingEqualizer && showvisthumbnail) || (isShowingLyrics && showlyricsthumbnail))
                     if (artImageAvailable)
                         AsyncImage(
@@ -247,6 +253,7 @@ fun Thumbnail(
                                         onLongPress = { onShowStatsForNerds(true) },
                                         onTap = if (thumbnailTapEnabledKey) {
                                             {
+                                                if(expandedlyrics) onexpandedplayer(true)
                                                 onShowLyrics(true)
                                                 onShowEqualizer(false)
                                             }
@@ -261,16 +268,17 @@ fun Thumbnail(
 
                         )
 
-            if (!artImageAvailable)
-                Image(
-                    painter = painterResource(R.drawable.app_icon),
-                    colorFilter = ColorFilter.tint(LocalAppearance.current.colorPalette.accent),
-                    modifier = Modifier
-                        .pointerInput(Unit) {
-                            detectTapGestures(
+                    if (!artImageAvailable)
+                      Image(
+                         painter = painterResource(R.drawable.app_icon),
+                         colorFilter = ColorFilter.tint(LocalAppearance.current.colorPalette.accent),
+                         modifier = Modifier
+                             .pointerInput(Unit) {
+                               detectTapGestures(
                                 onLongPress = { onShowStatsForNerds(true) },
                                 onTap = if (thumbnailTapEnabledKey) {
                                     {
+                                        if(expandedlyrics) onexpandedplayer(true)
                                         onShowLyrics(true)
                                         onShowEqualizer(false)
                                     }
@@ -330,6 +338,7 @@ fun Thumbnail(
                 )
                 player.seekToNext()
             }
+        }
             /*
             PlaybackError(
                 isDisplayed = error != null,
