@@ -2,7 +2,7 @@
 [versions]
 compose-compiler = "1.5.11"
 junit = "4.13.2"
-agp = "8.4.2"
+agp = "8.5.0"
 kotlin = "1.9.23"
 kotlin-ksp = "1.9.23-1.0.20"
 kotlin-coroutine = "1.8.1"
@@ -38,7 +38,7 @@ math3 = "3.6.1"
 
 [libraries]
 gradle = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
-junit = { group = "junit", name = "junit", version = "junit" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
 kotlin-coroutines = {group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlin-coroutine"}
 kotlin-datetime = {group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlin-datetime"}
 compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "compose" }
