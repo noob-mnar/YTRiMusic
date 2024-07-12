@@ -157,6 +157,7 @@ fun NextVisualizer() {
             val visualizersList = getVisualizers()
             var currentVisualizer by rememberPreference(currentVisualizerKey, 0)
             if (currentVisualizer < 0) currentVisualizer = 0
+            else if (currentVisualizer > visualizersList.lastIndex) currentVisualizer = 0
 
             Box(
                 modifier = Modifier.fillMaxSize()
