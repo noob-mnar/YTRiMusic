@@ -227,7 +227,7 @@ fun NonQueuedMediaItemMenuLibrary(
 
     if (isHiding) {
         ConfirmationDialog(
-            text = stringResource(R.string.hidesong),
+            text = stringResource(R.string.hide_song),
             onDismiss = { isHiding = false },
             onConfirm = {
                 onDismiss()

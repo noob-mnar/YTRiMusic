@@ -441,7 +441,7 @@ fun OtherSettings() {
 
         SettingsGroupSpacer()
 
-        SettingsEntryGroupText(title = stringResource(R.string.androidheadunit))
+        SettingsEntryGroupText(title = stringResource(R.string.android_headunit))
         SwitchSettingEntry(
             title = stringResource(R.string.extra_space),
             text = "",

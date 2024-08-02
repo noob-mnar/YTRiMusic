@@ -1886,7 +1886,7 @@ fun Lyrics(
                                             MenuEntry(
                                                 icon = R.drawable.droplet,
                                                 enabled = true,
-                                                text = stringResource(R.string.lyricscolor),
+                                                text = stringResource(R.string.lyrics_color),
                                                 onClick = {
                                                     menuState.display {
                                                         Menu {
@@ -1931,7 +1931,7 @@ fun Lyrics(
                                                             )
                                                             MenuEntry(
                                                                 icon = R.drawable.droplet,
-                                                                text = stringResource(R.string.fluidrainbow),
+                                                                text = stringResource(R.string.fluid_rainbow),
                                                                 secondaryText = "",
                                                                 onClick = {
                                                                     menuState.hide()
@@ -1956,7 +1956,7 @@ fun Lyrics(
                                             MenuEntry(
                                                 icon = R.drawable.horizontal_bold_line,
                                                 enabled = true,
-                                                text = stringResource(R.string.lyricsoutline),
+                                                text = stringResource(R.string.lyrics_outline),
                                                 onClick = {
                                                     menuState.display {
                                                         Menu {
@@ -2002,7 +2002,7 @@ fun Lyrics(
                                                             )
                                                             MenuEntry(
                                                                 icon = R.drawable.droplet,
-                                                                text = stringResource(R.string.fluidrainbow),
+                                                                text = stringResource(R.string.fluid_rainbow),
                                                                 secondaryText = "",
                                                                 onClick = {
                                                                     menuState.hide()
@@ -2090,7 +2090,7 @@ fun Lyrics(
                                             MenuEntry(
                                                 icon = R.drawable.droplet,
                                                 enabled = true,
-                                                text = stringResource(R.string.lyricsbackground),
+                                                text = stringResource(R.string.lyrics_background),
                                                 onClick = {
                                                     menuState.display {
                                                         Menu {

@@ -745,7 +745,7 @@ fun QueueModern(
                             .combinedClickable(
                                 onClick = { discoverIsEnabled = !discoverIsEnabled },
                                 onLongClick = {
-                                    SmartMessage(context.getString(R.string.discoverinfo), context = context)
+                                    SmartMessage(context.getString(R.string.discover_info), context = context)
                                 }
 
                             )

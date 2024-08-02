@@ -440,13 +440,13 @@ fun AppearanceSettings() {
                 isChecked = showTopActionsBar,
                 onCheckedChange = { showTopActionsBar = it }
             )
-        if (filter.isNullOrBlank() || stringResource(R.string.playertype).contains(
+        if (filter.isNullOrBlank() || stringResource(R.string.player_type).contains(
                 filterCharSequence,
                 true
             )
         )
             EnumValueSelectorSettingsEntry(
-                title = stringResource(R.string.playertype),
+                title = stringResource(R.string.player_type),
                 selectedValue = playerType,
                 onValueSelected = {
                     playerType = it
@@ -475,13 +475,13 @@ fun AppearanceSettings() {
         AnimatedVisibility(visible = showthumbnail) {
             Column {
                 if (playerType == PlayerType.Modern) {
-                    if (filter.isNullOrBlank() || stringResource(R.string.fadingedge).contains(
+                    if (filter.isNullOrBlank() || stringResource(R.string.fading_edge).contains(
                             filterCharSequence,
                             true
                         )
                     )
                         SwitchSettingEntry(
-                            title = stringResource(R.string.fadingedge),
+                            title = stringResource(R.string.fading_edge),
                             text = "",
                             isChecked = fadingedge,
                             onCheckedChange = { fadingedge = it },
@@ -503,13 +503,13 @@ fun AppearanceSettings() {
                             modifier = Modifier.padding(start = if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor) 25.dp else 0.dp)
                         )
                     if (carousel) {
-                        if (filter.isNullOrBlank() || stringResource(R.string.carouselsize).contains(
+                        if (filter.isNullOrBlank() || stringResource(R.string.carousel_size).contains(
                                 filterCharSequence,
                                 true
                             )
                         )
                             EnumValueSelectorSettingsEntry(
-                                title = stringResource(R.string.carouselsize),
+                                title = stringResource(R.string.carousel_size),
                                 selectedValue = carouselSize,
                                 onValueSelected = { carouselSize = it },
                                 valueText = {
@@ -526,13 +526,13 @@ fun AppearanceSettings() {
                     }
                 }
                 if (playerType == PlayerType.Essential) {
-                    if (filter.isNullOrBlank() || stringResource(R.string.thumbnailpause).contains(
+                    if (filter.isNullOrBlank() || stringResource(R.string.thumbnail_pause).contains(
                             filterCharSequence,
                             true
                         )
                     )
                         SwitchSettingEntry(
-                            title = stringResource(R.string.thumbnailpause),
+                            title = stringResource(R.string.thumbnail_pause),
                             text = "",
                             isChecked = thumbnailpause,
                             onCheckedChange = { thumbnailpause = it },
@@ -552,13 +552,13 @@ fun AppearanceSettings() {
                             modifier = Modifier.padding(start = if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor) 25.dp else 0.dp)
                         )
                     if (visualizerEnabled) {
-                        if (filter.isNullOrBlank() || stringResource(R.string.showvisthumbnail).contains(
+                        if (filter.isNullOrBlank() || stringResource(R.string.show_vis_thumbnail).contains(
                                 filterCharSequence,
                                 true
                             )
                         )
                             SwitchSettingEntry(
-                                title = stringResource(R.string.showvisthumbnail),
+                                title = stringResource(R.string.show_vis_thumbnail),
                                 text = "",
                                 isChecked = showvisthumbnail,
                                 onCheckedChange = { showvisthumbnail = it },
@@ -587,13 +587,13 @@ fun AppearanceSettings() {
                         },
                         modifier = Modifier.padding(start = if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor) 25.dp else 0.dp)
                     )
-                if (filter.isNullOrBlank() || stringResource(R.string.thumbnailtype).contains(
+                if (filter.isNullOrBlank() || stringResource(R.string.thumbnail_type).contains(
                         filterCharSequence,
                         true
                     )
                 )
                     EnumValueSelectorSettingsEntry(
-                        title = stringResource(R.string.thumbnailtype),
+                        title = stringResource(R.string.thumbnail_type),
                         selectedValue = thumbnailType,
                         onValueSelected = {
                             thumbnailType = it
@@ -644,50 +644,50 @@ fun AppearanceSettings() {
             }
         }
         if (!showthumbnail) {
-            if (filter.isNullOrBlank() || stringResource(R.string.noblur).contains(
+            if (filter.isNullOrBlank() || stringResource(R.string.no_blur).contains(
                     filterCharSequence,
                     true
                 )
             )
                 SwitchSettingEntry(
-                    title = stringResource(R.string.noblur),
+                    title = stringResource(R.string.no_blur),
                     text = "",
                     isChecked = noblur,
                     onCheckedChange = { noblur = it }
                 )
 
-            if (filter.isNullOrBlank() || stringResource(R.string.statsfornerdsplayer).contains(
+            if (filter.isNullOrBlank() || stringResource(R.string.stats_for_nerds_player).contains(
                     filterCharSequence,
                     true
                 )
             )
                 SwitchSettingEntry(
-                    title = stringResource(R.string.statsfornerdsplayer),
+                    title = stringResource(R.string.stats_for_nerds_player),
                     text = "",
                     isChecked = statsfornerds,
                     onCheckedChange = { statsfornerds = it }
                 )
         }
         if (!showlyricsthumbnail && !isLandscape)
-            if (filter.isNullOrBlank() || stringResource(R.string.expandedlyrics).contains(
+            if (filter.isNullOrBlank() || stringResource(R.string.expanded_lyrics).contains(
                     filterCharSequence,
                     true
                 )
             )
                 SwitchSettingEntry(
-                    title = stringResource(R.string.expandedlyrics),
-                    text = stringResource(R.string.expandedlyricsinfo),
+                    title = stringResource(R.string.expanded_lyrics),
+                    text = stringResource(R.string.expanded_lyrics_info),
                     isChecked = expandedlyrics,
                     onCheckedChange = { expandedlyrics = it }
                 )
 
-        if (filter.isNullOrBlank() || stringResource(R.string.timelinesize).contains(
+        if (filter.isNullOrBlank() || stringResource(R.string.timeline_size).contains(
                 filterCharSequence,
                 true
             )
         )
             EnumValueSelectorSettingsEntry(
-                title = stringResource(R.string.timelinesize),
+                title = stringResource(R.string.timeline_size),
                 selectedValue = playerTimelineSize,
                 onValueSelected = { playerTimelineSize = it },
                 valueText = {
@@ -721,13 +721,13 @@ fun AppearanceSettings() {
                 },
             )
 
-        if (filter.isNullOrBlank() || stringResource(R.string.miniplayertype).contains(
+        if (filter.isNullOrBlank() || stringResource(R.string.mini_player_type).contains(
                 filterCharSequence,
                 true
             )
         )
             EnumValueSelectorSettingsEntry(
-                title = stringResource(R.string.miniplayertype),
+                title = stringResource(R.string.mini_player_type),
                 selectedValue = miniPlayerType,
                 onValueSelected = {
                     miniPlayerType = it
@@ -774,13 +774,13 @@ fun AppearanceSettings() {
                 }
             )
 
-        if (filter.isNullOrBlank() || stringResource(R.string.transparentbar).contains(
+        if (filter.isNullOrBlank() || stringResource(R.string.transparent_bar).contains(
                 filterCharSequence,
                 true
             )
         )
             SwitchSettingEntry(
-                title = stringResource(R.string.transparentbar),
+                title = stringResource(R.string.transparent_bar),
                 text = "",
                 isChecked = transparentbar,
                 onCheckedChange = { transparentbar = it }
@@ -829,13 +829,13 @@ fun AppearanceSettings() {
                 },
             )
 
-        if (filter.isNullOrBlank() || stringResource(R.string.buttonzoomout).contains(
+        if (filter.isNullOrBlank() || stringResource(R.string.button_zoom_out).contains(
                 filterCharSequence,
                 true
             )
         )
             SwitchSettingEntry(
-                title = stringResource(R.string.buttonzoomout),
+                title = stringResource(R.string.button_zoom_out),
                 text = "",
                 isChecked = buttonzoomout,
                 onCheckedChange = { buttonzoomout = it }
@@ -902,37 +902,37 @@ fun AppearanceSettings() {
             )
 
         if ((playerBackgroundColors == PlayerBackgroundColors.CoverColorGradient) || (playerBackgroundColors == PlayerBackgroundColors.ThemeColorGradient))
-            if (filter.isNullOrBlank() || stringResource(R.string.blackgradient).contains(
+            if (filter.isNullOrBlank() || stringResource(R.string.black_gradient).contains(
                     filterCharSequence,
                     true
                 )
             )
                 SwitchSettingEntry(
-                    title = stringResource(R.string.blackgradient),
+                    title = stringResource(R.string.black_gradient),
                     text = "",
                     isChecked = blackgradient,
                     onCheckedChange = { blackgradient = it }
                 )
         if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor)
-            if (filter.isNullOrBlank() || stringResource(R.string.bottomgradient).contains(
+            if (filter.isNullOrBlank() || stringResource(R.string.bottom_gradient).contains(
                     filterCharSequence,
                     true
                 )
             )
                 SwitchSettingEntry(
-                    title = stringResource(R.string.bottomgradient),
+                    title = stringResource(R.string.bottom_gradient),
                     text = "",
                     isChecked = bottomgradient,
                     onCheckedChange = { bottomgradient = it }
                 )
         if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor)
-           if (filter.isNullOrBlank() || stringResource(R.string.textoutline).contains(
+           if (filter.isNullOrBlank() || stringResource(R.string.text_outline).contains(
                 filterCharSequence,
                 true
                 )
            )
                SwitchSettingEntry(
-                   title = stringResource(R.string.textoutline),
+                   title = stringResource(R.string.text_outline),
                    text = "",
                    isChecked = textoutline,
                    onCheckedChange = { textoutline = it }
@@ -974,7 +974,7 @@ fun AppearanceSettings() {
             )
         AnimatedVisibility( visible = showNextSongsInPlayer) {
           Column {
-              if (filter.isNullOrBlank() || stringResource(R.string.showtwosongs).contains(filterCharSequence,true))
+              if (filter.isNullOrBlank() || stringResource(R.string.show_two_songs).contains(filterCharSequence,true))
               OutlinedTextField(
                   value = showsongs,
                   onValueChange = { showsongs = it },
@@ -988,7 +988,7 @@ fun AppearanceSettings() {
                       fontSize = typography.xs.bold.fontSize,
                       fontFamily = typography.xs.bold.fontFamily
                   ),
-                  label = { Text(stringResource(R.string.showtwosongs), color = colorPalette.text) },
+                  label = { Text(stringResource(R.string.show_two_songs), color = colorPalette.text) },
                   modifier = Modifier
                       .fillMaxWidth()
                       .padding(horizontal = 50.dp)
@@ -996,13 +996,13 @@ fun AppearanceSettings() {
               if (showsongs == "0") showsongs = "1"
               if (showsongs != "" && showsongs.toInt() > 9) showsongs = "9"
 
-            if (filter.isNullOrBlank() || stringResource(R.string.showalbumcover).contains(
+            if (filter.isNullOrBlank() || stringResource(R.string.show_album_cover).contains(
                     filterCharSequence,
                     true
                 )
             )
                 SwitchSettingEntry(
-                    title = stringResource(R.string.showalbumcover),
+                    title = stringResource(R.string.show_album_cover),
                     text = "",
                     isChecked = showalbumcover,
                     onCheckedChange = { showalbumcover = it },
@@ -1173,25 +1173,25 @@ fun AppearanceSettings() {
                 onCheckedChange = { transparentBackgroundActionBarPlayer = it }
             )
 
-        if (filter.isNullOrBlank() || stringResource(R.string.actionspacedevenly).contains(
+        if (filter.isNullOrBlank() || stringResource(R.string.action_spaced_evenly).contains(
                 filterCharSequence,
                 true
             )
         )
             SwitchSettingEntry(
-                title = stringResource(R.string.actionspacedevenly),
+                title = stringResource(R.string.action_spaced_evenly),
                 text = "",
                 isChecked = actionspacedevenly,
                 onCheckedChange = { actionspacedevenly = it }
             )
 
-        if (filter.isNullOrBlank() || stringResource(R.string.tapqueue).contains(
+        if (filter.isNullOrBlank() || stringResource(R.string.tap_queue).contains(
                 filterCharSequence,
                 true
             )
         )
             SwitchSettingEntry(
-                title = stringResource(R.string.tapqueue),
+                title = stringResource(R.string.tap_queue),
                 text = "",
                 isChecked = tapqueue,
                 onCheckedChange = { tapqueue = it }
@@ -1270,13 +1270,13 @@ fun AppearanceSettings() {
             )
         if (!isLandscape || !showthumbnail) {
             if (!showlyricsthumbnail and !expandedlyrics) {
-                if (filter.isNullOrBlank() || stringResource(R.string.expandedplayer).contains(
+                if (filter.isNullOrBlank() || stringResource(R.string.expanded_player).contains(
                         filterCharSequence,
                         true
                     )
                 )
                     SwitchSettingEntry(
-                        title = stringResource(R.string.expandedplayer),
+                        title = stringResource(R.string.expanded_player),
                         text = "",
                         isChecked = expandedplayertoggle,
                         onCheckedChange = { expandedplayertoggle = it }
