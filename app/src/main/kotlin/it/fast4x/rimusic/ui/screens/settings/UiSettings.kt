@@ -689,15 +689,15 @@ fun  UiSettings() {
         )
             SwitchSettingEntry(
                 title = stringResource(R.string.discover),
-                text = stringResource(R.string.discoverinfo),
+                text = stringResource(R.string.discover_info),
                 isChecked = discoverIsEnabled,
                 onCheckedChange = { discoverIsEnabled = it }
             )
 
-        if (filter.isNullOrBlank() || stringResource(R.string.playlistindicator).contains(filterCharSequence,true))
+        if (filter.isNullOrBlank() || stringResource(R.string.playlist_indicator).contains(filterCharSequence,true))
             SwitchSettingEntry(
-                title = stringResource(R.string.playlistindicator),
-                text = stringResource(R.string.playlistindicatorinfo),
+                title = stringResource(R.string.playlist_indicator),
+                text = stringResource(R.string.playlist_indicator_info),
                 isChecked = playlistindicator,
                 onCheckedChange = {
                     playlistindicator = it
