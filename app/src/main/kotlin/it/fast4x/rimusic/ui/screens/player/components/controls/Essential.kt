@@ -165,34 +165,26 @@ fun InfoAlbumAndArtistEssential(
             ) {
                 BasicText(
                     text = cleanPrefix(title ?: ""),
-                    style = TextStyle(
+                    style = typography.l.bold.merge(TextStyle(
                         textAlign = TextAlign.Center,
                         color = if (albumId == null)
                                  if (showthumbnail) colorPalette.textDisabled else if (colorPaletteMode == ColorPaletteMode.Light) colorPalette.textDisabled.copy(0.5f).compositeOver(Color.Black) else colorPalette.textDisabled.copy(0.35f).compositeOver(Color.White)
-                                else colorPalette.text,
-                        fontStyle = typography.l.bold.fontStyle,
-                        fontWeight = typography.l.bold.fontWeight,
-                        fontSize = typography.l.bold.fontSize,
-                        fontFamily = typography.l.bold.fontFamily
-                    ),
+                                else colorPalette.text
+                    )),
                     maxLines = 1,
                     modifier = modifierTitle
                 )
                 BasicText(
                     text = cleanPrefix(title ?: ""),
-                    style = TextStyle(
+                    style = typography.l.bold.merge(TextStyle(
                         drawStyle = Stroke(width = 1.5f, join = StrokeJoin.Round),
                         textAlign = TextAlign.Center,
                         color = if (!textoutline) Color.Transparent
                         else if (colorPaletteMode == ColorPaletteMode.Light || (colorPaletteMode == ColorPaletteMode.System && (!isSystemInDarkTheme()))) Color.White.copy(
                             0.5f
                         )
-                        else Color.Black,
-                        fontStyle = typography.l.bold.fontStyle,
-                        fontWeight = typography.l.bold.fontWeight,
-                        fontSize = typography.l.bold.fontSize,
-                        fontFamily = typography.l.bold.fontFamily
-                    ),
+                        else Color.Black
+                    )),
                     maxLines = 1,
                     modifier = modifierTitle
                 )
