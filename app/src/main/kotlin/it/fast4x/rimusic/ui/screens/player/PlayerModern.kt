@@ -2223,13 +2223,15 @@ fun PlayerModern(
                                 )
 
                     }
-                    if (!showthumbnail) {
-                        StatsForNerds(
-                            mediaId = mediaItem.mediaId,
-                            isDisplayed = statsfornerds,
-                            onDismiss = {}
-                        )
-                    }
+
+                    // does not seem to get activated so commented
+//                    if (!showthumbnail) {
+//                        StatsForNerds(
+//                            mediaId = mediaItem.mediaId,
+//                            isDisplayed = statsfornerds,
+//                            onDismiss = {}
+//                        )
+//                    }
                     actionsBarContent()
                 }
             }
@@ -2730,13 +2732,13 @@ fun PlayerModern(
                     }
                 }
 
-                if (!showthumbnail) {
-                    StatsForNerds(
-                        mediaId = mediaItem.mediaId,
-                        isDisplayed = statsfornerds,
-                        onDismiss = {}
-                    )
-                }
+
+                StatsForNerds(
+                    mediaId = mediaItem.mediaId,
+                    isDisplayed = statsfornerds,
+                    onDismiss = {}
+                )
+
                 actionsBarContent()
               }
             }
