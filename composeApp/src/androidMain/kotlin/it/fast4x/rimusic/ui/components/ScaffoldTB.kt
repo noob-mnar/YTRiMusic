@@ -51,6 +51,7 @@ import it.fast4x.rimusic.utils.playerPositionKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.transitionEffectKey
 import me.knighthat.colorPalette
+import me.knighthat.component.HorizontalNavigationBar
 import me.knighthat.navBarPos
 
 
@@ -78,10 +79,14 @@ fun ScaffoldTB(
     onSearchClick: (() -> Unit)?,
     tabIndex: Int,
     onTabChanged: (Int) -> Unit,
-    tabColumnContent: @Composable (ColumnScope.(@Composable (Int, String, Int) -> Unit) -> Unit),
+    tabColumnContent: @Composable (@Composable (Int, String, Int) -> Unit) -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable AnimatedVisibilityScope.(Int) -> Unit
 ) {
+    val horizontalNavBar = HorizontalNavigationBar( navController, tabIndex, onTabChanged, modifier )
+    horizontalNavBar.addButton( tabColumnContent )
+
+
     val navigationRailTB: @Composable () -> Unit = {
         NavigationRailTB(
             navController = navController,
