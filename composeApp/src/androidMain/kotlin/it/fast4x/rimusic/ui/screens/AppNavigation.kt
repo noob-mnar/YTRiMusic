@@ -79,6 +79,8 @@ import it.fast4x.rimusic.utils.preferences
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
 import it.fast4x.rimusic.utils.transitionEffectKey
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 @androidx.annotation.OptIn(UnstableApi::class)
 @OptIn(ExperimentalFoundationApi::class, ExperimentalAnimationApi::class,
@@ -380,7 +382,8 @@ fun AppNavigation(
                 onViewPlaylist = {},
                 //pop = popDestination,
                 onSearch = { query ->
-                    navController.navigate(route = "${NavRoutes.searchResults.name}/$query")
+                    val uriSafe = URLEncoder.encode( query, StandardCharsets.UTF_8.toString() )
+                    navController.navigate(route = "${NavRoutes.searchResults.name}/$uriSafe")
 
                     if (!context.preferences.getBoolean(pauseSearchHistoryKey, false)) {
                         it.fast4x.rimusic.query {
@@ -402,7 +405,6 @@ fun AppNavigation(
             )
         ) { navBackStackEntry ->
             val query = navBackStackEntry.arguments?.getString("query") ?: ""
-
             SearchResultScreen(
                 navController = navController,
                 playerEssential = playerEssential,
