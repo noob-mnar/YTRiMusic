@@ -1,7 +1,6 @@
 package me.knighthat.button
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -18,10 +17,6 @@ open class Button(
     val size: Dp,
     var modifier: Modifier = Modifier
 ) {
-
-    fun clickEvent( onClick: () -> Unit ) {
-        modifier = modifier.clickable { onClick() }
-    }
 
     @Composable
     open fun Draw() {
