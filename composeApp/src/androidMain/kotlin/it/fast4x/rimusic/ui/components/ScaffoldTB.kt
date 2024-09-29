@@ -83,28 +83,8 @@ fun ScaffoldTB(
     modifier: Modifier = Modifier,
     content: @Composable AnimatedVisibilityScope.(Int) -> Unit
 ) {
-    val horizontalNavBar = HorizontalNavigationBar( navController, tabIndex, onTabChanged, modifier )
-    horizontalNavBar.addButton( tabColumnContent )
-
-
-    val navigationRailTB: @Composable () -> Unit = {
-        NavigationRailTB(
-            navController = navController,
-            topIconButtonId = topIconButtonId,
-            onTopIconButtonClick = onTopIconButtonClick,
-            showButton1 = showButton1,
-            topIconButton2Id = topIconButton2Id,
-            onTopIconButton2Click = onTopIconButton2Click,
-            showButton2 = showButton2,
-            bottomIconButtonId = bottomIconButtonId,
-            onBottomIconButtonClick = onBottomIconButtonClick ?: {},
-            showBottomButton = showBottomButton,
-            tabIndex = tabIndex,
-            onTabIndexChanged = onTabChanged,
-            content = tabColumnContent,
-            hideTabs = hideTabs
-        )
-    }
+    val horizontalNavBar = HorizontalNavigationBar( tabIndex, onTabChanged, navController, modifier )
+    horizontalNavBar.add( tabColumnContent )
 
     //val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -123,7 +103,7 @@ fun ScaffoldTB(
                 AppBar(navController)
 
                 if ( navBarPos() == NavigationBarPosition.Top )
-                    navigationRailTB()
+                    horizontalNavBar.Draw()
 
                 /*
                 if (playerEssential != null && playerPosition == PlayerPosition.Top) {
@@ -172,8 +152,7 @@ fun ScaffoldTB(
                      */
 
                     if ( navBarPos() == NavigationBarPosition.Bottom )
-                            navigationRailTB()
-
+                        horizontalNavBar.Draw()
                 //}
         }
 
