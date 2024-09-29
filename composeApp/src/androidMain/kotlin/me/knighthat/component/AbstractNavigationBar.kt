@@ -80,26 +80,29 @@ abstract class AbstractNavigationBar(
 
 internal class NavigationButton(
     val navController: NavController,
-    val iconId: Int,
-    val color: Color,
+    iconId: Int,
+    color: Color,
     val destination: String = "",
-    val padding: Dp = 0.dp,
-    val size: Dp = 0.dp,
-    var modifier: Modifier = Modifier
-) {
+    padding: Dp = 0.dp,
+    size: Dp = 0.dp,
+    modifier: Modifier = Modifier
+): Button( iconId, color, padding, size, modifier ) {
+
     fun modifier( newModifier: (Modifier) -> Modifier ) {
         modifier = newModifier( modifier )
     }
 
     fun clickEvent( event: (NavigationButton) -> Unit ) {
-        modifier = modifier.clickable { event(this@NavigationButton) }
+        modifier {
+            it.clickable { event(this@NavigationButton) }
+        }
     }
 
     @Composable
-    fun Draw() {
+    override fun Draw() {
         if( destination.isNotBlank() )
             clickEvent { navController.navigate( destination ) }
 
-        Button( iconId, color, padding, size, modifier ).Draw()
+        super.Draw()
     }
 }
