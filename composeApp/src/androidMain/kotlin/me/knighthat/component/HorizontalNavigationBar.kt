@@ -145,6 +145,11 @@ class HorizontalNavigationBar(
 
     @Composable
     override fun Draw() {
+        // Settings button only visible when
+        // UI is not RiMusic and current location isn't home screen
+        if( uiType() != UiType.RiMusic && navController.currentBackStackEntry?.destination?.route != NavRoutes.home.name )
+            addButton( 0, BackButton() )
+
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Bottom,
@@ -164,11 +169,6 @@ class HorizontalNavigationBar(
                         RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)
                     else
                         RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp)
-
-                // Settings button only visible when
-                // UI is not RiMusic and current location isn't home screen
-                if( uiType() != UiType.RiMusic && navController.currentBackStackEntry?.destination?.route != NavRoutes.home.name )
-                    BackButton().Draw()
 
                 Box(
                     modifier = Modifier
