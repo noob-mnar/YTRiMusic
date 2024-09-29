@@ -1,4 +1,4 @@
-package me.knighthat.component
+package me.knighthat.component.nav
 
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.animateFloat

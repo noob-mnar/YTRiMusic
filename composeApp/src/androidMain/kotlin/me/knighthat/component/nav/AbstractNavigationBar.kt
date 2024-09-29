@@ -1,4 +1,4 @@
-package me.knighthat.component
+package me.knighthat.component.nav
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.clickable
