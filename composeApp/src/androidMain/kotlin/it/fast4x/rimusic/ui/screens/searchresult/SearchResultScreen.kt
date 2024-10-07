@@ -44,6 +44,7 @@ import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.models.Album
+import it.fast4x.rimusic.models.SearchQuery
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongAlbumMap
 import it.fast4x.rimusic.query
@@ -125,10 +126,11 @@ fun SearchResultScreen(
                     modifier = Modifier
                         .pointerInput(Unit) {
                             detectTapGestures {
-                                context.persistMap?.keys?.removeAll {
-                                    it.startsWith("searchResults/$query/")
-                                }
-                                onSearchAgain()
+//                                context.persistMap?.keys?.removeAll {
+//                                    it.startsWith("searchResults/$query/")
+//                                }
+                                navController.navigate("searchScreenRoute/${query}")
+//                                onSearchAgain
                             }
                         }
                 )

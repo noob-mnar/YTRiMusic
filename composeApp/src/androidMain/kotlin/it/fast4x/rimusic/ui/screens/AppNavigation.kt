@@ -497,5 +497,19 @@ fun AppNavigation(
             )
         }
 
+        composable(
+            "searchScreenRoute/{query}"
+        ) { backStackEntry ->
+            val query = backStackEntry.arguments?.getString("query")?: ""
+            SearchScreen(
+                navController = navController,
+                playerEssential = playerEssential,
+                initialTextInput = query ,
+                onViewPlaylist = {},
+                onSearch = { newQuery ->
+                    navController.navigate(route = "${NavRoutes.searchResults.name}/${cleanString(newQuery)}")
+                           },
+            )
+        }
     }
 }
