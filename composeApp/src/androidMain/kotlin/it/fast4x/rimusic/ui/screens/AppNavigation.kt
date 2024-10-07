@@ -500,6 +500,7 @@ fun AppNavigation(
         composable(
             "searchScreenRoute/{query}"
         ) { backStackEntry ->
+            val context = LocalContext.current
             val query = backStackEntry.arguments?.getString("query")?: ""
             SearchScreen(
                 navController = navController,
@@ -508,6 +509,12 @@ fun AppNavigation(
                 onViewPlaylist = {},
                 onSearch = { newQuery ->
                     navController.navigate(route = "${NavRoutes.searchResults.name}/${cleanString(newQuery)}")
+
+                    if (!context.preferences.getBoolean(pauseSearchHistoryKey, false)) {
+                        it.fast4x.rimusic.query {
+                            Database.insert(SearchQuery(query = newQuery))
+                        }
+                    }
                            },
             )
         }
