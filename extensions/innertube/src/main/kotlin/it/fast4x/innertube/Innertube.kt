@@ -11,6 +11,7 @@ import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.header
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.append
 import io.ktor.serialization.kotlinx.json.json
 import it.fast4x.innertube.models.MusicNavigationButtonRenderer
 import it.fast4x.innertube.models.NavigationEndpoint
@@ -23,9 +24,27 @@ import java.net.InetSocketAddress
 import java.net.Proxy
 
 object Innertube {
-    val client = HttpClient(OkHttp) {
-        BrowserUserAgent()
 
+    const val BASE_URL = "music.youtube.com"
+    const val ORIGIN = "https://music.youtube.com"
+
+    private val HEADERS = mapOf(
+        HttpHeaders.Accept to "*/*",
+        HttpHeaders.Host to BASE_URL,
+        HttpHeaders.ContentType to ContentType.Application.Json.toString(),
+        /*
+            This UserAgent requires frequent update
+            This may reduce the chance of being block by a tiny bit
+            But anything at this point should be taken for advantage.
+
+            The example below is "Chrome 129.0.0, Windows' @ https://useragents.me/
+         */
+        HttpHeaders.UserAgent to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.3",
+        HttpHeaders.Origin to ORIGIN,
+        HttpHeaders.Referrer to ORIGIN
+    )
+
+    val client = HttpClient(OkHttp) {
         expectSuccess = true
 
         install(ContentNegotiation) {
@@ -54,9 +73,8 @@ object Innertube {
         }
 
         defaultRequest {
-            url(scheme = "https", host ="music.youtube.com") {
-                headers.append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                headers.append("X-Goog-Api-Key", "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8")
+            url(scheme = "https", host = BASE_URL ) {
+                HEADERS.forEach( headers::append )
                 parameters.append("prettyPrint", "false")
             }
         }
