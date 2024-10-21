@@ -4,11 +4,11 @@ import io.ktor.client.call.body
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import it.fast4x.innertube.Innertube
-import it.fast4x.innertube.models.Context
 import it.fast4x.innertube.models.PlayerResponse
 import it.fast4x.innertube.models.bodies.PlayerBody
 import it.fast4x.innertube.utils.runCatchingNonCancellable
 import it.fast4x.piped.models.Session
+import me.knighthat.innertube.body.Context
 
 suspend fun Innertube.player(
     body: PlayerBody,
@@ -29,7 +29,7 @@ suspend fun Innertube.player(
             val safePlayerResponse = client.post(player) {
                 setBody(
                     body.copy(
-                        context = Context.DefaultAndroid.copy(
+                        context = Context.DEFAULT_ANDROID.copy(
                             thirdParty = Context.ThirdParty(
                                 embedUrl = "https://www.youtube.com/watch?v=${body.videoId}"
                             )
