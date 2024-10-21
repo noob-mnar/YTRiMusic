@@ -2,6 +2,7 @@ package me.knighthat.innertube.body
 
 import kotlinx.serialization.Serializable
 import me.knighthat.innertube.client.AndroidMusic
+import me.knighthat.innertube.client.IOSMusic
 
 @Serializable
 data class Context(
@@ -15,6 +16,13 @@ data class Context(
             client = Client(
                 clientName = AndroidMusic.CLIENT_NAME,
                 clientVersion = AndroidMusic.CLIENT_VERSION
+            )
+        )
+
+        val DEFAULT_IOS = Context (
+            client = Client(
+                clientName = IOSMusic.CLIENT_NAME,
+                clientVersion = IOSMusic.CLIENT_VERSION
             )
         )
     }
