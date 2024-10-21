@@ -1,6 +1,7 @@
 package it.fast4x.innertube.requests
 
 import io.ktor.client.call.body
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import it.fast4x.innertube.Innertube
@@ -9,87 +10,47 @@ import it.fast4x.innertube.models.bodies.PlayerBody
 import it.fast4x.innertube.utils.runCatchingNonCancellable
 import it.fast4x.piped.models.Session
 import me.knighthat.innertube.body.Context
+import me.knighthat.innertube.client.AndroidMusic
+import me.knighthat.innertube.client.IOSMusic
 
 suspend fun Innertube.player(
     body: PlayerBody,
-    //pipedApiInstance: String = "pipedapi.adminforge.de",
     pipedSession: Session
-    ) = runCatchingNonCancellable {
-        val response = client.post(player) {
-            setBody(body)
-            mask("playabilityStatus.status,playerConfig.audioConfig,streamingData.adaptiveFormats,videoDetails.videoId")
+) = runCatchingNonCancellable {
+
+    var response = client.post(player) {
+        setBody(body)
+        mask("playabilityStatus.status,playerConfig.audioConfig,streamingData.adaptiveFormats,videoDetails.videoId")
+    }.body<PlayerResponse>()
+
+    println("PlayerService Innertube.player response $response")
+
+    // Retry this process with API key
+    if( response.playabilityStatus?.status == "LOGIN_REQUIRED" ) {
+        println( "Innertube.player fetch failed! Resending with API key" )
+
+        response = client.post( player ) {
+            parameter( "key", AndroidMusic.API_KEY )
+            setBody( body )
+            mask( "playabilityStatus.status,playerConfig.audioConfig,streamingData.adaptiveFormats,videoDetails.videoId" )
         }.body<PlayerResponse>()
-
-        println("PlayerService Innertube.player response $response")
-
-
-        if (response.playabilityStatus?.status == "OK") {
-            response
-        } else {
-            val safePlayerResponse = client.post(player) {
-                setBody(
-                    body.copy(
-                        context = Context.DEFAULT_ANDROID.copy(
-                            thirdParty = Context.ThirdParty(
-                                embedUrl = "https://www.youtube.com/watch?v=${body.videoId}"
-                            )
-                        ),
-                    )
-                )
-                mask("playabilityStatus.status,playerConfig.audioConfig,streamingData.adaptiveFormats,videoDetails.videoId")
-            }.body<PlayerResponse>()
-
-            println("PlayerService Innertube.player response safePlayerResponse $safePlayerResponse")
-
-            if (safePlayerResponse.playabilityStatus?.status == "OK") {
-                safePlayerResponse
-            } else {
-                /*
-                @Serializable
-                data class AudioStream(
-                    val url: String,
-                    val bitrate: Long
-                )
-
-                @Serializable
-                data class PipedResponse(
-                    val audioStreams: List<AudioStream>
-                )
-
-                val audioStreams = client.get("https://$pipedApiInstance/streams/${body.videoId}") {
-                    contentType(ContentType.Application.Json)
-                }.body<PipedResponse>().audioStreams
-                 */
-
-                safePlayerResponse // temporaly used
-
-                /*
-                    // TODO() Piped api streams not working, improve with other service
-                    val audioStreams = Piped.media.audioStreams(
-                        session = pipedSession,
-                        videoId = body.videoId
-                    )?.getOrNull()
-
-                println("PlayerService Innertube.player PIPED audiostreams $audioStreams")
-
-                    safePlayerResponse.copy(
-                        streamingData = safePlayerResponse.streamingData?.copy(
-                            adaptiveFormats = safePlayerResponse.streamingData.adaptiveFormats?.map { adaptiveFormat ->
-                                adaptiveFormat.copy(
-                                    url = audioStreams?.find { it.bitrate == adaptiveFormat.bitrate }?.url
-                                )
-                            }
-                        )
-                    )
-
-                 */
-
-
-            }
-
-        }
-
-
-
     }
+
+    // If problem persists, switch platform
+    if( response.playabilityStatus?.status == "LOGIN_REQUIRED" ) {
+        println( "Innertube.player fetch failed #2! Switching to IOS" )
+
+        response = client.post( player ) {
+            parameter( "key", IOSMusic.API_KEY )
+            setBody(
+                body.copy(
+                    context = Context.DEFAULT_IOS
+                )
+            )
+            mask( "playabilityStatus.status,playerConfig.audioConfig,streamingData.adaptiveFormats,videoDetails.videoId" )
+        }.body<PlayerResponse>()
+    }
+
+    response
+}
 
