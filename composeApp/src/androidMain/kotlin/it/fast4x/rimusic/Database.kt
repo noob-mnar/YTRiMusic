@@ -22,6 +22,7 @@ import androidx.room.Update
 import androidx.room.Upsert
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteQuery
+import it.fast4x.rimusic.database.Converters
 import it.fast4x.rimusic.enums.AlbumSortBy
 import it.fast4x.rimusic.enums.ArtistSortBy
 import it.fast4x.rimusic.enums.PlaylistSongSortBy
@@ -1547,53 +1548,6 @@ abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
 
         fun reload() = synchronized(this) {
             Instance = getDatabase()
-        }
-    }
-}
-
-@TypeConverters
-object Converters {
-
-    @TypeConverter
-    @JvmStatic
-    fun fromString(stringListString: String): List<String> {
-        return stringListString.split(",").map { it }
-    }
-
-    @TypeConverter
-    @JvmStatic
-    fun toString(stringList: List<String>): String {
-        return stringList.joinToString(separator = ",")
-    }
-
-    @TypeConverter
-    @JvmStatic
-    @UnstableApi
-    fun mediaItemFromByteArray(value: ByteArray?): MediaItem? {
-        return value?.let { byteArray ->
-            runCatching {
-                val parcel = Parcel.obtain()
-                parcel.unmarshall(byteArray, 0, byteArray.size)
-                parcel.setDataPosition(0)
-                val bundle = parcel.readBundle(MediaItem::class.java.classLoader)
-                parcel.recycle()
-
-                bundle?.let(MediaItem::fromBundle)
-            }.getOrNull()
-        }
-    }
-
-    @TypeConverter
-    @JvmStatic
-    @UnstableApi
-    fun mediaItemToByteArray(mediaItem: MediaItem?): ByteArray? {
-        return mediaItem?.toBundle()?.let { persistableBundle ->
-            val parcel = Parcel.obtain()
-            parcel.writeBundle(persistableBundle)
-            val bytes = parcel.marshall()
-            parcel.recycle()
-
-            bytes
         }
     }
 }
