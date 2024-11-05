@@ -1,9 +1,8 @@
 package it.fast4x.rimusic
 
 import android.database.SQLException
-import android.os.Parcel
+import androidx.annotation.WorkerThread
 import androidx.media3.common.MediaItem
-import androidx.media3.common.util.UnstableApi
 import androidx.room.AutoMigration
 import androidx.room.Dao
 import androidx.room.Delete
@@ -16,7 +15,6 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.RoomWarnings
 import androidx.room.Transaction
-import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import androidx.room.Update
 import androidx.room.Upsert
@@ -65,6 +63,9 @@ import me.knighthat.database.migrator.From8To9Migration
 @Dao
 interface Database {
     companion object : Database by DatabaseInitializer.Instance.database
+    
+    val path: String?
+        get() = DatabaseInitializer.Instance.openHelper.writableDatabase.path
 
     @Transaction
     @Query("SELECT * FROM Format WHERE songId = :songId ORDER BY bitrate DESC LIMIT 1")
@@ -1479,6 +1480,9 @@ interface Database {
     fun checkpoint() {
         raw(SimpleSQLiteQuery("PRAGMA wal_checkpoint(FULL)"))
     }
+
+    fun close() = DatabaseInitializer.Instance.close()
+
 }
 
 @androidx.room.Database(
@@ -1552,10 +1556,6 @@ abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
     }
 }
 
-@Suppress("UnusedReceiverParameter")
-val Database.internal: RoomDatabase
-    get() = DatabaseInitializer.Instance
-
 fun query(block: () -> Unit) = DatabaseInitializer.Instance.queryExecutor.execute(block)
 
 fun transaction(block: () -> Unit) = with(DatabaseInitializer.Instance) {
@@ -1563,6 +1563,3 @@ fun transaction(block: () -> Unit) = with(DatabaseInitializer.Instance) {
         runInTransaction(block)
     }
 }
-
-val RoomDatabase.path: String?
-    get() = openHelper.writableDatabase.path
