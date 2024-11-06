@@ -89,7 +89,6 @@ import it.fast4x.rimusic.models.PlaylistPreview
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongEntity
 import it.fast4x.rimusic.models.SongPlaylistMap
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.LocalMenuState
@@ -120,7 +119,6 @@ import it.fast4x.rimusic.utils.completed
 import it.fast4x.rimusic.utils.deleteFileIfExists
 import it.fast4x.rimusic.utils.deletePipedPlaylist
 import it.fast4x.rimusic.utils.disableScrollingTextKey
-import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.durationTextToMillis
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.forcePlay
@@ -152,7 +150,6 @@ import it.fast4x.rimusic.utils.thumbnailRoundnessKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -290,8 +287,10 @@ fun LocalPlaylistSongs(
                             && pipedSession.token.isNotEmpty()
                 val prefix = if( isPipedPlaylist ) PIPED_PREFIX else ""
 
-                query {
-                    playlistPreview?.playlist?.copy(name = "$prefix$newValue")?.let(Database::update)
+                Database.transaction {
+                    playlistPreview?.playlist
+                                   ?.copy(name = "$prefix$newValue")
+                                   ?.let( ::update )
                 }
 
                 if (isPipedPlaylist)
@@ -339,8 +338,8 @@ fun LocalPlaylistSongs(
             override val messageId = -1         // Unused
 
             override fun onConfirm() {
-                query {
-                    playlistPreview?.playlist?.let(Database::delete)
+                Database.transaction {
+                    playlistPreview?.playlist?.let( ::delete )
                 }
 
                 if (
@@ -368,15 +367,17 @@ fun LocalPlaylistSongs(
             override val titleId = R.string.do_you_really_want_to_renumbering_positions_in_this_playlist
             override val messageId = -1
 
-            override fun onConfirm() {
-                query {
-                    val shuffled = playlistSongs.shuffled()
+            /**
+             * [List.shuffled] and [Database.updateSongPosition] are heavy tasks,
+             * they shouldn't be run on [Dispatchers.Main] thread.
+             */
+            override fun onConfirm() = runBlocking( Dispatchers.Default ) {
 
-                    shuffled.forEachIndexed { index, song ->
-                        playlistPreview?.playlist?.let {
-                            Database.updateSongPosition(it.id, song.song.id, index)
-                        }
-                    }
+                Database.transaction {
+                    playlistSongs.shuffled()
+                                 .forEachIndexed { index, song ->
+                                     updateSongPosition( playlistId, song.song.id, index )
+                                 }
                 }
 
                 onDismiss()
@@ -395,17 +396,19 @@ fun LocalPlaylistSongs(
                     listMediaItems
                 else if( playlistSongs.isNotEmpty() ) {
                     playlistSongs.map {
-                        query {
-                            Database.insert(
-                                Song(
-                                    id = it.asMediaItem.mediaId,
-                                    title = it.asMediaItem.mediaMetadata.title.toString(),
-                                    artistsText = it.asMediaItem.mediaMetadata.artist.toString(),
-                                    thumbnailUrl = it.song.thumbnailUrl,
-                                    durationText = null
-                                )
+                        /**
+                         * No need to wrap this call in [Database.transaction]
+                         * [DownloadAllDialog.onConfirm] already done that
+                         */
+                        Database.upsert(
+                            Song(
+                                id = it.asMediaItem.mediaId,
+                                title = it.asMediaItem.mediaMetadata.title.toString(),
+                                artistsText = it.asMediaItem.mediaMetadata.artist.toString(),
+                                thumbnailUrl = it.song.thumbnailUrl,
+                                durationText = null
                             )
-                        }
+                        )
 
                         it.asMediaItem
                     }
@@ -468,10 +471,24 @@ fun LocalPlaylistSongs(
     val sortBy by sort.sortByState
     val sortOrder by sort.sortOrderState
 
-    LaunchedEffect(Unit, searchInput, sortOrder, sortBy) {
-        Database.songsPlaylist(playlistId, sortBy, sortOrder).filterNotNull()
-            .collect { playlistSongs = if (parentalControlEnabled)
-                it.filter { !it.song.title.startsWith(EXPLICIT_PREFIX) } else it }
+    // This component only designed to render 1 playlist
+    // Therefore, playlistId shouldn't be the key of LaunchedEffect
+    LaunchedEffect( sortOrder, sortBy ) {
+
+        val fromDatabase = withContext( Dispatchers.IO ) {
+            Database.songsPlaylist(playlistId, sortBy, sortOrder)
+        }
+
+        withContext( Dispatchers.Default ) {
+            fromDatabase.collect {
+                playlistSongs = it.filter { songEntity ->
+                    if( parentalControlEnabled )
+                        !songEntity.song.title.startsWith( EXPLICIT_PREFIX )
+                    else
+                        true
+                }
+            }
+        }
     }
 
 
@@ -534,9 +551,8 @@ fun LocalPlaylistSongs(
         lazyListState = lazyListState,
         key = playlistSongs,
         onDragEnd = { fromIndex, toIndex ->
-            //Log.d("mediaItem","reoder playlist $playlistId, from $fromIndex, to $toIndex")
-            query {
-                Database.move(playlistId, fromIndex, toIndex)
+            Database.transaction {
+                Database.move( playlistId, fromIndex, toIndex )
             }
         },
         extraItemCount = 1
@@ -785,14 +801,14 @@ fun LocalPlaylistSongs(
                                 modifier = Modifier
                                     .combinedClickable(
                                         onClick = {
-                                            query {
-                                                if (playlistPreview?.playlist?.name?.startsWith(
-                                                        PINNED_PREFIX,
-                                                        0,
-                                                        true
-                                                    ) == true
-                                                )
-                                                    Database.unPinPlaylist(playlistId) else
+                                            val isPinned = playlistPreview?.playlist
+                                                                          ?.name
+                                                                          ?.startsWith(PINNED_PREFIX, true)
+
+                                            Database.transaction {
+                                                if( isPinned == true )
+                                                    Database.unPinPlaylist(playlistId)
+                                                else
                                                     Database.pinPlaylist(playlistId)
                                             }
                                         },

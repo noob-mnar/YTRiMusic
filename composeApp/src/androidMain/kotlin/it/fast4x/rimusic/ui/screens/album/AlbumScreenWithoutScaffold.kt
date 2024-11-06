@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
 import com.valentinilk.shimmer.shimmer
-import io.ktor.util.valuesOf
 import it.fast4x.compose.persist.PersistMapCleanup
 import it.fast4x.compose.persist.persist
 import it.fast4x.compose.routing.RouteHandler
@@ -41,7 +40,6 @@ import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.SearchQuery
 import it.fast4x.rimusic.models.SongAlbumMap
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.ui.components.themed.Header
 import it.fast4x.rimusic.ui.components.themed.HeaderIconButton
 import it.fast4x.rimusic.ui.components.themed.HeaderPlaceholder
@@ -200,8 +198,8 @@ fun AlbumScreenWithoutScaffold(
                     searchResultRoute(query)
 
                     if (!context.preferences.getBoolean(pauseSearchHistoryKey, false)) {
-                        query {
-                            Database.insert(SearchQuery(query = query))
+                        Database.transaction {
+                            insert( SearchQuery(query = query) )
                         }
                     }
                 },
@@ -269,10 +267,9 @@ fun AlbumScreenWithoutScaffold(
                                     val bookmarkedAt =
                                         if (album?.bookmarkedAt == null) System.currentTimeMillis() else null
 
-                                    query {
-                                        album
-                                            ?.copy(bookmarkedAt = bookmarkedAt)
-                                            ?.let(Database::update)
+                                    Database.transaction {
+                                        album?.copy( bookmarkedAt = bookmarkedAt )
+                                             ?.let( ::update )
                                     }
                                 }
                             )

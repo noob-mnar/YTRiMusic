@@ -41,7 +41,6 @@ import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.SongAlbumMap
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.ui.components.Scaffold
 import it.fast4x.rimusic.ui.components.themed.Header
 import it.fast4x.rimusic.ui.components.themed.HeaderIconButton
@@ -205,10 +204,9 @@ fun AlbumScreen(
                                         val bookmarkedAt =
                                             if (album?.bookmarkedAt == null) System.currentTimeMillis() else null
 
-                                        query {
-                                            album
-                                                ?.copy(bookmarkedAt = bookmarkedAt)
-                                                ?.let(Database::update)
+                                        Database.transaction {
+                                            album?.copy( bookmarkedAt = bookmarkedAt )
+                                                 ?.let( ::update )
                                         }
                                     }
                                 )

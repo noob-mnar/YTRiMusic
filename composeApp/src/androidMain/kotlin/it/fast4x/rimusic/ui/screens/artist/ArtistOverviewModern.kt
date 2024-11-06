@@ -68,8 +68,6 @@ import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.models.Artist
-import it.fast4x.rimusic.models.Song
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.ShimmerHost
@@ -99,7 +97,6 @@ import it.fast4x.rimusic.utils.align
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.conditional
-import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.fadingEdge
 import it.fast4x.rimusic.utils.forcePlay
@@ -393,8 +390,8 @@ fun ArtistOverviewModern(
                                 if (youtubeArtistPage?.songs?.isNotEmpty() == true)
                                     youtubeArtistPage.songs?.forEach {
                                         binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                        query {
-                                            Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                                        Database.transaction {
+                                            resetFormatContentLength( it.asMediaItem.mediaId )
                                         }
                                         manageDownload(
                                             context = context,
@@ -432,8 +429,8 @@ fun ArtistOverviewModern(
                                 if (youtubeArtistPage?.songs?.isNotEmpty() == true)
                                     youtubeArtistPage.songs?.forEach {
                                         binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                        query {
-                                            Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                                        Database.transaction {
+                                            resetFormatContentLength( it.asMediaItem.mediaId )
                                         }
                                         manageDownload(
                                             context = context,
@@ -546,10 +543,9 @@ fun ArtistOverviewModern(
                                     song = song,
                                     onDownloadClick = {
                                         binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                        query {
-                                            Database.resetFormatContentLength(song.asMediaItem.mediaId)
+                                        Database.transaction {
+                                            resetFormatContentLength( song.asMediaItem.mediaId )
                                         }
-
                                         manageDownload(
                                             context = context,
                                             mediaItem = song.asMediaItem,

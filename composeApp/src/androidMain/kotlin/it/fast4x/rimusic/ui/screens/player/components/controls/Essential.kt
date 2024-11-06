@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.EXPLICIT_PREFIX
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.ButtonState
 import it.fast4x.rimusic.enums.ColorPaletteMode
@@ -64,7 +65,6 @@ import it.fast4x.rimusic.models.ui.UiMedia
 import it.fast4x.rimusic.query
 import it.fast4x.rimusic.ui.components.themed.IconButton
 import it.fast4x.rimusic.ui.components.themed.SelectorArtistsDialog
-import it.fast4x.rimusic.EXPLICIT_PREFIX
 import it.fast4x.rimusic.ui.screens.player.bounceClick
 import it.fast4x.rimusic.ui.styling.favoritesIcon
 import it.fast4x.rimusic.utils.bold
@@ -203,20 +203,13 @@ fun InfoAlbumAndArtistEssential(
                      //icon = if (likedAt == null) getUnlikedIcon() else getLikedIcon(),
                      onClick = {
                          val currentMediaItem = binder.player.currentMediaItem
-                         query {
-                             if (Database.like(
-                                     mediaId,
-                                     //if (likedAt == null) System.currentTimeMillis() else null
-                                     setLikeState(likedAt)
-                                 ) == 0
-                             ) {
-                                 currentMediaItem
-                                     ?.takeIf { it.mediaId == mediaId }
-                                     ?.let {
-                                         Database.insert(currentMediaItem, Song::toggleLike)
-                                     }
-                             }
+
+                         Database.transaction {
+                             if ( like(mediaId, setLikeState(likedAt)) == 0 )
+                                 currentMediaItem?.takeIf { it.mediaId == mediaId }
+                                                 ?.let { insert( currentMediaItem, Song::toggleLike ) }
                          }
+
                          if (effectRotationEnabled) isRotated = !isRotated
                      },
                      modifier = Modifier
@@ -352,20 +345,11 @@ fun ControlsEssential(
             icon = getLikeState(mediaId),
             onClick = {
                 val currentMediaItem = binder.player.currentMediaItem
-                query {
-                    if (Database.like(
-                            mediaId,
-                            setLikeState(likedAt)
-                        ) == 0
-                    ) {
-                        currentMediaItem
-                            ?.takeIf { it.mediaId == mediaId }
-                            ?.let {
-                                Database.insert(currentMediaItem, Song::toggleLike)
 
-                            }
-                    }
-                }
+                if ( Database.like(mediaId, setLikeState(likedAt)) == 0 )
+                    currentMediaItem?.takeIf { it.mediaId == mediaId }
+                                    ?.let { Database.insert( currentMediaItem, Song::toggleLike ) }
+
                 if (effectRotationEnabled) isRotated = !isRotated
             },
             modifier = Modifier

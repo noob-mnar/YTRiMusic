@@ -12,7 +12,6 @@ import it.fast4x.innertube.requests.player
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.enums.AudioQualityFormat
 import it.fast4x.rimusic.models.Format
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.utils.enableYouTubeLoginKey
 import it.fast4x.rimusic.utils.preferences
 import me.knighthat.appContext
@@ -193,10 +192,9 @@ suspend fun getInnerTubeFormatUrl(
                         // Specify range to avoid YouTube's throttling
                         it?.copy(url = "${it.url}&range=0-${it.contentLength ?: 10000000}")
                     }.also {
-                        //println("PlayerService MyDownloadHelper DataSpecProcess getMediaFormat before upsert format $it")
-                        query {
-                            if (Database.songExist(videoId) > 0)
-                                Database.upsert(
+                        Database.transaction {
+                            if ( songExist(videoId) > 0 )
+                                upsert(
                                     Format(
                                         songId = videoId,
                                         itag = it?.itag?.toInt(),
@@ -208,7 +206,6 @@ suspend fun getInnerTubeFormatUrl(
                                     )
                                 )
                         }
-                        //println("PlayerService MyDownloadHelper DataSpecProcess getMediaFormat after upsert format $it")
                     }
                 }
                 "LOGIN_REQUIRED" -> throw LoginRequiredException()

@@ -12,7 +12,6 @@ import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.pm.ServiceInfo
 import android.content.res.Configuration
-import android.database.SQLException
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.media.AudioDeviceCallback
@@ -38,7 +37,6 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.startForegroundService
 import androidx.core.content.getSystemService
-import androidx.core.net.toUri
 import androidx.core.text.isDigitsOnly
 import androidx.media.VolumeProviderCompat
 import androidx.media3.common.AudioAttributes
@@ -51,12 +49,8 @@ import androidx.media3.common.audio.SonicAudioProcessor
 import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.StandaloneDatabaseProvider
-import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DataSpec
-import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.datasource.cache.Cache
-import androidx.media3.datasource.cache.CacheDataSource
-import androidx.media3.datasource.cache.CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR
 import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.NoOpCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
@@ -79,32 +73,32 @@ import androidx.media3.extractor.mkv.MatroskaExtractor
 import androidx.media3.extractor.mp4.FragmentedMp4Extractor
 import androidx.media3.extractor.text.DefaultSubtitleParserFactory
 import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.models.GetQueueResponse
 import it.fast4x.innertube.models.NavigationEndpoint
-import it.fast4x.innertube.models.bodies.PlayerBody
 import it.fast4x.innertube.models.bodies.SearchBody
-import it.fast4x.innertube.requests.player
 import it.fast4x.innertube.requests.searchPage
-import it.fast4x.innertube.utils.ProxyPreferences
 import it.fast4x.innertube.utils.from
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.MainActivity
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.cleanPrefix
+import it.fast4x.rimusic.enums.AudioQualityFormat
 import it.fast4x.rimusic.enums.DurationInMilliseconds
 import it.fast4x.rimusic.enums.ExoPlayerCacheLocation
 import it.fast4x.rimusic.enums.ExoPlayerDiskCacheMaxSize
 import it.fast4x.rimusic.enums.ExoPlayerMinTimeForEvent
+import it.fast4x.rimusic.enums.PopupType
+import it.fast4x.rimusic.enums.QueueLoopType
 import it.fast4x.rimusic.extensions.audiovolume.AudioVolumeObserver
 import it.fast4x.rimusic.extensions.audiovolume.OnAudioVolumeChangedListener
 import it.fast4x.rimusic.extensions.discord.sendDiscordPresence
 import it.fast4x.rimusic.models.Event
-import it.fast4x.rimusic.models.Format
 import it.fast4x.rimusic.models.PersistentQueue
 import it.fast4x.rimusic.models.PersistentSong
 import it.fast4x.rimusic.models.QueuedMediaItem
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongEntity
 import it.fast4x.rimusic.models.asMediaItem
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.widgets.PlayerHorizontalWidget
@@ -114,12 +108,8 @@ import it.fast4x.rimusic.utils.TimerJob
 import it.fast4x.rimusic.utils.YouTubeRadio
 import it.fast4x.rimusic.utils.activityPendingIntent
 import it.fast4x.rimusic.utils.asSong
-import it.fast4x.rimusic.utils.broadCastPendingIntent
-import it.fast4x.rimusic.cleanPrefix
-import it.fast4x.rimusic.enums.AudioQualityFormat
-import it.fast4x.rimusic.enums.PopupType
-import it.fast4x.rimusic.enums.QueueLoopType
 import it.fast4x.rimusic.utils.audioQualityFormatKey
+import it.fast4x.rimusic.utils.broadCastPendingIntent
 import it.fast4x.rimusic.utils.closebackgroundPlayerKey
 import it.fast4x.rimusic.utils.discordPersonalAccessTokenKey
 import it.fast4x.rimusic.utils.discoverKey
@@ -129,8 +119,6 @@ import it.fast4x.rimusic.utils.exoPlayerCustomCacheKey
 import it.fast4x.rimusic.utils.exoPlayerDiskCacheMaxSizeKey
 import it.fast4x.rimusic.utils.exoPlayerMinTimeForEventKey
 import it.fast4x.rimusic.utils.forcePlayFromBeginning
-import it.fast4x.rimusic.utils.forceSeekToNext
-import it.fast4x.rimusic.utils.forceSeekToPrevious
 import it.fast4x.rimusic.utils.getEnum
 import it.fast4x.rimusic.utils.intent
 import it.fast4x.rimusic.utils.isAtLeastAndroid10
@@ -193,17 +181,11 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import me.knighthat.appContext
-import okhttp3.OkHttpClient
+import org.jetbrains.annotations.Contract
 import timber.log.Timber
 import java.io.IOException
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
-import java.net.ConnectException
-import java.net.InetSocketAddress
-import java.net.Proxy
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
-import java.time.Duration
 import kotlin.math.roundToInt
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.seconds
@@ -839,32 +821,25 @@ class PlayerService : InvincibleService(),
 
         val totalPlayTimeMs = playbackStats.totalPlayTimeMs
 
-        if (totalPlayTimeMs > 5000) {
-            query {
-                Database.incrementTotalPlayTimeMs(mediaItem.mediaId, totalPlayTimeMs)
+        if (totalPlayTimeMs > 5000)
+            Database.transaction {
+                incrementTotalPlayTimeMs( mediaItem.mediaId, totalPlayTimeMs )
             }
-        }
 
 
         val minTimeForEvent =
             preferences.getEnum(exoPlayerMinTimeForEventKey, ExoPlayerMinTimeForEvent.`20s`)
 
-        if (totalPlayTimeMs > minTimeForEvent.ms) {
-            query {
-                try {
-                    Database.insert(
-                        Event(
-                            songId = mediaItem.mediaId,
-                            timestamp = System.currentTimeMillis(),
-                            playTime = totalPlayTimeMs
-                        )
+        if (totalPlayTimeMs > minTimeForEvent.ms)
+            Database.transaction {
+                insert(
+                    Event(
+                        songId = mediaItem.mediaId,
+                        timestamp = System.currentTimeMillis(),
+                        playTime = totalPlayTimeMs
                     )
-                } catch (e: SQLException) {
-                    Timber.e("PlayerService onPlaybackStatsReady SQLException ${e.stackTraceToString()}")
-                }
+                )
             }
-
-        }
     }
 
     @UnstableApi
@@ -1104,9 +1079,10 @@ class PlayerService : InvincibleService(),
                 position = if (index == mediaItemIndex) mediaItemPosition else null
             )
         }.let { queuedMediaItems ->
-            query {
-                Database.clearQueue()
-                Database.insert(queuedMediaItems)
+
+            Database.transaction {
+                clearQueue()
+                insert( queuedMediaItems )
             }
         }
     }
@@ -1115,56 +1091,59 @@ class PlayerService : InvincibleService(),
     @FlowPreview
     @UnstableApi
     private fun maybeRestorePlayerQueue() {
+
+        @Contract("_ -> new")
+        fun convert( queuedMediaItem: QueuedMediaItem ): MediaItem =
+            queuedMediaItem.mediaItem
+                           .buildUpon()
+                           .setUri( queuedMediaItem.mediaItem.mediaId )
+                           .setCustomCacheKey( queuedMediaItem.mediaItem.mediaId )
+                           .build()
+                           .apply { mediaMetadata.extras?.putBoolean( "isFromPersistentQueue", true ) }
+
         if (!isPersistentQueueEnabled) return
 
-        query {
-            val queuedSong = Database.queue()
+        val queuedSong = Database.queue()
+        if (queuedSong.isEmpty()) return
 
-            if (queuedSong.isEmpty()) return@query
+        val index = queuedSong.indexOfFirst { it.position != null }.coerceAtLeast(0)
 
-            val index = queuedSong.indexOfFirst { it.position != null }.coerceAtLeast(0)
+        player.setMediaItems(
+            queuedSong.map( ::convert ),
+            index,
+            queuedSong[index].position ?: C.TIME_UNSET
+        )
+        player.prepare()
 
-            runBlocking(Dispatchers.Main) {
-                player.setMediaItems(
-                    queuedSong.map { mediaItem ->
-                        mediaItem.mediaItem.buildUpon()
-                            .setUri(mediaItem.mediaItem.mediaId)
-                            .setCustomCacheKey(mediaItem.mediaItem.mediaId)
-                            .build().apply {
-                                mediaMetadata.extras?.putBoolean("isFromPersistentQueue", true)
-                            }
-                    },
-                    index,
-                    queuedSong[index].position ?: C.TIME_UNSET
-                )
-                player.prepare()
+        isNotificationStarted = true
 
-                isNotificationStarted = true
-                runCatching {
-                    startForegroundService(this@PlayerService, intent<PlayerService>())
-                }.onFailure {
-                    Timber.e("maybeRestorePlayerQueue startForegroundService ${it.stackTraceToString()}")
-                }
-                runCatching {
-                    //startForeground(NotificationId, notification())
-                    notification()?.let {
-                        ServiceCompat.startForeground(
-                            this@PlayerService,
-                            NotificationId,
-                            it,
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
-                            } else {
-                                0
-                            }
-                        )
-                    }
-                }.onFailure {
-                    Timber.e("maybeRestorePlayerQueue startForeground ${it.stackTraceToString()}")
-                }
-            }
+        runCatching {
+            startForegroundService(this@PlayerService, intent<PlayerService>())
+        }.onFailure {
+            // TODO: Use a better error catching method
+            Timber.e("maybeRestorePlayerQueue startForegroundService ${it.stackTraceToString()}")
         }
 
+        runCatching {
+            val fgServiceType =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+                else
+                    0
+
+            //startForeground(NotificationId, notification())
+            notification()?.let {
+                ServiceCompat.startForeground(
+                    this@PlayerService,
+                    NotificationId,
+                    it,
+                    fgServiceType
+                )
+            }
+        }.onFailure {
+            // TODO: Use a better error catching method
+            Timber.e("maybeRestorePlayerQueue startForeground ${it.stackTraceToString()}")
+        }
     }
 
     @UnstableApi

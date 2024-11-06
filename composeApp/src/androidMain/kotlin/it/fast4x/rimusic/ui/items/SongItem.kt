@@ -38,17 +38,17 @@ import it.fast4x.innertube.Innertube
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.EXPLICIT_PREFIX
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.cleanPrefix
+import it.fast4x.rimusic.enums.DownloadedStateMedia
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.service.MyDownloadService
+import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.ui.components.themed.HeaderIconButton
 import it.fast4x.rimusic.ui.components.themed.IconButton
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.components.themed.TextPlaceholder
 import it.fast4x.rimusic.ui.styling.favoritesIcon
 import it.fast4x.rimusic.ui.styling.shimmer
-import it.fast4x.rimusic.cleanPrefix
-import it.fast4x.rimusic.enums.DownloadedStateMedia
-import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.asSong
 import it.fast4x.rimusic.utils.conditional
@@ -69,7 +69,6 @@ import me.knighthat.thumbnailShape
 import me.knighthat.typography
 
 
-
 @UnstableApi
 @Composable
 fun SongItem(
@@ -87,9 +86,7 @@ fun SongItem(
         thumbnailSizeDp = thumbnailSizeDp,
         modifier = modifier,
         onDownloadClick = {
-            CoroutineScope(Dispatchers.IO).launch {
-                Database.upsert(song.asSong)
-            }
+            Database.transaction { upsert(song.asSong) }
             onDownloadClick()
         },
         downloadState = downloadState,
@@ -152,9 +149,7 @@ fun SongItem(
         trailingContent = trailingContent,
         modifier = modifier,
         onDownloadClick = {
-            CoroutineScope(Dispatchers.IO).launch {
-                Database.upsert(song)
-            }
+            Database.transaction { upsert(song) }
             onDownloadClick()
         },
         downloadState = downloadState,
