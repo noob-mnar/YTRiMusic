@@ -90,7 +90,6 @@ import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongEntity
 import it.fast4x.rimusic.models.SongPlaylistMap
 import it.fast4x.rimusic.service.isLocal
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.SwipeableQueueItem
 import it.fast4x.rimusic.ui.components.themed.FloatingActionsContainerWithScrollToTop
@@ -147,6 +146,7 @@ import it.fast4x.rimusic.utils.showFloatingIconKey
 import it.fast4x.rimusic.utils.songSortOrderKey
 import it.fast4x.rimusic.utils.syncSongsInPipedPlaylist
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -567,40 +567,9 @@ fun LocalPlaylistSongs(
 
     fun sync() {
         playlistPreview?.let { playlistPreview ->
-            if (!playlistPreview.playlist.name.startsWith(
-                    PIPED_PREFIX,
-                    0,
-                    true
-                )
-            ) {
-                transaction {
-                    runBlocking(Dispatchers.IO) {
-                        withContext(Dispatchers.IO) {
-                            Innertube.playlistPage(
-                                BrowseBody(
-                                    browseId = playlistPreview.playlist.browseId
-                                        ?: ""
-                                )
-                            )
-                                ?.completed()
-                        }
-                    }?.getOrNull()?.let { remotePlaylist ->
-                        Database.clearPlaylist(playlistId)
+            val isPiped = playlistPreview.playlist.name.startsWith( PIPED_PREFIX, true )
 
-                        remotePlaylist.songsPage
-                            ?.items
-                            ?.map(Innertube.SongItem::asMediaItem)
-                            ?.onEach(Database::insert)
-                            ?.mapIndexed { position, mediaItem ->
-                                SongPlaylistMap(
-                                    songId = mediaItem.mediaId,
-                                    playlistId = playlistId,
-                                    position = position
-                                )
-                            }?.let(Database::insertSongPlaylistMaps)
-                    }
-                }
-            } else {
+            if( isPiped ) {
                 syncSongsInPipedPlaylist(
                     context = context,
                     coroutineScope = coroutineScope,
@@ -609,8 +578,40 @@ fun LocalPlaylistSongs(
                         playlistPreview.playlist.browseId
                     ),
                     playlistId = playlistPreview.playlist.id
-
                 )
+                return
+            }
+
+            CoroutineScope( Dispatchers.IO ).launch {
+
+                val playlistPage = withContext( Dispatchers.IO ) {
+                    val browseId = playlistPreview.playlist.browseId ?: ""
+
+                    Innertube.playlistPage( BrowseBody( browseId = browseId ) )
+                            ?.completed()
+                            ?.getOrNull()
+                }
+                if( playlistPage == null ) return@launch
+
+                // Run this in transaction even though it's already in CoroutineScope
+                // to preserve data integrity due to the nature of cancel-and-reverse
+                // policy upon error
+                Database.transaction {
+                    clearPlaylist( playlistId )
+
+                    playlistPage.songsPage
+                                ?.items
+                                ?.map( Innertube.SongItem::asMediaItem )
+                                ?.onEach( ::insert )
+                                ?.mapIndexed { position, mediaItem ->
+                                    SongPlaylistMap(
+                                        songId = mediaItem.mediaId,
+                                        playlistId = playlistId,
+                                        position = position
+                                    )
+                                }
+                                ?.let( ::insertSongPlaylistMaps )
+                }
             }
         }
     }
@@ -924,8 +925,8 @@ fun LocalPlaylistSongs(
                                             onAddToPreferites = {
                                                 if (listMediaItems.isNotEmpty()) {
                                                     listMediaItems.map {
-                                                        transaction {
-                                                            Database.like(
+                                                        Database.transaction {
+                                                            like(
                                                                 it.mediaId,
                                                                 System.currentTimeMillis()
                                                             )
@@ -933,8 +934,8 @@ fun LocalPlaylistSongs(
                                                     }
                                                 } else {
                                                     playlistSongs.map {
-                                                        transaction {
-                                                            Database.like(
+                                                        Database.transaction {
+                                                            like(
                                                                 it.asMediaItem.mediaId,
                                                                 System.currentTimeMillis()
                                                             )
@@ -950,9 +951,9 @@ fun LocalPlaylistSongs(
                                                 //Log.d("mediaItem", "next initial pos ${position}")
                                                 if (listMediaItems.isEmpty()) {
                                                     playlistSongs.forEachIndexed { index, song ->
-                                                        transaction {
-                                                            Database.insert(song.asMediaItem)
-                                                            Database.insert(
+                                                        Database.transaction {
+                                                            insert( song.asMediaItem )
+                                                            insert(
                                                                 SongPlaylistMap(
                                                                     songId = song.asMediaItem.mediaId,
                                                                     playlistId = playlistPreview.playlist.id,
@@ -980,9 +981,9 @@ fun LocalPlaylistSongs(
                                                 } else {
                                                     listMediaItems.forEachIndexed { index, song ->
                                                         //Log.d("mediaItemMaxPos", position.toString())
-                                                        transaction {
-                                                            Database.insert(song)
-                                                            Database.insert(
+                                                        Database.transaction {
+                                                            insert(song)
+                                                            insert(
                                                                 SongPlaylistMap(
                                                                     songId = song.mediaId,
                                                                     playlistId = playlistPreview.playlist.id,
@@ -1204,9 +1205,9 @@ fun LocalPlaylistSongs(
                         SwipeableQueueItem(
                             mediaItem = song.asMediaItem,
                             onSwipeToLeft = {
-                                transaction {
-                                    Database.move(playlistId, positionInPlaylist, Int.MAX_VALUE)
-                                    Database.delete(
+                                Database.transaction {
+                                    move( playlistId, positionInPlaylist, Int.MAX_VALUE )
+                                    delete(
                                         SongPlaylistMap(
                                             song.song.id,
                                             playlistId,

@@ -49,7 +49,6 @@ import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongPlaylistMap
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.themed.AlbumsItemMenu
 import it.fast4x.rimusic.ui.components.themed.FloatingActionsContainerWithScrollToTop
@@ -331,9 +330,9 @@ fun HomeAlbumsModern(
                                                 //Log.d("mediaItem", "next initial pos ${position}")
                                                 //if (listMediaItems.isEmpty()) {
                                                 songs.forEachIndexed { index, song ->
-                                                    transaction {
-                                                        Database.insert(song.asMediaItem)
-                                                        Database.insert(
+                                                    Database.transaction {
+                                                        insert(song.asMediaItem)
+                                                        insert(
                                                             SongPlaylistMap(
                                                                 songId = song.asMediaItem.mediaId,
                                                                 playlistId = playlistPreview.playlist.id,

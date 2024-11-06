@@ -7,10 +7,10 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import com.github.doyaaaaaken.kotlincsv.dsl.csvReader
+import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.models.Song
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import me.knighthat.component.header.TabToolBar
 
@@ -32,7 +32,7 @@ interface ImportSongsFromCSV: Button {
                             readAllWithHeaderAsSequence().forEachIndexed { index, row: Map<String, String> ->
                                 println("mediaItem index song $index")
 
-                                transaction {
+                                Database.transaction {
                                     beforeTransaction( index, row )
                                     /**/
                                     val mediaId = row["MediaId"]

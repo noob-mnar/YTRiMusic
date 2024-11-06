@@ -1592,9 +1592,3 @@ abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
         }
     }
 }
-
-fun transaction(block: () -> Unit) = with(DatabaseInitializer.Instance) {
-    transactionExecutor.execute {
-        runInTransaction(block)
-    }
-}
