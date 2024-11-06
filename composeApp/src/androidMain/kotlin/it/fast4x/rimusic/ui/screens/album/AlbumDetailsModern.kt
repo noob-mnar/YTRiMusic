@@ -76,7 +76,6 @@ import it.fast4x.rimusic.models.Playlist
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongPlaylistMap
 import it.fast4x.rimusic.service.isLocal
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.ShimmerHost
 import it.fast4x.rimusic.ui.components.SwipeablePlaylistItem
@@ -834,9 +833,9 @@ fun AlbumDetailsModern(
                                                 //Log.d("mediaItem", "next initial pos ${position}")
                                                 if (listMediaItems.isEmpty()) {
                                                     songs.forEachIndexed { index, song ->
-                                                        transaction {
-                                                            Database.insert(song.asMediaItem)
-                                                            Database.insert(
+                                                        Database.transaction {
+                                                            insert(song.asMediaItem)
+                                                            insert(
                                                                 SongPlaylistMap(
                                                                     songId = song.asMediaItem.mediaId,
                                                                     playlistId = playlistPreview.playlist.id,
@@ -849,9 +848,9 @@ fun AlbumDetailsModern(
                                                 } else {
                                                     listMediaItems.forEachIndexed { index, song ->
                                                         //Log.d("mediaItemMaxPos", position.toString())
-                                                        transaction {
-                                                            Database.insert(song)
-                                                            Database.insert(
+                                                        Database.transaction {
+                                                            insert( song )
+                                                            insert(
                                                                 SongPlaylistMap(
                                                                     songId = song.mediaId,
                                                                     playlistId = playlistPreview.playlist.id,

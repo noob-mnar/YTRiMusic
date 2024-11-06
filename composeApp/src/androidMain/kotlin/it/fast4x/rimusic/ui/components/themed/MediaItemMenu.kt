@@ -80,7 +80,6 @@ import it.fast4x.rimusic.models.PlaylistPreview
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongPlaylistMap
 import it.fast4x.rimusic.service.isLocal
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.items.FolderItem
 import it.fast4x.rimusic.ui.items.SongItem
 import it.fast4x.rimusic.ui.styling.Dimensions
@@ -161,8 +160,8 @@ fun InHistoryMediaItemMenu(
         onHideFromDatabase = onHideFromDatabase,
         onDeleteFromDatabase = onDeleteFromDatabase,
         onAddToPreferites = {
-            transaction {
-                Database.like(song.id, System.currentTimeMillis())
+            Database.transaction {
+                like( song.id, System.currentTimeMillis() )
             }
         },
         modifier = modifier,
@@ -194,9 +193,9 @@ fun InPlaylistMediaItemMenu(
         mediaItem = song.asMediaItem,
         onDismiss = onDismiss,
         onRemoveFromPlaylist = {
-            transaction {
-                Database.move(playlistId, positionInPlaylist, Int.MAX_VALUE)
-                Database.delete(SongPlaylistMap(song.id, playlistId, Int.MAX_VALUE))
+            Database.transaction {
+                move( playlistId, positionInPlaylist, Int.MAX_VALUE )
+                delete( SongPlaylistMap(song.id, playlistId, Int.MAX_VALUE) )
             }
 
             if (playlist?.playlist?.name?.startsWith(PIPED_PREFIX) == true && isPipedEnabled && pipedSession.token.isNotEmpty()) {
@@ -211,8 +210,8 @@ fun InPlaylistMediaItemMenu(
             }
         },
         onAddToPreferites = {
-            transaction {
-                Database.like(song.id, System.currentTimeMillis())
+            Database.transaction {
+                like( song.id, System.currentTimeMillis() )
             }
         },
         modifier = modifier,
@@ -288,8 +287,8 @@ fun NonQueuedMediaItemMenuLibrary(
             onHideFromDatabase = { isHiding = true },
             onRemoveFromQuickPicks = onRemoveFromQuickPicks,
             onAddToPreferites = {
-                transaction {
-                    Database.like(
+                Database.transaction {
+                    like(
                         mediaItem.mediaId,
                         System.currentTimeMillis()
                     )
@@ -321,8 +320,8 @@ fun NonQueuedMediaItemMenuLibrary(
             onHideFromDatabase = { isHiding = true },
             onRemoveFromQuickPicks = onRemoveFromQuickPicks,
             onAddToPreferites = {
-                transaction {
-                    Database.like(
+                Database.transaction {
+                    like(
                         mediaItem.mediaId,
                         System.currentTimeMillis()
                     )
@@ -463,8 +462,8 @@ fun QueuedMediaItemMenu(
                 navController.navigate(route = "${NavRoutes.localPlaylist.name}/$it")
             },
             onAddToPreferites = {
-                transaction {
-                    Database.like(
+                Database.transaction {
+                    like(
                         mediaItem.mediaId,
                         System.currentTimeMillis()
                     )
@@ -497,8 +496,8 @@ fun QueuedMediaItemMenu(
                 navController.navigate(route = "${NavRoutes.playlist.name}/$it")
             },
             onAddToPreferites = {
-                transaction {
-                    Database.like(
+                Database.transaction {
+                    like(
                         mediaItem.mediaId,
                         System.currentTimeMillis()
                     )
@@ -554,12 +553,14 @@ fun BaseMediaItemMenu(
         onDownload = onDownload,
         onAddToPreferites = onAddToPreferites,
         onAddToPlaylist = { playlist, position ->
-            transaction {
-                Database.insert(mediaItem)
-                Database.insert(
+            Database.transaction {
+                val playlistId = insert(playlist).takeIf { it != -1L } ?: playlist.id
+
+                insert(mediaItem)
+                insert(
                     SongPlaylistMap(
                         songId = mediaItem.mediaId,
-                        playlistId = Database.insert(playlist).takeIf { it != -1L } ?: playlist.id,
+                        playlistId = playlistId,
                         position = position
                     )
                 )
@@ -636,12 +637,14 @@ fun MiniMediaItemMenu(
         mediaItem = mediaItem,
         onDismiss = onDismiss,
         onAddToPlaylist = { playlist, position ->
-            transaction {
-                Database.insert(mediaItem)
-                Database.insert(
+            Database.transaction {
+                val playlistId = insert(playlist).takeIf { it != -1L } ?: playlist.id
+
+                insert(mediaItem)
+                insert(
                     SongPlaylistMap(
                         songId = mediaItem.mediaId,
-                        playlistId = Database.insert(playlist).takeIf { it != -1L } ?: playlist.id,
+                        playlistId = playlistId,
                         position = position
                     )
                 )

@@ -98,7 +98,6 @@ import it.fast4x.rimusic.enums.LyricsOutline
 import it.fast4x.rimusic.enums.PlayerBackgroundColors
 import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.models.Lyrics
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.themed.DefaultDialog
 import it.fast4x.rimusic.ui.components.themed.IconButton
@@ -2309,9 +2308,8 @@ fun SelectLyricFromTrack(
                         }
                     } ${stringResource(R.string.id)} ${it.id}) ",
                     onClick = {
-                        menuState.hide()
-                        transaction {
-                            Database.upsert(
+                        Database.transaction {
+                            upsert(
                                 Lyrics(
                                     songId = mediaId,
                                     fixed = lyrics?.fixed,
@@ -2319,6 +2317,7 @@ fun SelectLyricFromTrack(
                                 )
                             )
                         }
+                        menuState.hide()
                     }
                 )
             }

@@ -135,7 +135,6 @@ import it.fast4x.rimusic.enums.ThumbnailType
 import it.fast4x.rimusic.models.Info
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.ui.toUiMedia
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.CustomModalBottomSheet
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.themed.BlurParamsDialog
@@ -1437,10 +1436,10 @@ fun Player(
                                         MiniPlayerMenu(
                                             navController = navController,
                                             onDismiss = {
-                                                menuState.hide()
-                                                transaction {
-                                                    songPlaylist = Database.songUsedInPlaylists(mediaItem.mediaId)
+                                                Database.transaction {
+                                                    songPlaylist = songUsedInPlaylists( mediaItem.mediaId )
                                                 }
+                                                menuState.hide()
                                             },
                                             mediaItem = mediaItem,
                                             binder = binder,

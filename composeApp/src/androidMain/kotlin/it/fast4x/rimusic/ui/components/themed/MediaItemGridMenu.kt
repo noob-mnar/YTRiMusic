@@ -67,7 +67,6 @@ import it.fast4x.rimusic.models.Info
 import it.fast4x.rimusic.models.Playlist
 import it.fast4x.rimusic.models.SongPlaylistMap
 import it.fast4x.rimusic.service.isLocal
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.items.SongItem
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.favoritesIcon
@@ -169,12 +168,14 @@ fun BaseMediaItemGridMenu(
         onDownload = onDownload,
         onAddToPreferites = onAddToPreferites,
         onAddToPlaylist = { playlist, position ->
-            transaction {
-                Database.insert(mediaItem)
-                Database.insert(
+            Database.transaction {
+                val playlistId = insert(playlist).takeIf { it != -1L } ?: playlist.id
+
+                insert( mediaItem )
+                insert(
                     SongPlaylistMap(
                         songId = mediaItem.mediaId,
-                        playlistId = Database.insert(playlist).takeIf { it != -1L } ?: playlist.id,
+                        playlistId = playlistId,
                         position = position
                     )
                 )
@@ -235,12 +236,14 @@ fun MiniMediaItemGridMenu(
         mediaItem = mediaItem,
         onDismiss = onDismiss,
         onAddToPlaylist = { playlist, position ->
-            transaction {
-                Database.insert(mediaItem)
-                Database.insert(
+            Database.transaction {
+                val playlistId = insert(playlist).takeIf { it != -1L } ?: playlist.id
+
+                insert( mediaItem )
+                insert(
                     SongPlaylistMap(
                         songId = mediaItem.mediaId,
-                        playlistId = Database.insert(playlist).takeIf { it != -1L } ?: playlist.id,
+                        playlistId = playlistId,
                         position = position
                     )
                 )

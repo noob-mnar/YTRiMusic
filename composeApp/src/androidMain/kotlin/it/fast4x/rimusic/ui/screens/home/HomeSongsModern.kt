@@ -86,7 +86,6 @@ import it.fast4x.rimusic.models.SongPlaylistMap
 import it.fast4x.rimusic.service.LOCAL_KEY_PREFIX
 import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.service.isLocal
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.ButtonsRow
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.SwipeablePlaylistItem
@@ -866,8 +865,8 @@ fun HomeSongsModern(
                             onAddToPreferites = {
                                 if (listMediaItems.isNotEmpty()) {
                                     listMediaItems.map {
-                                        transaction {
-                                            Database.like(
+                                        Database.transaction {
+                                            like(
                                                 it.mediaId,
                                                 System.currentTimeMillis()
                                             )
@@ -875,8 +874,8 @@ fun HomeSongsModern(
                                     }
                                 } else {
                                     items.map {
-                                        transaction {
-                                            Database.like(
+                                        Database.transaction {
+                                            like(
                                                 it.asMediaItem.mediaId,
                                                 System.currentTimeMillis()
                                             )

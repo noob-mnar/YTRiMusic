@@ -73,7 +73,6 @@ import androidx.media3.extractor.mkv.MatroskaExtractor
 import androidx.media3.extractor.mp4.FragmentedMp4Extractor
 import androidx.media3.extractor.text.DefaultSubtitleParserFactory
 import it.fast4x.innertube.Innertube
-import it.fast4x.innertube.models.GetQueueResponse
 import it.fast4x.innertube.models.NavigationEndpoint
 import it.fast4x.innertube.models.bodies.SearchBody
 import it.fast4x.innertube.requests.searchPage
@@ -99,7 +98,6 @@ import it.fast4x.rimusic.models.QueuedMediaItem
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongEntity
 import it.fast4x.rimusic.models.asMediaItem
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.widgets.PlayerHorizontalWidget
 import it.fast4x.rimusic.ui.widgets.PlayerVerticalWidget
@@ -1960,10 +1958,8 @@ class PlayerService : InvincibleService(),
 
                     val songs = it.process()
 
-                    songs.forEach {
-                        transaction {
-                            Database.insert(it)
-                        }
+                    Database.transaction {
+                        songs.forEach( ::insert )
                     }
 
                     if (justAdd) {
@@ -2007,12 +2003,9 @@ class PlayerService : InvincibleService(),
         @ExperimentalCoroutinesApi
         @FlowPreview
         fun toggleLike() = mediaItemState.value?.let { mediaItem ->
-            //mediaItemToggleLike(mediaItem)
-            transaction {
-                Database.like(
-                    mediaItem.mediaId,
-                    if (isLikedState.value) null else System.currentTimeMillis()
-                )
+            Database.transaction {
+                val likedAt = if (isLikedState.value) null else System.currentTimeMillis()
+                like( mediaItem.mediaId, likedAt )
             }
             updatePlaybackState()
         }
