@@ -83,9 +83,8 @@ import it.fast4x.rimusic.models.OnDeviceSong
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongEntity
 import it.fast4x.rimusic.models.SongPlaylistMap
-import it.fast4x.rimusic.query
-import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.service.LOCAL_KEY_PREFIX
+import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.ButtonsRow
@@ -118,7 +117,6 @@ import it.fast4x.rimusic.utils.center
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.defaultFolderKey
 import it.fast4x.rimusic.utils.disableScrollingTextKey
-import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.durationTextToMillis
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.excludeSongsWithDurationLimitKey
@@ -428,14 +426,16 @@ fun HomeSongsModern(
 
             override fun onConfirm() {
                 song.ifPresent {
-                    query {
-                        menuState.hide()
-                        binder?.cache?.removeResource(it.song.id)
-                        binder?.downloadCache?.removeResource(it.song.id)
-                        Database.delete(it.song)
-                        Database.deleteSongFromPlaylists(it.song.id)
-                        Database.deleteFormat(it.song.id)
+                    menuState.hide()
+                    binder?.cache?.removeResource(it.song.id)
+                    binder?.downloadCache?.removeResource(it.song.id)
+
+                    Database.transaction {
+                        delete(it.song)
+                        deleteSongFromPlaylists(it.song.id)
+                        deleteFormat(it.song.id)
                     }
+
                     SmartMessage(context.resources.getString(R.string.deleted), context = context)
                 }
 
@@ -462,18 +462,17 @@ fun HomeSongsModern(
 
             override fun onConfirm() {
                 song.ifPresent {
-                    query {
-                        menuState.hide()
-                        binder?.cache?.removeResource(it.song.id)
-                        binder?.downloadCache?.removeResource(it.song.id)
-                        Database.resetFormatContentLength(it.song.id)
-                        Database.deleteFormat(it.song.id)
-                        Database.incrementTotalPlayTimeMs(
-                            it.song.id,
-                            -it.song.totalPlayTimeMs
-                        )
+                    val songId = it.song.id
+
+                    menuState.hide()
+                    binder?.cache?.removeResource( songId )
+                    binder?.downloadCache?.removeResource( songId )
+
+                    Database.transaction {
+                        resetFormatContentLength( songId )
+                        deleteFormat( songId )
+                        incrementTotalPlayTimeMs( songId, -it.song.totalPlayTimeMs ) }
                     }
-                }
 
                 onDismiss()
             }
@@ -1184,8 +1183,8 @@ fun HomeSongsModern(
                                 song = song.song,
                                 onDownloadClick = {
                                     binder?.cache?.removeResource(song.song.asMediaItem.mediaId)
-                                    query {
-                                        Database.resetFormatContentLength(song.song.asMediaItem.mediaId)
+                                    Database.transaction {
+                                        resetFormatContentLength( song.song.asMediaItem.mediaId )
                                     }
                                     if (!isLocal)
                                         manageDownload(

@@ -69,11 +69,8 @@ import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.models.Playlist
-import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongPlaylistMap
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.isLocal
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.ShimmerHost
 import it.fast4x.rimusic.ui.components.themed.FloatingActionsContainerWithScrollToTop
@@ -94,7 +91,6 @@ import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.completed
 import it.fast4x.rimusic.utils.disableScrollingTextKey
-import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.durationTextToMillis
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.forcePlayAtIndex
@@ -228,22 +224,24 @@ fun PlaylistSongList(
             value = playlistPage?.title ?: "",
             placeholder = "https://........",
             setValue = { text ->
-                query {
-                    transaction {
-                        val playlistId = Database.insert(Playlist(name = text, browseId = browseId))
 
-                        playlistPage?.songsPage?.items
-                            ?.map(Innertube.SongItem::asMediaItem)
-                            ?.onEach(Database::insert)
-                            ?.mapIndexed { index, mediaItem ->
-                                SongPlaylistMap(
-                                    songId = mediaItem.mediaId,
-                                    playlistId = playlistId,
-                                    position = index
-                                )
-                            }?.let(Database::insertSongPlaylistMaps)
-                    }
+                Database.transaction {
+                    val playlistId = insert( Playlist(name = text, browseId = browseId) )
+
+                    playlistPage?.songsPage
+                                ?.items
+                                ?.map( Innertube.SongItem::asMediaItem )
+                                ?.onEach( ::insert )
+                                ?.mapIndexed { index, mediaItem ->
+                                    SongPlaylistMap(
+                                        songId = mediaItem.mediaId,
+                                        playlistId = playlistId,
+                                        position = index
+                                    )
+                                }
+                                ?.let( ::insertSongPlaylistMaps )
                 }
+
                 SmartMessage(context.resources.getString(R.string.done), PopupType.Success, context = context)
             }
         )
@@ -320,8 +318,8 @@ fun PlaylistSongList(
                                 if (playlistPage?.songsPage?.items?.isNotEmpty() == true)
                                     playlistPage?.songsPage?.items?.forEach {
                                         binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                        query {
-                                            Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                                        Database.transaction {
+                                            resetFormatContentLength(it.asMediaItem.mediaId)
                                         }
                                         manageDownload(
                                             context = context,
@@ -347,8 +345,8 @@ fun PlaylistSongList(
                                 if (playlistPage?.songsPage?.items?.isNotEmpty() == true)
                                     playlistPage?.songsPage?.items?.forEach {
                                         binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                        query {
-                                            Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                                        Database.transaction {
+                                            resetFormatContentLength(it.asMediaItem.mediaId)
                                         }
                                         manageDownload(
                                             context = context,
@@ -694,16 +692,15 @@ fun PlaylistSongList(
                         song = song,
                         onDownloadClick = {
                             binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                            query {
-                                Database.resetFormatContentLength(song.asMediaItem.mediaId)
+                            Database.transaction {
+                                resetFormatContentLength(song.asMediaItem.mediaId)
                             }
-
                             if (!isLocal)
-                            manageDownload(
-                                context = context,
-                                mediaItem = song.asMediaItem,
-                                downloadState = isDownloaded
-                            )
+                                manageDownload(
+                                    context = context,
+                                    mediaItem = song.asMediaItem,
+                                    downloadState = isDownloaded
+                                )
                         },
                         downloadState = downloadState,
                         thumbnailSizePx = songThumbnailSizePx,

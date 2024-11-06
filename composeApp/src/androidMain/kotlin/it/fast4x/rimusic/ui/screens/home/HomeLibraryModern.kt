@@ -55,7 +55,6 @@ import it.fast4x.rimusic.models.Playlist
 import it.fast4x.rimusic.models.PlaylistPreview
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongPlaylistMap
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.ui.components.ButtonsRow
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.themed.FloatingActionsContainerWithScrollToTop
@@ -189,8 +188,8 @@ fun HomeLibraryModern(
                         name = newValue
                     )
                 else
-                    query {
-                        Database.insert( Playlist( name = newValue ) )
+                    Database.transaction {
+                        insert( Playlist( name = newValue ) )
                     }
 
                 onDismiss()

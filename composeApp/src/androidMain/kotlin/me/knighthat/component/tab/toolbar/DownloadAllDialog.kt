@@ -8,7 +8,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.R
-import it.fast4x.rimusic.query
+import it.fast4x.rimusic.service.PlayerService
 import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.service.modern.PlayerServiceModern
 import it.fast4x.rimusic.utils.manageDownload
@@ -34,21 +34,21 @@ interface DownloadAllDialog: ConfirmationDialog {
     override fun onConfirm() {
         downloadState.intValue = Download.STATE_DOWNLOADING
 
-        listToProcess().forEach {
-            if(binder == null){ // binder has to be non-null for remove from cache to work
-                return
-            }
-            binder?.cache?.removeResource(it.mediaId)
-            query {
-                Database.resetFormatContentLength(it.mediaId)
-            }
+        Database.transaction {
+            // binder has to be non-null for remove from cache to work
+            if(binder == null) return@transaction
 
-            if (!it.isLocal)
-                manageDownload(
-                    context = context,
-                    mediaItem = it,
-                    downloadState = false
-                )
+            listToProcess().forEach {
+                binder?.cache?.removeResource(it.mediaId)
+                resetFormatContentLength(it.mediaId)
+
+                if (!it.isLocal)
+                    manageDownload(
+                        context = context,
+                        mediaItem = it,
+                        downloadState = false
+                    )
+            }
         }
 
         onDismiss()

@@ -33,7 +33,6 @@ import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongEntity
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.LOCAL_KEY_PREFIX
 import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.ui.components.themed.NewVersionDialog
@@ -73,56 +72,42 @@ fun getTimestampFromDate(date: String): Long {
 }
 
 fun songToggleLike( song: Song ) {
-    query {
-        if (Database.songExist(song.asMediaItem.mediaId) == 0)
-            Database.insert(song.asMediaItem, Song::toggleLike)
-        //else {
-            if (Database.songliked(song.asMediaItem.mediaId) == 0)
-                Database.like(
-                    song.asMediaItem.mediaId,
-                    System.currentTimeMillis()
-                )
-            else Database.like(
+    Database.transaction {
+        if ( songExist(song.asMediaItem.mediaId) == 0 )
+            insert(song.asMediaItem, Song::toggleLike)
+
+        if ( songliked(song.asMediaItem.mediaId) == 0 )
+            like(
                 song.asMediaItem.mediaId,
-                null
+                System.currentTimeMillis()
             )
-        //}
+        else like( song.asMediaItem.mediaId, null )
     }
 }
 
 fun mediaItemToggleLike( mediaItem: MediaItem ) {
-    query {
-        if (Database.songExist(mediaItem.mediaId) == 0)
-            Database.insert(mediaItem, Song::toggleLike)
-        //else {
-            if (Database.songliked(mediaItem.mediaId) == 0)
-                Database.like(
-                    mediaItem.mediaId,
-                    System.currentTimeMillis()
-                )
-            else Database.like(
-                mediaItem.mediaId,
+    Database.transaction {      // One step fails, whole block cancelled
+        if ( songExist(mediaItem.mediaId) == 0 )
+            insert(mediaItem, Song::toggleLike)
+
+        val likedAt =
+            if( songliked(mediaItem.mediaId) == 0 )
+                System.currentTimeMillis()
+            else
                 null
-            )
-        //}
+
+        like( mediaItem.mediaId, likedAt )
     }
 }
 
 fun albumItemToggleBookmarked( albumItem: Innertube.AlbumItem ) {
-    query {
-        //if (Database.albumExist(albumItem.key) == 0)
-        //    Database.insert(albumItem.asAlbum, Album::toggleLike)
-        //else {
-        if (Database.albumBookmarked(albumItem.key) == 0)
-            Database.bookmarkAlbum(
+    Database.transaction {
+        if ( albumBookmarked(albumItem.key) == 0 )
+            bookmarkAlbum(
                 albumItem.key,
                 System.currentTimeMillis()
             )
-        else Database.bookmarkAlbum(
-            albumItem.key,
-            null
-        )
-        //}
+        else bookmarkAlbum( albumItem.key, null )
     }
 }
 
@@ -639,9 +624,7 @@ fun Modifier.conditional(condition : Boolean, modifier : Modifier.() -> Modifier
 fun resetFormatContentLength(mediaId: String) {
     val dbCoroutineScope = CoroutineScope(Dispatchers.IO)
     dbCoroutineScope.launch {
-        query {
-            Database.resetFormatContentLength(mediaId)
-        }
+        Database.resetFormatContentLength(mediaId)
     }
 
 }

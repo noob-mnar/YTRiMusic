@@ -62,7 +62,12 @@ import it.fast4x.compose.persist.persistList
 import it.fast4x.innertube.models.NavigationEndpoint
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
+import it.fast4x.rimusic.MODIFIED_PREFIX
+import it.fast4x.rimusic.MONTHLY_PREFIX
+import it.fast4x.rimusic.PINNED_PREFIX
+import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.MenuStyle
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.PlaylistSortBy
@@ -74,24 +79,16 @@ import it.fast4x.rimusic.models.Playlist
 import it.fast4x.rimusic.models.PlaylistPreview
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongPlaylistMap
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.items.FolderItem
 import it.fast4x.rimusic.ui.items.SongItem
-import it.fast4x.rimusic.MODIFIED_PREFIX
-import it.fast4x.rimusic.PINNED_PREFIX
-import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.favoritesIcon
 import it.fast4x.rimusic.ui.styling.px
-import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.utils.addNext
 import it.fast4x.rimusic.utils.addToPipedPlaylist
 import it.fast4x.rimusic.utils.asMediaItem
-import it.fast4x.rimusic.cleanPrefix
-import it.fast4x.rimusic.utils.disableScrollingTextKey
-import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.forcePlay
 import it.fast4x.rimusic.utils.formatAsDuration
@@ -249,14 +246,16 @@ fun NonQueuedMediaItemMenuLibrary(
             text = stringResource(R.string.update_song),
             onDismiss = { isHiding = false },
             onConfirm = {
-                onDismiss()
-                query {
-                    if (binder != null) {
-                            binder.cache.removeResource(mediaItem.mediaId)
-                            binder.downloadCache.removeResource(mediaItem.mediaId)
-                            Database.resetTotalPlayTimeMs(mediaItem.mediaId)
+                if (binder != null) {
+                    binder.cache.removeResource(mediaItem.mediaId)
+                    binder.downloadCache.removeResource(mediaItem.mediaId)
+                    Database.transaction {
+                        resetTotalPlayTimeMs(mediaItem.mediaId)
                     }
                 }
+                // Should wait until all computation finishes
+                // before dismissing dialog
+                onDismiss()
             }
         )
     }
@@ -863,12 +862,10 @@ fun MediaItemMenu(
             value = mediaItem.mediaMetadata.title.toString(),
             placeholder = stringResource(R.string.title),
             setValue = {
-                if (it.isNotEmpty()) {
-                    query {
-                        Database.updateSongTitle(mediaItem.mediaId, it)
+                if (it.isNotEmpty())
+                    Database.transaction {
+                        updateSongTitle( mediaItem.mediaId, it )
                     }
-                    //context.toast("Song Saved $it")
-                }
             },
             prefix = MODIFIED_PREFIX
         )
@@ -880,12 +877,10 @@ fun MediaItemMenu(
             value = mediaItem.mediaMetadata.artist.toString(),
             placeholder = stringResource(R.string.authors),
             setValue = {
-                if (it.isNotEmpty()) {
-                    query {
-                        Database.updateSongArtist(mediaItem.mediaId, it)
+                if (it.isNotEmpty())
+                    Database.transaction {
+                        updateSongArtist( mediaItem.mediaId, it )
                     }
-                    //context.toast("Artist Changed $it")
-                }
             }
         )
 
@@ -1103,8 +1098,8 @@ fun MediaItemMenu(
                             ?.toString(),
                         onDownloadClick = {
                             binder?.cache?.removeResource(mediaItem.mediaId)
-                            query {
-                                Database.resetFormatContentLength(mediaItem.mediaId)
+                            Database.transaction {
+                                resetFormatContentLength( mediaItem.mediaId )
                             }
                             if (!isLocal)
                                 manageDownload(
@@ -1129,15 +1124,9 @@ fun MediaItemMenu(
                             color = colorPalette().favoritesIcon,
                             //color = if (likedAt == null) colorPalette().textDisabled else colorPalette().text,
                             onClick = {
-                                query {
-                                    if (Database.like(
-                                            mediaItem.mediaId,
-                                            //if (likedAt == null) System.currentTimeMillis() else null
-                                            setLikeState(likedAt)
-                                        ) == 0
-                                    ) {
-                                        Database.insert(mediaItem, Song::toggleLike)
-                                    }
+                                Database.transaction {
+                                    if ( like(mediaItem.mediaId, setLikeState(likedAt)) == 0 )
+                                        insert( mediaItem, Song::toggleLike )
                                 }
                             },
                             modifier = Modifier

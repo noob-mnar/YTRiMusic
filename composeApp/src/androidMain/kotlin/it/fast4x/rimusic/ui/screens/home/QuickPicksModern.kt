@@ -9,7 +9,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -80,7 +79,6 @@ import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.models.Artist
 import it.fast4x.rimusic.models.PlaylistPreview
 import it.fast4x.rimusic.models.Song
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.ui.components.LocalMenuState
@@ -448,8 +446,8 @@ fun QuickPicksModern(
                                     song = song,
                                     onDownloadClick = {
                                         binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                        query {
-                                            Database.resetFormatContentLength(song.asMediaItem.mediaId)
+                                        Database.transaction {
+                                            resetFormatContentLength( song.asMediaItem.mediaId )
                                         }
 
                                         if (!isLocal)
@@ -481,15 +479,14 @@ fun QuickPicksModern(
                                                         onDismiss = menuState::hide,
                                                         mediaItem = song.asMediaItem,
                                                         onRemoveFromQuickPicks = {
-                                                            query {
-                                                                Database.clearEventsFor(song.id)
+                                                            Database.transaction {
+                                                                clearEventsFor(song.id)
                                                             }
                                                         },
-
                                                         onDownload = {
                                                             binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                                            query {
-                                                                Database.resetFormatContentLength(song.asMediaItem.mediaId)
+                                                            Database.transaction {
+                                                                resetFormatContentLength(song.asMediaItem.mediaId)
                                                             }
                                                             manageDownload(
                                                                 context = context,
@@ -541,8 +538,8 @@ fun QuickPicksModern(
                                     song = song,
                                     onDownloadClick = {
                                         binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                        query {
-                                            Database.resetFormatContentLength(song.asMediaItem.mediaId)
+                                        Database.transaction {
+                                            resetFormatContentLength( song.asMediaItem.mediaId )
                                         }
                                         if (!isLocal)
                                             manageDownload(
@@ -565,8 +562,8 @@ fun QuickPicksModern(
                                                         mediaItem = song.asMediaItem,
                                                         onDownload = {
                                                             binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                                            query {
-                                                                Database.resetFormatContentLength(song.asMediaItem.mediaId)
+                                                            Database.transaction {
+                                                                resetFormatContentLength( song.asMediaItem.mediaId )
                                                             }
                                                             manageDownload(
                                                                 context = context,

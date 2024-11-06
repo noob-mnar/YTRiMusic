@@ -12,19 +12,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,7 +49,6 @@ import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongPlaylistMap
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.themed.AlbumsItemMenu
@@ -231,8 +225,8 @@ fun HomeAlbumsModern(
                     key = Album::id
                 ) { album ->
                     var songs = remember { listOf<Song>() }
-                    query {
-                        songs = Database.albumSongsList(album.id)
+                    Database.query {    // update songs asynchronously
+                        songs = Database.albumSongsList( album.id )
                     }
 
                     var showDialogChangeAlbumTitle by remember {
@@ -279,7 +273,9 @@ fun HomeAlbumsModern(
                             placeholder = stringResource( placeholderTextId ),
                             setValue = {
                                 if (it.isNotEmpty())
-                                    query { queryBlock( Database, album.id, it ) }
+                                    Database.transaction {
+                                        queryBlock( Database, album.id, it )
+                                    }
                             },
                             prefix = MODIFIED_PREFIX
                         )

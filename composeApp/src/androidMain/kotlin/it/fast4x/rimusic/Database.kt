@@ -756,7 +756,6 @@ interface Database {
     @Query("SELECT count(id) FROM Album WHERE id = :id")
     fun albumExist(id: String): Int
 
-    @Transaction
     @Query("SELECT * FROM Song JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId WHERE SongAlbumMap.albumId = :albumId ORDER BY position")
     @RewriteQueriesToDropUnusedColumns
     fun albumSongsList(albumId: String): List<Song>
@@ -1483,6 +1482,44 @@ interface Database {
 
     fun close() = DatabaseInitializer.Instance.close()
 
+    /**
+     * Commit statements in BULK. If anything goes wrong during the
+     * transaction, other statements will be cancelled and reversed
+     * to preserve database's integrity. [Read more](https://sqlite.org/lang_transaction.html)
+     *
+     * [transaction] runs all statements on non-blocking thread
+     * to prevent UI from going unresponsive.
+     *
+     * ### Best use cases:
+     * - Commit multiple write statements that require data integrity
+     * - Processes that take longer time to complete
+     *
+     * # Do NOT use this to retrieve data from the database.
+     *
+     * @param block of statements to write to database
+     */
+    @WorkerThread
+    fun transaction( block: Database.() -> Unit ) = DatabaseInitializer.Instance
+                                                                       .transactionExecutor
+                                                                       .execute { this@Database.block() }
+
+    /**
+     * Access and retrieve from database.
+     *
+     * [query] runs all statements asynchronously to 
+     * prevent blocking UI thread from freezing
+     * 
+     * ### Best use cases:
+     * - Background data retrieval
+     * - Non-immediate UI component update (i.e. count number of songs)
+     *
+     * # Do NOT use this method to write data to database because it offers no fail-safe during write.
+     *
+     * @param block of statements to retrieve data from database
+     */
+    fun query( block: Database.() -> Unit ) = DatabaseInitializer.Instance
+                                                                 .queryExecutor
+                                                                 .execute { this@Database.block() }
 }
 
 @androidx.room.Database(
@@ -1555,8 +1592,6 @@ abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
         }
     }
 }
-
-fun query(block: () -> Unit) = DatabaseInitializer.Instance.queryExecutor.execute(block)
 
 fun transaction(block: () -> Unit) = with(DatabaseInitializer.Instance) {
     transactionExecutor.execute {

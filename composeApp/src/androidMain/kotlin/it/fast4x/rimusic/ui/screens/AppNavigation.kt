@@ -392,14 +392,12 @@ fun AppNavigation(
                         }"
                     )
 
-                    if (!context.preferences.getBoolean(pauseSearchHistoryKey, false)) {
-                        it.fast4x.rimusic.query {
-                            Database.insert(SearchQuery(query = query))
+                    if (!context.preferences.getBoolean(pauseSearchHistoryKey, false))
+                        Database.transaction {
+                            insert( SearchQuery(query = query) )
                         }
-                    }
                 },
-
-                )
+            )
         }
 
         composable(
@@ -518,11 +516,10 @@ fun AppNavigation(
                 onSearch = { newQuery ->
                     navController.navigate(route = "${NavRoutes.searchResults.name}/${cleanString(newQuery)}")
 
-                    if (!context.preferences.getBoolean(pauseSearchHistoryKey, false)) {
-                        it.fast4x.rimusic.query {
-                            Database.insert(SearchQuery(query = newQuery))
+                    if (!context.preferences.getBoolean(pauseSearchHistoryKey, false))
+                        Database.transaction {
+                            insert( SearchQuery(query = newQuery) )
                         }
-                    }
                 },
             )
         }

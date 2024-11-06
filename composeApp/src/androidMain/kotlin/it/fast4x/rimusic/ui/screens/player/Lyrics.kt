@@ -86,8 +86,11 @@ import it.fast4x.lrclib.models.Track
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.ColorPaletteMode
 import it.fast4x.rimusic.enums.Languages
+import it.fast4x.rimusic.enums.LyricsAlignment
+import it.fast4x.rimusic.enums.LyricsBackground
 import it.fast4x.rimusic.enums.LyricsColor
 import it.fast4x.rimusic.enums.LyricsFontSize
 import it.fast4x.rimusic.enums.LyricsHighlight
@@ -95,7 +98,6 @@ import it.fast4x.rimusic.enums.LyricsOutline
 import it.fast4x.rimusic.enums.PlayerBackgroundColors
 import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.models.Lyrics
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.themed.DefaultDialog
@@ -113,8 +115,6 @@ import it.fast4x.rimusic.ui.styling.onOverlayShimmer
 import it.fast4x.rimusic.utils.SynchronizedLyrics
 import it.fast4x.rimusic.utils.TextCopyToClipboard
 import it.fast4x.rimusic.utils.center
-import it.fast4x.rimusic.cleanPrefix
-import it.fast4x.rimusic.enums.LyricsAlignment
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.colorPaletteModeKey
 import it.fast4x.rimusic.utils.expandedplayerKey
@@ -122,6 +122,7 @@ import it.fast4x.rimusic.utils.getHttpClient
 import it.fast4x.rimusic.utils.isShowingSynchronizedLyricsKey
 import it.fast4x.rimusic.utils.languageDestination
 import it.fast4x.rimusic.utils.languageDestinationName
+import it.fast4x.rimusic.utils.lyricsAlignmentKey
 import it.fast4x.rimusic.utils.lyricsBackgroundKey
 import it.fast4x.rimusic.utils.lyricsColorKey
 import it.fast4x.rimusic.utils.lyricsFontSizeKey
