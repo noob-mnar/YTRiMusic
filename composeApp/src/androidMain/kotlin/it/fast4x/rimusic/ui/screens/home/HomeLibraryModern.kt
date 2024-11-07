@@ -214,7 +214,8 @@ fun HomeLibraryModern(
                     }!!
             },
             afterTransaction = { index, song ->
-                Database.insert(song)
+
+                Database.song.safeUpsert( song )
                 Database.insert(
                     SongPlaylistMap(
                         songId = song.id,

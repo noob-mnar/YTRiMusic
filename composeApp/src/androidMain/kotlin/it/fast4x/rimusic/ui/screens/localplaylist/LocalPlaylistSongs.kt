@@ -400,7 +400,7 @@ fun LocalPlaylistSongs(
                          * No need to wrap this call in [Database.transaction]
                          * [DownloadAllDialog.onConfirm] already done that
                          */
-                        Database.upsert(
+                        Database.song.safeUpsert(
                             Song(
                                 id = it.asMediaItem.mediaId,
                                 title = it.asMediaItem.mediaMetadata.title.toString(),

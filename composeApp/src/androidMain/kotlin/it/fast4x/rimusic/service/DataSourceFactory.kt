@@ -42,9 +42,7 @@ internal fun PlayerService.createDataSourceFactory(): DataSource.Factory {
             }
             // Ensure that the song is in database
             if (mediaItem != null)
-                Database.transaction {
-                    insert(mediaItem.asSong)
-                }
+                Database.song.safeUpsert( mediaItem.asSong )
 
 
             //println("PlayerService DataSourcefactory currentMediaItem: ${mediaItem?.mediaId}")

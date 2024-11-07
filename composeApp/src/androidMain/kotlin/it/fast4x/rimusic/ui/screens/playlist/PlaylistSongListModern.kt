@@ -600,9 +600,9 @@ fun PlaylistSongListModern(
 
                                                         playlistPage!!.songsPage?.items?.forEachIndexed { index, song ->
                                                             runCatching {
-                                                                 coroutineScope.launch(Dispatchers.IO) {
-                                                                    Database.insert(song.asSong)
-                                                                    Database.insert(
+                                                                Database.transaction {
+                                                                    this.song.safeUpsert( song.asSong )
+                                                                    insert(
                                                                         SongPlaylistMap(
                                                                             songId = song.asMediaItem.mediaId,
                                                                             playlistId = playlistPreview.playlist.id,

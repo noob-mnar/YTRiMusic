@@ -55,9 +55,8 @@ fun syncSongsInPipedPlaylist(context: Context,coroutineScope: CoroutineScope, pi
                         thumbnailUrl = video.thumbnailUrl.toString()
                     )
                 }
-                if (song != null) {
-                    Database.insert(song)
-                }
+                if (song != null)
+                    Database.song.safeUpsert( song )
             }
             playlist.videos.forEachIndexed { index, song ->
                 Database.insert(
@@ -123,9 +122,8 @@ fun ImportPipedPlaylists(){
                                                 thumbnailUrl = video.thumbnailUrl.toString()
                                             )
                                         }
-                                        if (song != null) {
-                                            insert(song)
-                                        }
+                                        if (song != null)
+                                            this@transaction.song.safeUpsert( song )
                                     }
                                     playlist.videos.forEachIndexed { index, song ->
                                         if (!song.id.isNullOrBlank() || !song.id.isNullOrEmpty()) {

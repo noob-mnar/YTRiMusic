@@ -1,6 +1,7 @@
 package it.fast4x.rimusic
 
 import android.database.SQLException
+import android.database.sqlite.SQLiteConstraintException
 import androidx.annotation.WorkerThread
 import androidx.media3.common.MediaItem
 import androidx.room.AutoMigration
@@ -58,6 +59,7 @@ import me.knighthat.database.migrator.From22To23Migration
 import me.knighthat.database.migrator.From3To4Migration
 import me.knighthat.database.migrator.From7To8Migration
 import me.knighthat.database.migrator.From8To9Migration
+import me.knighthat.database.table.SongTable
 
 
 @Dao
@@ -66,6 +68,9 @@ interface Database {
     
     val path: String?
         get() = DatabaseInitializer.Instance.openHelper.writableDatabase.path
+
+    val song: SongTable
+        get() = DatabaseInitializer.Instance.song
 
     @Transaction
     @Query("SELECT * FROM Format WHERE songId = :songId ORDER BY bitrate DESC LIMIT 1")
@@ -76,20 +81,12 @@ interface Database {
     fun getLastBestFormat(): Flow<Format?>
 
     @Transaction
-    @Query("SELECT * FROM Song WHERE id in (SELECT songId FROM Format ORDER BY lastModified DESC LIMIT 1)")
-    fun getLastSongPlayed(): Flow<Song?>
-
-    @Transaction
-    @Query("SELECT COUNT(id) from Song WHERE id = :id and title LIKE '${EXPLICIT_PREFIX}%'")
-    fun isSongExplicit(id: String): Int
-
-    @Transaction
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
+    @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
     @Query("SELECT DISTINCT (timestamp / 86400000) as timestampDay, event.* FROM event ORDER BY rowId DESC")
     fun events(): Flow<List<EventWithSong>>
 
     @Transaction
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
+    @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
     @Query("SELECT Event.* FROM Event JOIN Song ON Song.id = songId WHERE " +
             "Event.timestamp / 86400000 = :date / 86400000 LIMIT :limit")
     @RewriteQueriesToDropUnusedColumns
@@ -127,9 +124,6 @@ interface Database {
     @Query("SELECT * FROM Song WHERE artistsText = :name ")
     fun artistSongsByname(name: String): Flow<List<Song>>
 
-    @Transaction
-    @Query("SELECT * FROM Song")
-    fun flowListAllSongs(): Flow<List<Song>>
 
     @Query("SELECT id FROM Playlist WHERE name = :playlistName")
     fun playlistExistByName(playlistName: String): Long
@@ -158,16 +152,6 @@ interface Database {
     @Query("SELECT * FROM Artist WHERE id in (:idsList)")
     @RewriteQueriesToDropUnusedColumns
     fun getArtistsList(idsList: List<String>): Flow<List<Artist?>>
-
-    @Transaction
-    @Query("SELECT * FROM Song WHERE id in (:idsList) ")
-    @RewriteQueriesToDropUnusedColumns
-    fun getSongsList(idsList: List<String>): Flow<List<Song>>
-
-    @Transaction
-    @Query("SELECT * FROM Song WHERE id in (:idsList) ")
-    @RewriteQueriesToDropUnusedColumns
-    fun getSongsListNoFlow(idsList: List<String>): List<Song>
 
     @Query("SELECT thumbnailUrl FROM Song WHERE id in (:idsList) ")
     fun getSongsListThumbnailUrls(idsList: List<String>): Flow<List<String?>>
@@ -660,12 +644,6 @@ interface Database {
     fun songsWithAlbumByPlayTimeDesc(showHiddenSongs: Int = 0): Flow<List<SongEntity>>
 
 
-
-    @Transaction
-    @Query("SELECT * FROM Song WHERE likedAt IS NOT NULL ORDER BY likedAt DESC")
-    @RewriteQueriesToDropUnusedColumns
-    fun favorites(): Flow<List<Song>>
-
     @Query("SELECT * FROM QueuedMediaItem")
     fun queue(): List<QueuedMediaItem>
 
@@ -841,12 +819,6 @@ interface Database {
             }
         }
     }
-
-    @Query("UPDATE Song SET totalPlayTimeMs = 0 WHERE id = :id")
-    fun resetTotalPlayTimeMs(id: String)
-
-    @Query("UPDATE Song SET totalPlayTimeMs = totalPlayTimeMs + :addition WHERE id = :id")
-    fun incrementTotalPlayTimeMs(id: String, addition: Long)
 
     @Transaction
     @Query("SELECT max(position) maxPos FROM SongPlaylistMap WHERE playlistId = :id")
@@ -1384,9 +1356,6 @@ interface Database {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     fun insert(songArtistMap: SongArtistMap): Long
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun insert(song: Song): Long
-
     @Insert(onConflict = OnConflictStrategy.ABORT)
     fun insert(queuedMediaItems: List<QueuedMediaItem>)
 
@@ -1400,38 +1369,59 @@ interface Database {
     fun insert(artists: List<Artist>, songArtistMaps: List<SongArtistMap>)
 
     @Transaction
-    fun insert(mediaItem: MediaItem, block: (Song) -> Song = { it }) {
+    fun insert(
+        mediaItem: MediaItem,
+        block: (Song) -> Song = { it }
+    ) = Database.transaction {
+        val metadata = mediaItem.mediaMetadata
+        val extras = metadata.extras
         val song = Song(
             id = mediaItem.mediaId,
-            title = mediaItem.mediaMetadata.title!!.toString(),
-            artistsText = mediaItem.mediaMetadata.artist?.toString(),
-            durationText = mediaItem.mediaMetadata.extras?.getString("durationText"),
-            thumbnailUrl = mediaItem.mediaMetadata.artworkUri?.toString()
-        ).let(block).also { song ->
-            if (insert(song) == -1L) return
+            title = metadata.title!!.toString(),
+            artistsText = metadata.artist?.toString(),
+            durationText = extras?.getString("durationText"),
+            thumbnailUrl = metadata.artworkUri?.toString()
+        )
+
+        block( song )
+
+        try {
+            // Attempt to put song to database
+            this@Database.song.insert( song )
+        } catch ( e: SQLiteConstraintException ) {
+            // Stop here if it's already in database
+            return@transaction
         }
 
-        mediaItem.mediaMetadata.extras?.getString("albumId")?.let { albumId ->
-            insert(
-                Album(id = albumId, title = mediaItem.mediaMetadata.albumTitle?.toString()),
-                SongAlbumMap(songId = song.id, albumId = albumId, position = null)
+        val albumId = extras?.getString( "albumId" )
+        val artistNames = extras?.getStringArrayList("artistNames")
+        val artistIds = extras?.getStringArrayList("artistIds")
+
+        // Return if any of those variables is null
+        if( albumId == null || artistNames == null || artistIds == null )
+            return@transaction
+
+        insert(
+            Album(
+                id = albumId,
+                title = metadata.albumTitle?.toString()
+            ),
+            SongAlbumMap(
+                songId = song.id,
+                albumId = albumId,
+                position = null
             )
-        }
+        )
 
-        mediaItem.mediaMetadata.extras?.getStringArrayList("artistNames")?.let { artistNames ->
-            mediaItem.mediaMetadata.extras?.getStringArrayList("artistIds")?.let { artistIds ->
-                if (artistNames.size == artistIds.size) {
-                    insert(
-                        artistNames.mapIndexed { index, artistName ->
-                            Artist(id = artistIds[index], name = artistName)
-                        },
-                        artistIds.map { artistId ->
-                            SongArtistMap(songId = song.id, artistId = artistId)
-                        }
-                    )
+        if( artistNames.size == artistIds.size )
+            insert(
+                artistNames.mapIndexed { index, artistName ->
+                    Artist(id = artistIds[index], name = artistName)
+                },
+                artistIds.map { artistId ->
+                    SongArtistMap(songId = song.id, artistId = artistId)
                 }
-            }
-        }
+            )
     }
 
     @Update
@@ -1458,9 +1448,6 @@ interface Database {
     @Upsert
     fun upsert(format: Format)
 
-    @Upsert
-    fun upsert(song: Song)
-
     @Delete
     fun delete(searchQuery: SearchQuery)
 
@@ -1469,9 +1456,6 @@ interface Database {
 
     @Delete
     fun delete(songPlaylistMap: SongPlaylistMap)
-
-    @Delete
-    fun delete(song: Song)
 
     @RawQuery
     fun raw(supportSQLiteQuery: SupportSQLiteQuery): Int

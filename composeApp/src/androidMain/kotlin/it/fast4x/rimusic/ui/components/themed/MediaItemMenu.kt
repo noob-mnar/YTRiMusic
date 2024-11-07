@@ -249,7 +249,7 @@ fun NonQueuedMediaItemMenuLibrary(
                     binder.cache.removeResource(mediaItem.mediaId)
                     binder.downloadCache.removeResource(mediaItem.mediaId)
                     Database.transaction {
-                        resetTotalPlayTimeMs(mediaItem.mediaId)
+                        song.resetTotalPlayTime( mediaItem.mediaId )
                     }
                 }
                 // Should wait until all computation finishes
