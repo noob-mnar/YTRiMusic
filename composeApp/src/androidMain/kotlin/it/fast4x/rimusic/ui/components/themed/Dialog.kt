@@ -88,6 +88,7 @@ import it.fast4x.compose.persist.persist
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.ColorPaletteMode
 import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.enums.ValidationType
@@ -99,7 +100,7 @@ import it.fast4x.rimusic.utils.blurDarkenFactorKey
 import it.fast4x.rimusic.utils.blurStrengthKey
 import it.fast4x.rimusic.utils.bold
 import it.fast4x.rimusic.utils.center
-import it.fast4x.rimusic.cleanPrefix
+import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.colorPaletteModeKey
 import it.fast4x.rimusic.utils.drawCircle
 import it.fast4x.rimusic.utils.fadingedgeKey
@@ -121,6 +122,8 @@ import it.fast4x.rimusic.utils.thumbnailFadeKey
 import it.fast4x.rimusic.utils.thumbnailOffsetKey
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
 import it.fast4x.rimusic.utils.thumbnailSpacingKey
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import me.knighthat.colorPalette
 import me.knighthat.typography
@@ -515,7 +518,10 @@ inline fun SelectorArtistsDialog(
                         val browseId = values[idArtist].id
                         var artist by persist<Artist?>("artist/$browseId/artist")
                         LaunchedEffect(browseId) {
-                            Database.artist(values[idArtist].id).collect{artist = it}
+                            Database.artist
+                                    .flowFindById( values[idArtist].id )
+                                    // Collect on IO thread to keep it from interfering with UI thread
+                                    .collect(CoroutineScope( Dispatchers.IO )) { artist = it }
                         }
 
                         Box {

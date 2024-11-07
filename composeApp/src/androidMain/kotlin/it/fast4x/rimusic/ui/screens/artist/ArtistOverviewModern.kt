@@ -94,6 +94,7 @@ import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.addNext
 import it.fast4x.rimusic.utils.align
 import it.fast4x.rimusic.utils.asMediaItem
+import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.conditional
 import it.fast4x.rimusic.utils.enqueue
@@ -190,10 +191,13 @@ fun ArtistOverviewModern(
     val hapticFeedback = LocalHapticFeedback.current
     val parentalControlEnabled by rememberPreference(parentalControlEnabledKey, false)
 
-    LaunchedEffect(Unit) {
-        if (browseId != null) {
-            Database.artist(browseId).collect { artist = it }
-        }
+    LaunchedEffect( Unit ) {
+        browseId ?: return@LaunchedEffect
+
+        Database.artist
+                .flowFindById( browseId )
+                // Collect on IO thread to keep it from interfering with UI thread
+                .collect( CoroutineScope( Dispatchers.IO ) ) { artist = it }
     }
 
     LayoutWithAdaptiveThumbnail(thumbnailContent = thumbnailContent) {
@@ -354,7 +358,7 @@ fun ArtistOverviewModern(
 
                             Database.transaction {
                                 artist?.copy(bookmarkedAt = bookmarkedAt)
-                                      ?.let( ::update )
+                                      ?.let( this.artist::update )
                             }
                         },
                         alternative = artist?.bookmarkedAt == null,

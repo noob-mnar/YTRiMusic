@@ -137,32 +137,34 @@ fun ArtistScreen(
     val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
     LaunchedEffect(Unit) {
-        Database
-            .artist(browseId)
-            .combine(snapshotFlow { tabIndex }.map { it != 4 }) { artist, mustFetch -> artist to mustFetch }
-            .distinctUntilChanged()
-            .collect { (currentArtist, mustFetch) ->
-                artist = currentArtist
+        Database.artist
+                .flowFindById( browseId )
+                .combine(
+                    snapshotFlow { tabIndex }.map { it != 4 }
+                ) { artist, mustFetch -> artist to mustFetch }
+                .distinctUntilChanged()
+                // Collect on IO thread to keep it from interfering with UI thread
+                .collect( CoroutineScope(Dispatchers.IO) ) { (currentArtist, mustFetch) ->
+                    artist = currentArtist
 
-                if (artistPage == null && (currentArtist?.timestamp == null || mustFetch)) {
-                    withContext(Dispatchers.IO) {
-                        Innertube.artistPage(BrowseBody(browseId = browseId))
-                            ?.onSuccess { currentArtistPage ->
-                                artistPage = currentArtistPage
+                    if( artistPage != null || !(currentArtist?.timestamp == null || mustFetch) )
+                        return@collect
 
-                                Database.upsert(
-                                    Artist(
-                                        id = browseId,
-                                        name = currentArtistPage.name,
-                                        thumbnailUrl = currentArtistPage.thumbnail?.url,
-                                        timestamp = System.currentTimeMillis(),
-                                        bookmarkedAt = currentArtist?.bookmarkedAt
-                                    )
+                    Innertube.artistPage( BrowseBody(browseId = browseId) )
+                        ?.onSuccess {
+                            artistPage = it
+
+                            Database.artist.safeUpsert(
+                                Artist(
+                                    browseId,
+                                    it.name,
+                                    it.thumbnail?.url,
+                                    System.currentTimeMillis(),
+                                    artist?.bookmarkedAt
                                 )
-                            }
-                    }
+                            )
+                        }
                 }
-            }
     }
 
     val listMediaItems = remember { mutableListOf<MediaItem>() }
@@ -250,7 +252,7 @@ fun ArtistScreen(
 
                                             Database.transaction {
                                                 artist?.copy( bookmarkedAt = bookmarkedAt )
-                                                      ?.let( ::update )
+                                                      ?.let( this.artist::update )
                                             }
                                         },
                                         alternative = artist?.bookmarkedAt == null
@@ -352,7 +354,7 @@ fun ArtistScreen(
 
                                     Database.transaction {
                                         artist?.copy( bookmarkedAt = bookmarkedAt )
-                                              ?.let( ::update )
+                                              ?.let( this.artist::update )
                                     }
                                 },
                                 alternative = if (artist?.bookmarkedAt == null) true else false     // WHY???

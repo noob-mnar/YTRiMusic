@@ -88,6 +88,7 @@ import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.addNext
 import it.fast4x.rimusic.utils.addToPipedPlaylist
 import it.fast4x.rimusic.utils.asMediaItem
+import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.forcePlay
 import it.fast4x.rimusic.utils.formatAsDuration
@@ -107,6 +108,7 @@ import it.fast4x.rimusic.utils.removeFromPipedPlaylist
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.setLikeState
 import it.fast4x.rimusic.utils.thumbnail
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.withContext
@@ -819,18 +821,24 @@ fun MediaItemMenu(
     var artistsList by persistList<Artist?>("home/artists")
     var artistIds = remember { mutableListOf("") }
 
-    LaunchedEffect(Unit, mediaItem.mediaId) {
+    LaunchedEffect( mediaItem.mediaId ) {
         withContext(Dispatchers.IO) {
             if (albumInfo?.id.isNullOrEmpty())
                 albumInfo = Database.songAlbumInfo(mediaItem.mediaId)
             if (artistsInfo.isNullOrEmpty())
                 artistsInfo = Database.songArtistInfo(mediaItem.mediaId)
-
-            artistsInfo?.forEach { info ->
-                if (info.id.isNotEmpty()) artistIds.add(info.id)
-            }
-            Database.getArtistsList(artistIds).collect { artistsList = it }
         }
+
+        withContext( Dispatchers.Default ) {
+            artistsInfo?.map( Info::id )
+                       ?.filter( String::isNotBlank )
+                       ?.forEach( artistIds::add )
+        }
+
+        Database.artist
+                .flowFindAllByIds( artistIds )
+                // Collect on IO thread to keep it from interfering with UI thread
+                .collect( CoroutineScope(Dispatchers.IO) ) { artistsList = it }
     }
 
     LaunchedEffect(Unit, mediaItem.mediaId) {

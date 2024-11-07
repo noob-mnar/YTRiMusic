@@ -4,6 +4,7 @@ import android.database.sqlite.SQLiteConstraintException
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Transaction
+import androidx.room.Update
 import androidx.room.Upsert
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.DatabaseInitializer
@@ -128,4 +129,10 @@ interface Table<E, K> {
             arrayOf()
         )
     }
+
+    @Update
+    fun update( entity: E )
+
+    @Update
+    fun update( entities: List<E> )
 }
