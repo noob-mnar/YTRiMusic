@@ -17,6 +17,7 @@ import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.Artist
 import it.fast4x.rimusic.models.SongAlbumMap
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -30,35 +31,36 @@ fun UpdateYoutubeArtist(browseId: String) {
     var artist by persist<Artist?>("artist/$browseId/artist")
     val tabIndex by rememberPreference(artistScreenTabIndexKey, defaultValue = 0)
 
-    LaunchedEffect(browseId) {
-        Database
-            .artist(browseId)
-            .combine(snapshotFlow { tabIndex }.map { it != 4 }) { artist, mustFetch -> artist to mustFetch }
-            .distinctUntilChanged()
-            .collect { (currentArtist, mustFetch) ->
-                artist = currentArtist
+    LaunchedEffect(Unit) {
+        Database.artist
+                .flowFindById( browseId )
+                .combine(
+                    snapshotFlow { tabIndex }.map { it != 4 }
+                ) { artist, mustFetch -> artist to mustFetch }
+                .distinctUntilChanged()
+                // Collect on IO thread to keep it from interfering with UI thread
+                .collect( CoroutineScope(Dispatchers.IO) ) { (currentArtist, mustFetch) ->
+                    artist = currentArtist
 
-                if (artistPage == null && (currentArtist?.timestamp == null || mustFetch)) {
-                    withContext(Dispatchers.IO) {
-                        Innertube.artistPage(BrowseBody(browseId = browseId))
-                            ?.onSuccess { currentArtistPage ->
-                                artistPage = currentArtistPage
+                    if( artistPage != null || !(currentArtist?.timestamp == null || mustFetch) )
+                        return@collect
 
-                                Database.upsert(
-                                    Artist(
-                                        id = browseId,
-                                        name = currentArtistPage.name,
-                                        thumbnailUrl = currentArtistPage.thumbnail?.url,
-                                        timestamp = System.currentTimeMillis(),
-                                        bookmarkedAt = currentArtist?.bookmarkedAt
-                                    )
+                    Innertube.artistPage( BrowseBody(browseId = browseId) )
+                        ?.onSuccess {
+                            artistPage = it
+
+                            Database.artist.safeUpsert(
+                                Artist(
+                                    browseId,
+                                    it.name,
+                                    it.thumbnail?.url,
+                                    System.currentTimeMillis(),
+                                    artist?.bookmarkedAt
                                 )
-                            }
-                    }
+                            )
+                        }
                 }
-            }
     }
-
 }
 
 @UnstableApi

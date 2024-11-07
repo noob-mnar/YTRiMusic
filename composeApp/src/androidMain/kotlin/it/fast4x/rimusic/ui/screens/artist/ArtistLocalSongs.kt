@@ -48,6 +48,7 @@ import it.fast4x.rimusic.ui.items.SongItemPlaceholder
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.asMediaItem
+import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.forcePlayAtIndex
@@ -57,6 +58,8 @@ import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.showFloatingIconKey
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import me.knighthat.colorPalette
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -87,27 +90,9 @@ fun ArtistLocalSongs(
     val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
     LaunchedEffect(Unit) {
-        Database.artistSongs(browseId).collect { songs = it }
-/*
-        val items = songs?.map { it.id }
-        downloader.downloads.collect { downloads ->
-            if (items != null) {
-                downloadState =
-                    if (items.all { downloads[it]?.state == Download.STATE_COMPLETED })
-                        Download.STATE_COMPLETED
-                    else if (items.all {
-                            downloads[it]?.state == Download.STATE_QUEUED
-                                    || downloads[it]?.state == Download.STATE_DOWNLOADING
-                                    || downloads[it]?.state == Download.STATE_COMPLETED
-                        })
-                        Download.STATE_DOWNLOADING
-                    else
-                        Download.STATE_STOPPED
-            }
-        }
-
- */
-
+        Database.artist
+                .flowSongsOf(browseId)
+                .collect( CoroutineScope(Dispatchers.IO) ) { songs = it }
     }
 
     val songThumbnailSizeDp = Dimensions.thumbnails.song

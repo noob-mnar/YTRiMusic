@@ -59,6 +59,7 @@ import me.knighthat.database.migrator.From22To23Migration
 import me.knighthat.database.migrator.From3To4Migration
 import me.knighthat.database.migrator.From7To8Migration
 import me.knighthat.database.migrator.From8To9Migration
+import me.knighthat.database.table.ArtistTable
 import me.knighthat.database.table.SongTable
 
 
@@ -71,6 +72,8 @@ interface Database {
 
     val song: SongTable
         get() = DatabaseInitializer.Instance.song
+    val artist: ArtistTable
+        get() = DatabaseInitializer.Instance.artist
 
     @Transaction
     @Query("SELECT * FROM Format WHERE songId = :songId ORDER BY bitrate DESC LIMIT 1")
@@ -147,11 +150,6 @@ interface Database {
 
     @Query("UPDATE Album SET title = :title WHERE id = :id")
     fun updateAlbumTitle(id: String, title: String): Int
-
-    @Transaction
-    @Query("SELECT * FROM Artist WHERE id in (:idsList)")
-    @RewriteQueriesToDropUnusedColumns
-    fun getArtistsList(idsList: List<String>): Flow<List<Artist?>>
 
     @Query("SELECT thumbnailUrl FROM Song WHERE id in (:idsList) ")
     fun getSongsListThumbnailUrls(idsList: List<String>): Flow<List<String?>>
@@ -688,9 +686,6 @@ interface Database {
     @Query("SELECT * FROM Lyrics WHERE songId = :songId")
     fun lyrics(songId: String): Flow<Lyrics?>
 
-    @Query("SELECT * FROM Artist WHERE id = :id")
-    fun artist(id: String): Flow<Artist?>
-
     @Query("SELECT * FROM Artist WHERE bookmarkedAt IS NOT NULL ORDER BY name")
     fun preferitesArtistsByName(): Flow<List<Artist>>
 
@@ -1220,13 +1215,6 @@ interface Database {
     @Query("SELECT thumbnailUrl FROM Song JOIN SongPlaylistMap ON id = songId WHERE playlistId = :id ORDER BY position LIMIT 4")
     fun playlistThumbnailUrls(id: Long): Flow<List<String>>
 
-
-
-    @Transaction
-    @Query("SELECT * FROM Song JOIN SongArtistMap ON Song.id = SongArtistMap.songId WHERE SongArtistMap.artistId = :artistId AND totalPlayTimeMs > 0 ORDER BY Song.ROWID DESC")
-    @RewriteQueriesToDropUnusedColumns
-    fun artistSongs(artistId: String): Flow<List<Song>>
-
     @Query("SELECT * FROM Format WHERE songId = :songId")
     fun format(songId: String): Flow<Format?>
 
@@ -1425,9 +1413,6 @@ interface Database {
     }
 
     @Update
-    fun update(artist: Artist)
-
-    @Update
     fun update(album: Album)
 
     @Update
@@ -1441,9 +1426,6 @@ interface Database {
 
     @Upsert
     fun upsert(songAlbumMap: SongAlbumMap)
-
-    @Upsert
-    fun upsert(artist: Artist)
 
     @Upsert
     fun upsert(format: Format)
@@ -1550,6 +1532,8 @@ interface Database {
 @TypeConverters(Converters::class)
 abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
     abstract val database: Database
+    abstract val song: SongTable
+    abstract val artist: ArtistTable
 
     companion object {
 
