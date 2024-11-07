@@ -821,7 +821,7 @@ class PlayerService : InvincibleService(),
 
         if (totalPlayTimeMs > 5000)
             Database.transaction {
-                incrementTotalPlayTimeMs( mediaItem.mediaId, totalPlayTimeMs )
+                song.addTotalPlayTime( mediaItem.mediaId, totalPlayTimeMs )
             }
 
 

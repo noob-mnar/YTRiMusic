@@ -1106,20 +1106,20 @@ fun Context.musicFilesAsFlow(sortBy: OnDeviceSongSortBy, order: SortOrder, conte
                                         thumbnailUrl = albumUri.toString(),
                                         relativePath = relativePath
                                     )
-                                    Database.insert(
-                                        song.toSong()
-                                    )
-                                    
-                                    Database.insert(
-                                        it.fast4x.rimusic.models.Format(
-                                            songId = song.id,
-                                            itag = 0,
-                                            mimeType = mimeType,
-                                            bitrate = bitrate.toLong(),
-                                            contentLength = fileSize.toLong(),
-                                            lastModified = dateModified
+
+                                    Database.transaction {
+                                        this.song.upsert( song.toSong() )
+                                        insert(
+                                            it.fast4x.rimusic.models.Format(
+                                                songId = song.id,
+                                                itag = 0,
+                                                mimeType = mimeType,
+                                                bitrate = bitrate.toLong(),
+                                                contentLength = fileSize.toLong(),
+                                                lastModified = dateModified
+                                            )
                                         )
-                                    )
+                                    }
 
                                     add(
                                         song

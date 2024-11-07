@@ -337,7 +337,7 @@ fun HomeSongsModern(
             uri ?: return@rememberLauncherForActivityResult,
             context,
             afterTransaction = { _, song ->
-                Database.upsert( song )
+                Database.song.safeUpsert( song )
                 Database.like( song.id, System.currentTimeMillis() )
             }
         )
@@ -425,14 +425,16 @@ fun HomeSongsModern(
 
             override fun onConfirm() {
                 song.ifPresent {
+                    val songId = it.song.id
+
                     menuState.hide()
-                    binder?.cache?.removeResource(it.song.id)
-                    binder?.downloadCache?.removeResource(it.song.id)
+                    binder?.cache?.removeResource( songId )
+                    binder?.downloadCache?.removeResource( songId )
 
                     Database.transaction {
-                        delete(it.song)
-                        deleteSongFromPlaylists(it.song.id)
-                        deleteFormat(it.song.id)
+                        song.delete( it.song )
+                        deleteSongFromPlaylists( songId )
+                        deleteFormat( songId )
                     }
 
                     SmartMessage(context.resources.getString(R.string.deleted), context = context)
@@ -464,15 +466,15 @@ fun HomeSongsModern(
                     val songId = it.song.id
 
                     menuState.hide()
-                    binder?.cache?.removeResource( songId )
-                    binder?.downloadCache?.removeResource( songId )
+                    binder?.cache?.removeResource(songId)
+                    binder?.downloadCache?.removeResource(songId)
 
                     Database.transaction {
-                        resetFormatContentLength( songId )
-                        deleteFormat( songId )
-                        incrementTotalPlayTimeMs( songId, -it.song.totalPlayTimeMs ) }
+                        resetFormatContentLength(songId)
+                        deleteFormat(songId)
+                        this.song.resetTotalPlayTime(songId)
                     }
-
+                }
                 onDismiss()
             }
         }

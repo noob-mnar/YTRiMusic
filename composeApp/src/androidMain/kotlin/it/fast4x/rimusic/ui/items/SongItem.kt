@@ -60,9 +60,7 @@ import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.thumbnail
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.knighthat.colorPalette
 import me.knighthat.thumbnailShape
@@ -86,7 +84,7 @@ fun SongItem(
         thumbnailSizeDp = thumbnailSizeDp,
         modifier = modifier,
         onDownloadClick = {
-            Database.transaction { upsert(song.asSong) }
+            Database.song.safeUpsert( song.asSong )
             onDownloadClick()
         },
         downloadState = downloadState,
@@ -117,9 +115,7 @@ fun SongItem(
         trailingContent = trailingContent,
         modifier = modifier,
         onDownloadClick = {
-            CoroutineScope(Dispatchers.IO).launch {
-                Database.upsert(song.asSong)
-            }
+            Database.song.safeUpsert( song.asSong )
             onDownloadClick()
         },
         downloadState = downloadState,
@@ -149,7 +145,7 @@ fun SongItem(
         trailingContent = trailingContent,
         modifier = modifier,
         onDownloadClick = {
-            Database.transaction { upsert(song) }
+            Database.song.safeUpsert( song )
             onDownloadClick()
         },
         downloadState = downloadState,
