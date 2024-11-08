@@ -31,11 +31,12 @@ import it.fast4x.innertube.Innertube
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
-import it.fast4x.rimusic.utils.albumItemToggleBookmarked
 import it.fast4x.rimusic.utils.isSwipeToActionEnabledKey
 import it.fast4x.rimusic.utils.mediaItemToggleLike
 import it.fast4x.rimusic.utils.rememberPreference
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.withContext
 import me.knighthat.colorPalette
 
 @Composable
@@ -188,19 +189,35 @@ fun SwipeableAlbumItem(
     var bookmarkedAt by rememberSaveable {
         mutableStateOf<Long?>(null)
     }
-    LaunchedEffect(albumItem.key) {
-        Database.albumBookmarkedAt(albumItem.key).distinctUntilChanged().collect { bookmarkedAt = it }
+    LaunchedEffect( Unit ) {
+        Database.query { // Read bookmarkedAt asynchronously
+            bookmarkedAt = album.bookmarkedAt( albumItem.key )
+        }
     }
     var updateLike by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(updateLike) {
-        if (updateLike) {
-            albumItemToggleBookmarked(albumItem)
-            updateLike = false
-            if (bookmarkedAt == null)
-                SmartMessage(context.resources.getString(R.string.added_to_favorites), context = context)
-            else
-                SmartMessage("\"" + albumItem.info?.name + " - " + albumItem.authors?.joinToString("") { it.name + "\" " + context.resources.getString(R.string.removed_from_favorites)}, context = context, durationLong = true)
-        }
+        if( !updateLike ) return@LaunchedEffect
+
+        val message: String =
+            withContext( Dispatchers.IO ) {
+                val isBookmarked = Database.album.bookmarkedAt( albumItem.key ) != null
+
+                // Toggle album bookmark
+                val timestamp = if( isBookmarked ) null else System.currentTimeMillis()
+                Database.album.bookmark( albumItem.key, timestamp )
+
+                if( isBookmarked ) {
+                    val name = albumItem.info?.name
+                    val authors = albumItem.authors?.joinToString("") { it.name ?: "" }
+                    val string = context.resources.getString(R.string.removed_from_favorites)
+
+                    "\"$name - $authors\" $string"
+                } else
+                    context.resources.getString(R.string.added_to_favorites)
+            }
+        SmartMessage( message, context = context )
+
+        updateLike = false
     }
 
     SwipeableContent(

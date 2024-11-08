@@ -59,6 +59,7 @@ import me.knighthat.database.migrator.From22To23Migration
 import me.knighthat.database.migrator.From3To4Migration
 import me.knighthat.database.migrator.From7To8Migration
 import me.knighthat.database.migrator.From8To9Migration
+import me.knighthat.database.table.AlbumTable
 import me.knighthat.database.table.ArtistTable
 import me.knighthat.database.table.SongTable
 
@@ -74,6 +75,8 @@ interface Database {
         get() = DatabaseInitializer.Instance.song
     val artist: ArtistTable
         get() = DatabaseInitializer.Instance.artist
+    val album: AlbumTable
+        get() = DatabaseInitializer.Instance.album
 
     @Transaction
     @Query("SELECT * FROM Format WHERE songId = :songId ORDER BY bitrate DESC LIMIT 1")
@@ -141,15 +144,6 @@ interface Database {
     @Transaction
     @Query("UPDATE Song SET artistsText = :artist WHERE id = :id")
     fun updateSongArtist(id: String, artist: String): Int
-
-    @Query("UPDATE Album SET thumbnailUrl = :thumb WHERE id = :id")
-    fun updateAlbumCover(id: String, thumb: String): Int
-
-    @Query("UPDATE Album SET authorsText = :artist WHERE id = :id")
-    fun updateAlbumAuthors(id: String, artist: String): Int
-
-    @Query("UPDATE Album SET title = :title WHERE id = :id")
-    fun updateAlbumTitle(id: String, title: String): Int
 
     @Query("SELECT thumbnailUrl FROM Song WHERE id in (:idsList) ")
     fun getSongsListThumbnailUrls(idsList: List<String>): Flow<List<String?>>
@@ -674,9 +668,6 @@ interface Database {
     @Query("SELECT likedAt FROM Song WHERE id = :songId")
     fun likedAt(songId: String): Flow<Long?>
 
-    @Query("UPDATE Album SET bookmarkedAt = :bookmarkedAt WHERE id = :id")
-    fun bookmarkAlbum(id: String, bookmarkedAt: Long?): Int
-
     @Query("UPDATE Song SET likedAt = :likedAt WHERE id = :songId")
     fun like(songId: String, likedAt: Long?): Int
 
@@ -713,30 +704,6 @@ interface Database {
             }
         }
     }
-
-    @Query("SELECT * FROM Album WHERE id = :id")
-    fun album(id: String): Flow<Album?>
-
-    @Query("SELECT timestamp FROM Album WHERE id = :id")
-    fun albumTimestamp(id: String): Long?
-
-    @Query("SELECT bookmarkedAt FROM Album WHERE id = :id")
-    fun albumBookmarkedAt(id: String): Flow<Long?>
-
-    @Query("SELECT count(id) FROM Album WHERE id = :id and bookmarkedAt IS NOT NULL")
-    fun albumBookmarked(id: String): Int
-
-    @Query("SELECT count(id) FROM Album WHERE id = :id")
-    fun albumExist(id: String): Int
-
-    @Query("SELECT * FROM Song JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId WHERE SongAlbumMap.albumId = :albumId ORDER BY position")
-    @RewriteQueriesToDropUnusedColumns
-    fun albumSongsList(albumId: String): List<Song>
-
-    @Transaction
-    @Query("SELECT * FROM Song JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId WHERE SongAlbumMap.albumId = :albumId AND position IS NOT NULL ORDER BY position")
-    @RewriteQueriesToDropUnusedColumns
-    fun albumSongs(albumId: String): Flow<List<Song>>
 
     @Transaction
     @Query("SELECT *, (SELECT SUM(CAST(REPLACE(durationText, ':', '') AS INTEGER)) FROM Song JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId WHERE SongAlbumMap.albumId = Album.id AND position IS NOT NULL) as totalDuration " +
@@ -1253,9 +1220,6 @@ interface Database {
     @Query("DELETE FROM SongPlaylistMap WHERE songId = :id")
     fun deleteSongFromPlaylists(id: String)
 
-    @Query("DELETE FROM SongAlbumMap WHERE albumId = :id")
-    fun clearAlbum(id: String)
-
     @Query("SELECT loudnessDb FROM Format WHERE songId = :songId")
     fun loudnessDb(songId: String): Flow<Float?>
 
@@ -1351,10 +1315,7 @@ interface Database {
     fun insertSongPlaylistMaps(songPlaylistMaps: List<SongPlaylistMap>)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun insert(album: Album, songAlbumMap: SongAlbumMap)
-
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun insert(artists: List<Artist>, songArtistMaps: List<SongArtistMap>)
+    fun insert( songAlbumMap: SongAlbumMap )
 
     @Transaction
     fun insert(
@@ -1389,11 +1350,14 @@ interface Database {
         if( albumId == null || artistNames == null || artistIds == null )
             return@transaction
 
-        insert(
+        album.insert(
             Album(
                 id = albumId,
                 title = metadata.albumTitle?.toString()
-            ),
+            )
+        )
+
+        insert(
             SongAlbumMap(
                 songId = song.id,
                 albumId = albumId,
@@ -1401,28 +1365,22 @@ interface Database {
             )
         )
 
-        if( artistNames.size == artistIds.size )
-            insert(
-                artistNames.mapIndexed { index, artistName ->
-                    Artist(id = artistIds[index], name = artistName)
-                },
-                artistIds.map { artistId ->
-                    SongArtistMap(songId = song.id, artistId = artistId)
-                }
-            )
-    }
+        if( artistNames.size == artistIds.size ) {
+            artistNames.mapIndexed { index, artistName ->
+                Artist(id = artistIds[index], name = artistName)
+            }.onEach( artist::safeUpsert )
 
-    @Update
-    fun update(album: Album)
+            artistIds.map { artistId ->
+                SongArtistMap(songId = song.id, artistId = artistId)
+            }.onEach( ::insert )
+        }
+    }
 
     @Update
     fun update(playlist: Playlist)
 
     @Upsert
     fun upsert(lyrics: Lyrics)
-
-    @Upsert
-    fun upsert(album: Album, songAlbumMaps: List<SongAlbumMap>)
 
     @Upsert
     fun upsert(songAlbumMap: SongAlbumMap)
@@ -1534,6 +1492,7 @@ abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
     abstract val database: Database
     abstract val song: SongTable
     abstract val artist: ArtistTable
+    abstract val album: AlbumTable
 
     companion object {
 

@@ -100,17 +100,6 @@ fun mediaItemToggleLike( mediaItem: MediaItem ) {
     }
 }
 
-fun albumItemToggleBookmarked( albumItem: Innertube.AlbumItem ) {
-    Database.transaction {
-        if ( albumBookmarked(albumItem.key) == 0 )
-            bookmarkAlbum(
-                albumItem.key,
-                System.currentTimeMillis()
-            )
-        else bookmarkAlbum( albumItem.key, null )
-    }
-}
-
 val Innertube.AlbumItem.asAlbum: Album
     get() = Album (
         id = key,

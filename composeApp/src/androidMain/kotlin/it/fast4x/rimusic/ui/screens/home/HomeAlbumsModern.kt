@@ -73,6 +73,7 @@ import me.knighthat.component.tab.toolbar.Randomizer
 import me.knighthat.component.tab.toolbar.Search
 import me.knighthat.component.tab.toolbar.SongsShuffle
 import me.knighthat.component.tab.toolbar.Sort
+import me.knighthat.database.table.AlbumTable
 import me.knighthat.preference.Preference
 import me.knighthat.preference.Preference.HOME_ALBUM_ITEM_SIZE
 import me.knighthat.thumbnailShape
@@ -225,7 +226,7 @@ fun HomeAlbumsModern(
                 ) { album ->
                     var songs = remember { listOf<Song>() }
                     Database.query {    // update songs asynchronously
-                        songs = Database.albumSongsList( album.id )
+                        songs = Database.album.findSongsOf( album.id )
                     }
 
                     var showDialogChangeAlbumTitle by remember {
@@ -241,27 +242,27 @@ fun HomeAlbumsModern(
                     var onDismiss: () -> Unit = {}
                     var titleId = 0
                     var defValue = ""
-                    var placeholderTextId: Int = 0
-                    var queryBlock: (Database, String, String) -> Int = { _, _, _ -> 0}
+                    var placeholderTextId = 0
+                    var queryBlock: (AlbumTable, String, String) -> Int = { _, _, _ -> 0}
 
                     if( showDialogChangeAlbumCover ) {
                         onDismiss = { showDialogChangeAlbumCover = false }
                         titleId = R.string.update_cover
                         defValue = album.thumbnailUrl.toString()
                         placeholderTextId = R.string.cover
-                        queryBlock = Database::updateAlbumCover
+                        queryBlock = AlbumTable::updateCover
                     } else if( showDialogChangeAlbumTitle ) {
                         onDismiss = { showDialogChangeAlbumTitle = false }
                         titleId = R.string.update_title
                         defValue = album.title.toString()
                         placeholderTextId = R.string.title
-                        queryBlock = Database::updateAlbumTitle
+                        queryBlock = AlbumTable::updateTitle
                     } else if( showDialogChangeAlbumAuthors ) {
                         onDismiss = { showDialogChangeAlbumAuthors = false }
                         titleId = R.string.update_authors
                         defValue = album.authorsText.toString()
                         placeholderTextId = R.string.authors
-                        queryBlock = Database::updateAlbumAuthors
+                        queryBlock = AlbumTable::updateAuthors
                     }
 
                     if( showDialogChangeAlbumTitle || showDialogChangeAlbumAuthors || showDialogChangeAlbumCover )
@@ -273,7 +274,7 @@ fun HomeAlbumsModern(
                             setValue = {
                                 if (it.isNotEmpty())
                                     Database.transaction {
-                                        queryBlock( Database, album.id, it )
+                                        queryBlock( Database.album, album.id, it )
                                     }
                             },
                             prefix = MODIFIED_PREFIX
