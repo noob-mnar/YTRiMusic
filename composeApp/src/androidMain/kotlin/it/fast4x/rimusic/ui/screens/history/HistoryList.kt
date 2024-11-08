@@ -92,39 +92,37 @@ fun HistoryList(
     val parentalControlEnabled by rememberPreference(parentalControlEnabledKey, false)
     val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
-    val events = Database.events()
-        .map { events ->
-            if (parentalControlEnabled)
-                events.filter { !it.song.title.startsWith(EXPLICIT_PREFIX) } else events
-        }
-        .map { events ->
-            events.groupBy {
-                val date = //it.event.timestamp.toLocalDate()
-                LocalDateTime.ofInstant(
-                    Instant.ofEpochMilli(it.event.timestamp),
-                    TimeZone.getDefault().toZoneId()).toLocalDate()
-                val daysAgo = ChronoUnit.DAYS.between(date, today).toInt()
-                when {
-                    daysAgo == 0 -> DateAgo.Today
-                    daysAgo == 1 -> DateAgo.Yesterday
-                    date >= thisMonday -> DateAgo.ThisWeek
-                    date >= lastMonday -> DateAgo.LastWeek
-                    else -> DateAgo.Other(date.withDayOfMonth(1))
-                }
-            }.toSortedMap(compareBy { dateAgo ->
-                when (dateAgo) {
-                    DateAgo.Today -> 0L
-                    DateAgo.Yesterday -> 1L
-                    DateAgo.ThisWeek -> 2L
-                    DateAgo.LastWeek -> 3L
-                    is DateAgo.Other -> ChronoUnit.DAYS.between(dateAgo.date, today)
-                }
-            })
-        }
-        .collectAsState(initial = emptyMap(), context = Dispatchers.IO)
-
-
-
+    val events = Database.event
+                         .flowEventsWithSongs()
+                         .map { events ->
+                             if (parentalControlEnabled)
+                                 events.filter { !it.song.title.startsWith(EXPLICIT_PREFIX) } else events
+                         }
+                         .map { events ->
+                             events.groupBy {
+                                 val date = //it.event.timestamp.toLocalDate()
+                                 LocalDateTime.ofInstant(
+                                     Instant.ofEpochMilli(it.event.timestamp),
+                                     TimeZone.getDefault().toZoneId()).toLocalDate()
+                                 val daysAgo = ChronoUnit.DAYS.between(date, today).toInt()
+                                 when {
+                                     daysAgo == 0 -> DateAgo.Today
+                                     daysAgo == 1 -> DateAgo.Yesterday
+                                     date >= thisMonday -> DateAgo.ThisWeek
+                                     date >= lastMonday -> DateAgo.LastWeek
+                                     else -> DateAgo.Other(date.withDayOfMonth(1))
+                                 }
+                             }.toSortedMap(compareBy { dateAgo ->
+                                 when (dateAgo) {
+                                     DateAgo.Today -> 0L
+                                     DateAgo.Yesterday -> 1L
+                                     DateAgo.ThisWeek -> 2L
+                                     DateAgo.LastWeek -> 3L
+                                     is DateAgo.Other -> ChronoUnit.DAYS.between(dateAgo.date, today)
+                                 }
+                             })
+                         }
+                         .collectAsState(initial = emptyMap(), context = Dispatchers.IO)
 
     var downloadState by remember {
         mutableStateOf(Download.STATE_STOPPED)

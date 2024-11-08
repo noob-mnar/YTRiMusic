@@ -838,7 +838,7 @@ class PlayerService : InvincibleService(),
 
         if (totalPlayTimeMs > minTimeForEvent.ms)
             Database.transaction {
-                insert(
+                event.safeUpsert(
                     Event(
                         songId = mediaItem.mediaId,
                         timestamp = System.currentTimeMillis(),

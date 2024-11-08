@@ -204,38 +204,36 @@ fun QuickPicksModern(
     suspend fun loadData() {
         runCatching {
             refreshScope.launch(Dispatchers.IO) {
+                var song: Song? = null
+
                 when (playEventType) {
                     PlayEventsType.MostPlayed ->
-                        Database.songsMostPlayedByPeriod(from, now, 1).distinctUntilChanged().collect { songs ->
-                            val song = songs.firstOrNull()
-                            if (relatedPageResult == null || trending?.id != song?.id) {
-                                relatedPageResult = Innertube.relatedPage(
-                                    NextBody(
-                                        videoId = (song?.id ?: "HZnNt9nnEhw")
-                                    )
-                                )
-                            }
-                            trending = song
-                        }
+                        Database.songsMostPlayedByPeriod( from, now, 1 )
+                                .distinctUntilChanged()
+                                .collect {
+                                    song = it.firstOrNull()
+                                }
 
-                    PlayEventsType.LastPlayed, PlayEventsType.CasualPlayed -> {
-                        val numSongs = if (playEventType == PlayEventsType.LastPlayed) 3 else 100
-                        Database.lastPlayed(numSongs).distinctUntilChanged().collect { songs ->
-                            val song = if (playEventType == PlayEventsType.LastPlayed) songs.firstOrNull()
-                            else songs.shuffled().firstOrNull()
-                            if (relatedPageResult == null || trending?.id != song?.id) {
-                                relatedPageResult =
-                                    Innertube.relatedPage(
-                                        NextBody(
-                                            videoId = (song?.id ?: "HZnNt9nnEhw")
-                                        )
-                                    )
-                            }
-                            trending = song
-                        }
-                    }
-
+                    PlayEventsType.LastPlayed, PlayEventsType.CasualPlayed ->
+                        Database.event
+                                .lastPlayed( playEventType.searchLimit )
+                                .distinctUntilChanged()
+                                .collect {
+                                    it.apply {
+                                            if( playEventType == PlayEventsType.CasualPlayed )
+                                                shuffled()
+                                        }
+                                        .also { songList ->
+                                            song = songList.firstOrNull()
+                                        }
+                                }
                 }
+
+                if ( relatedPageResult == null || trending?.id != song?.id ) {
+                    val nextBody = NextBody(videoId = (song?.id ?: "HZnNt9nnEhw"))
+                    relatedPageResult = Innertube.relatedPage( nextBody )
+                }
+                trending = song
             }
 
             if (showNewAlbums || showNewAlbumsArtists || showMoodsAndGenres)
@@ -478,7 +476,7 @@ fun QuickPicksModern(
                                                         mediaItem = song.asMediaItem,
                                                         onRemoveFromQuickPicks = {
                                                             Database.transaction {
-                                                                clearEventsFor(song.id)
+                                                                event.deleteBySongId( song.id )
                                                             }
                                                         },
                                                         onDownload = {
