@@ -60,11 +60,13 @@ import it.fast4x.rimusic.ui.screens.settingsRoute
 import it.fast4x.rimusic.ui.styling.favoritesIcon
 import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.asMediaItem
+import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.pauseSearchHistoryKey
 import it.fast4x.rimusic.utils.preferences
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.withContext
@@ -110,49 +112,52 @@ fun AlbumScreenWithoutScaffold(
     PersistMapCleanup(tagPrefix = "album/$browseId/")
 
     LaunchedEffect(Unit) {
-        Database
-            .album(browseId)
-            .combine(snapshotFlow { tabIndex }) { album, tabIndex -> album to tabIndex }
-            .collect { (currentAlbum, tabIndex) ->
+        Database.album
+            .flowFindById( browseId )
+            .combine(
+                snapshotFlow { tabIndex }
+            ) { album, tabIndex -> album to tabIndex }
+            // Collect on IO thread to keep it from interfering with UI thread
+            .collect( CoroutineScope(Dispatchers.IO) ) { (currentAlbum, _) ->
                 album = currentAlbum
 
-                if (albumPage == null && currentAlbum?.timestamp == null) {
-                    withContext(Dispatchers.IO) {
-                        Innertube.albumPage(BrowseBody(browseId = browseId))
-                            ?.onSuccess { currentAlbumPage ->
-                                albumPage = currentAlbumPage
+                if( albumPage != null || currentAlbum?.timestamp != null )
+                    return@collect
 
-                                Database.clearAlbum(browseId)
+                Database.album.deleteById( browseId )
 
-                                Database.upsert(
-                                    Album(
-                                        id = browseId,
-                                        title = currentAlbumPage.title,
-                                        thumbnailUrl = currentAlbumPage.thumbnail?.url,
-                                        year = currentAlbumPage.year,
-                                        authorsText = currentAlbumPage.authors
-                                            ?.joinToString("") { it.name ?: "" },
-                                        shareUrl = currentAlbumPage.url,
-                                        timestamp = System.currentTimeMillis(),
-                                        bookmarkedAt = album?.bookmarkedAt
-                                    ),
-                                    currentAlbumPage
-                                        .songsPage
-                                        ?.items
-                                        ?.map(Innertube.SongItem::asMediaItem)
-                                        ?.onEach(Database::insert)
-                                        ?.mapIndexed { position, mediaItem ->
-                                            SongAlbumMap(
-                                                songId = mediaItem.mediaId,
-                                                albumId = browseId,
-                                                position = position
-                                            )
-                                        } ?: emptyList()
-                                )
-                            }
-                    }
+                Innertube.albumPage( BrowseBody(browseId = browseId) )
+                         ?.onSuccess { currentAlbumPage ->
+                             albumPage = currentAlbumPage
 
-                }
+                             Database.clearAlbum(browseId)
+
+                             currentAlbumPage.run {
+                                 Database.album.safeUpsert(
+                                     Album(
+                                         browseId,
+                                         title,
+                                         thumbnail?.url,
+                                         year,
+                                         authors?.joinToString("") { it.name ?: "" },
+                                         url,
+                                         album?.bookmarkedAt
+                                     )
+                                 )
+                                 songsPage?.items
+                                          ?.map( Innertube.SongItem::asMediaItem )
+                                          ?.onEach( Database::insert )
+                                          ?.mapIndexed { position, mediaItem ->
+                                              SongAlbumMap(
+                                                  mediaItem.mediaId,
+                                                  browseId,
+                                                  position
+                                              )
+                                          }
+                                          ?.onEach( Database::insert )
+                             }
+
+                         }
             }
     }
 
@@ -269,7 +274,7 @@ fun AlbumScreenWithoutScaffold(
 
                                     Database.transaction {
                                         album?.copy( bookmarkedAt = bookmarkedAt )
-                                             ?.let( ::update )
+                                             ?.let( this@transaction.album::update )
                                     }
                                 }
                             )

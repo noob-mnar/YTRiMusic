@@ -22,7 +22,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.withContext
 
 @Composable
 fun UpdateYoutubeArtist(browseId: String) {
@@ -70,49 +69,49 @@ fun UpdateYoutubeAlbum (browseId: String) {
     var albumPage by persist<Innertube.PlaylistOrAlbumPage?>("album/$browseId/albumPage")
     val tabIndex by rememberSaveable {mutableStateOf(0)}
     LaunchedEffect(browseId) {
-        Database
-            .album(browseId)
-            .combine(snapshotFlow { tabIndex }) { album, tabIndex -> album to tabIndex }
-            .collect { (currentAlbum, tabIndex) ->
+        Database.album
+            .flowFindById( browseId )
+            .combine(
+                snapshotFlow { tabIndex }
+            ) { album, tabIndex -> album to tabIndex }
+            // Collect on IO thread to keep it from interfering with UI thread
+            .collect( CoroutineScope(Dispatchers.IO) ) { (currentAlbum, _) ->
                 album = currentAlbum
 
-                if (albumPage == null && (currentAlbum?.timestamp == null || tabIndex == 1)) {
-                    withContext(Dispatchers.IO) {
-                        Innertube.albumPage(BrowseBody(browseId = browseId))
-                            ?.onSuccess { currentAlbumPage ->
-                                albumPage = currentAlbumPage
+                if( albumPage != null || currentAlbum?.timestamp != null )
+                    return@collect
 
-                                Database.clearAlbum(browseId)
+                Innertube.albumPage( BrowseBody(browseId = browseId) )
+                         ?.onSuccess { currentAlbumPage ->
+                             albumPage = currentAlbumPage
 
-                                Database.upsert(
-                                    Album(
-                                        id = browseId,
-                                        title = currentAlbumPage?.title,
-                                        thumbnailUrl = currentAlbumPage?.thumbnail?.url,
-                                        year = currentAlbumPage?.year,
-                                        authorsText = currentAlbumPage?.authors
-                                            ?.joinToString("") { it.name ?: "" },
-                                        shareUrl = currentAlbumPage?.url,
-                                        timestamp = System.currentTimeMillis(),
-                                        bookmarkedAt = album?.bookmarkedAt
-                                    ),
-                                    currentAlbumPage
-                                        ?.songsPage
-                                        ?.items
-                                        ?.map(Innertube.SongItem::asMediaItem)
-                                        ?.onEach(Database::insert)
-                                        ?.mapIndexed { position, mediaItem ->
-                                            SongAlbumMap(
-                                                songId = mediaItem.mediaId,
-                                                albumId = browseId,
-                                                position = position
-                                            )
-                                        } ?: emptyList()
-                                )
-                            }
-                    }
+                             currentAlbumPage.run {
+                                 Database.album.safeUpsert(
+                                     Album(
+                                         browseId,
+                                         title,
+                                         thumbnail?.url,
+                                         year,
+                                         authors?.joinToString("") { it.name ?: "" },
+                                         url,
+                                         album?.bookmarkedAt
+                                     )
+                                 )
+                                 songsPage?.items
+                                          ?.map( Innertube.SongItem::asMediaItem )
+                                          ?.onEach( Database::insert )
+                                          ?.mapIndexed { position, mediaItem ->
+                                              SongAlbumMap(
+                                                  mediaItem.mediaId,
+                                                  browseId,
+                                                  position
+                                              )
+                                          }
+                                          ?.onEach( Database::insert )
+                             }
 
-                }
+                             Database.album.deleteById( browseId )
+                         }
             }
     }
 }

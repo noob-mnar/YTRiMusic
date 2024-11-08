@@ -87,6 +87,7 @@ import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.utils.addNext
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.center
+import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.durationTextToMillis
@@ -103,6 +104,8 @@ import it.fast4x.rimusic.utils.parentalControlEnabledKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.showFloatingIconKey
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import me.knighthat.colorPalette
 import me.knighthat.typography
 import java.text.SimpleDateFormat
@@ -131,15 +134,28 @@ fun AlbumSongs(
     val parentalControlEnabled by rememberPreference(parentalControlEnabledKey, false)
     val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
-    LaunchedEffect(Unit) {
-        Database.albumSongs(browseId).collect {
-            songs = if (parentalControlEnabled)
-                it.filter { !it.title.startsWith(EXPLICIT_PREFIX) } else it
+    LaunchedEffect( Unit ) {
+        // Album's info must be up-to-date (so it can response to user changes)
+        Database.query {
+            this.album
+                .flowFindById( browseId )
+                // Collect on IO thread to keep it from interfering with UI thread
+                .collect( CoroutineScope(Dispatchers.IO) ) { album = it }
+
+            this.album
+                .flowSongsOf( browseId )
+                // Collect on IO thread to keep it from interfering with UI thread
+                .collect( CoroutineScope(Dispatchers.IO) ) {
+                    songs = it.filter { song ->
+                        if( parentalControlEnabled )
+                            song.title.startsWith( EXPLICIT_PREFIX ).not()
+                        else
+                            true
+                    }
+                }
         }
     }
-    LaunchedEffect(Unit) {
-        Database.album(browseId).collect { album = it }
-    }
+
 
     /*
     val playlistPreviews by remember {
@@ -263,7 +279,7 @@ fun AlbumSongs(
             setValue = {
                 if (it.isNotEmpty())
                     Database.transaction {
-                        updateAlbumTitle( browseId, it )
+                        this.album.updateTitle( browseId, it )
                     }
             },
             prefix = MODIFIED_PREFIX
@@ -277,7 +293,7 @@ fun AlbumSongs(
             setValue = {
                 if (it.isNotEmpty())
                     Database.transaction {
-                        updateAlbumAuthors( browseId, it )
+                        this.album.updateAuthors( browseId, it )
                     }
 
             }
@@ -292,7 +308,7 @@ fun AlbumSongs(
             setValue = {
                 if (it.isNotEmpty())
                     Database.transaction {
-                        updateAlbumCover( browseId, it )
+                        this.album.updateCover( browseId, it )
                     }
             }
         )

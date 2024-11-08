@@ -482,10 +482,8 @@ class PlayerMediaBrowserService : MediaBrowserServiceCompat(), ServiceConnection
                         ?.first()
                         ?.songs
 
-                    MediaId.albums -> data
-                        .getOrNull(1)
-                        ?.let(Database::albumSongs)
-                        ?.first()
+                    MediaId.albums -> data.getOrNull( 1 )
+                                          ?.let( Database.album::findSongsOf )
 
                     MediaId.artists -> data.getOrNull( 1 )
                                            ?.let( Database.artist::findSongsByName )
