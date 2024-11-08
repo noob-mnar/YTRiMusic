@@ -161,9 +161,8 @@ fun ArtistLocalSongs(
                                         if (songs?.isNotEmpty() == true)
                                             songs?.forEach {
                                                 binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                                Database.transaction {
-                                                    resetFormatContentLength( it.asMediaItem.mediaId )
-                                                }
+                                                Database.format.safeResetContentLength( it.asMediaItem.mediaId )
+
                                                 manageDownload(
                                                     context = context,
                                                     mediaItem = it.asMediaItem,
@@ -199,9 +198,8 @@ fun ArtistLocalSongs(
                                         if (songs?.isNotEmpty() == true)
                                             songs?.forEach {
                                                 binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                                Database.transaction {
-                                                    resetFormatContentLength( it.asMediaItem.mediaId )
-                                                }
+                                                Database.format.safeResetContentLength( it.asMediaItem.mediaId )
+
                                                 manageDownload(
                                                     context = context,
                                                     mediaItem = it.asMediaItem,
@@ -267,9 +265,8 @@ fun ArtistLocalSongs(
                             song = song,
                             onDownloadClick = {
                                 binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                Database.transaction {
-                                    resetFormatContentLength( song.asMediaItem.mediaId )
-                                }
+                                Database.format.safeResetContentLength( song.asMediaItem.mediaId )
+
                                 manageDownload(
                                     context = context,
                                     mediaItem = song.asMediaItem,

@@ -338,9 +338,8 @@ fun StatisticsPageModern(
                             song = songs.get(it).asMediaItem,
                             onDownloadClick = {
                                 binder?.cache?.removeResource(songs.get(it).asMediaItem.mediaId)
-                                Database.transaction {
-                                    resetFormatContentLength( songs.get(it).asMediaItem.mediaId )
-                                }
+                                Database.format.safeResetContentLength( songs[it].asMediaItem.mediaId )
+
                                 manageDownload(
                                     context = context,
                                     mediaItem = songs.get(it).asMediaItem,

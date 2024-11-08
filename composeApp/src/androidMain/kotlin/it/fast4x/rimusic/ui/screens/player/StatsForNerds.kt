@@ -45,6 +45,7 @@ import it.fast4x.rimusic.ui.styling.onOverlay
 import it.fast4x.rimusic.ui.styling.overlay
 import it.fast4x.rimusic.utils.audioQualityFormatKey
 import it.fast4x.rimusic.utils.blackgradientKey
+import it.fast4x.rimusic.utils.collectLatest
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.isLandscape
 import it.fast4x.rimusic.utils.medium
@@ -54,7 +55,8 @@ import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.showthumbnailKey
 import it.fast4x.rimusic.utils.statsfornerdsKey
 import it.fast4x.rimusic.utils.transparentBackgroundPlayerActionBarKey
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import me.knighthat.colorPalette
 import me.knighthat.typography
@@ -106,66 +108,14 @@ fun StatsForNerds(
         )
         var statsfornerdsfull by remember {mutableStateOf(false)}
         LaunchedEffect(mediaId) {
-            Database.format(mediaId).distinctUntilChanged().collectLatest { currentFormat ->
-                if (currentFormat?.itag == null) {
-                    /*
-                    binder.player.currentMediaItem?.takeIf { it.mediaId == mediaId }?.let { mediaItem ->
-                        withContext(Dispatchers.IO) {
-                            delay(2000)
-                            Innertube.player(PlayerBody(videoId = mediaId))?.onSuccess { response ->
-                                response.streamingData?.adaptiveFormats
-                                ?.filter {
-                                when (audioQualityFormat) {
-                                    AudioQualityFormat.Auto -> it.itag == 251 || it.itag == 141 ||
-                                            it.itag == 250 || it.itag == 140 ||
-                                            it.itag == 249 || it.itag == 139 ||
-                                            it.itag == 171
-                                    AudioQualityFormat.High -> it.itag == 251 || it.itag == 141
-                                    AudioQualityFormat.Medium -> it.itag == 250 || it.itag == 140 || it.itag == 171
-                                    AudioQualityFormat.Low -> it.itag == 249 || it.itag == 139
-                                }
-
-                            }
-                                ?.maxByOrNull {
-                                    (it.bitrate?.times(
-                                        when (audioQualityFormat) {
-                                            AudioQualityFormat.Auto -> if (connectivityManager.isActiveNetworkMetered) -1 else 1
-                                            AudioQualityFormat.High -> 1
-                                            AudioQualityFormat.Medium -> -1
-                                            AudioQualityFormat.Low -> -1
-                                        }
-                                    ) ?: -1) + (if (it.mimeType.startsWith("audio/webm")) 10240 else 0)
-                                }
-                                ?.let { format ->
-                                /*
-                                when(audioQualityFormat) {
-                                    AudioQualityFormat.Auto -> response.streamingData?.autoMaxQualityFormat
-                                    AudioQualityFormat.High -> response.streamingData?.highestQualityFormat
-                                    AudioQualityFormat.Medium -> response.streamingData?.mediumQualityFormat
-                                    AudioQualityFormat.Low -> response.streamingData?.lowestQualityFormat
-                                }?.let { format ->
-
-                                 */
-                                    Database.insert(mediaItem)
-                                    Database.insert(
-                                        Format(
-                                            songId = mediaId,
-                                            itag = format.itag,
-                                            mimeType = format.mimeType,
-                                            bitrate = format.bitrate,
-                                            loudnessDb = response.playerConfig?.audioConfig?.normalizedLoudnessDb,
-                                            contentLength = format.contentLength,
-                                            lastModified = format.lastModified
-                                        )
-                                    )
-                                }
-                            }
-                        }
+            Database.query {
+                this.format
+                    .flowFindById( mediaId )
+                    .distinctUntilChanged()
+                    // Collect on IO thread to keep it from interfering with UI thread
+                    .collectLatest( CoroutineScope(Dispatchers.IO) ) {
+                        format = if( it?.itag == null ) null else it
                     }
-                    */
-                } else {
-                    format = currentFormat
-                }
             }
         }
 

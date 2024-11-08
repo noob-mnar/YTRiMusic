@@ -220,9 +220,7 @@ fun SearchResultScreen(
                                             song = song,
                                             onDownloadClick = {
                                                 localBinder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                                Database.transaction {
-                                                    resetFormatContentLength( song.asMediaItem.mediaId )
-                                                }
+                                                Database.format.safeResetContentLength( song.asMediaItem.mediaId )
 
                                                 manageDownload(
                                                     context = context,

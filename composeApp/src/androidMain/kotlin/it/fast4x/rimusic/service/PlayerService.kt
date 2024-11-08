@@ -359,11 +359,19 @@ class PlayerService : InvincibleService(),
     @FlowPreview
     private val isCachedState = mediaItemState
         .flatMapMerge { item ->
-            item?.mediaId?.let {
-                flowOf(
-                    cache.isCached(it, 0, Database.formatContentLength(it))
-                )
-            } ?: flowOf(false)
+            var result = flowOf( false )
+
+            val mediaId = item?.mediaId
+            if( mediaId != null ) {
+
+                val length = Database.format.contentLength( mediaId )
+                if( length != null )
+                    result = flowOf(
+                        cache.isCached( mediaId, 0, length )
+                    )
+            }
+
+            result
         }
         .map { it }
         .stateIn(coroutineScope, SharingStarted.Eagerly, false)
@@ -1170,34 +1178,29 @@ class PlayerService : InvincibleService(),
             volumeNormalizationJob?.cancel()
             volumeNormalizationJob = coroutineScope.launch(Dispatchers.Main) {
                 fun Float?.toMb() = ((this ?: 0f) * 100).toInt()
-                Database.loudnessDb(songId).cancellable().collectLatest { loudnessDb ->
-                    val loudnessMb = loudnessDb.toMb().let {
-                        if (it !in -2000..2000) {
-                            withContext(Dispatchers.Main) {
-                                SmartMessage("Extreme loudness detected", context = this@PlayerService)
-                                /*
-                                SmartMessage(
-                                    getString(
-                                        R.string.loudness_normalization_extreme,
-                                        getString(R.string.format_db, (it / 100f).toString())
-                                    )
-                                )
-                                 */
+
+                Database.format
+                        .flowLoudness( songId )
+                        .cancellable()
+                        .collectLatest { dB ->
+                            val loudnessMb = dB.toMb().let {
+                                if (it !in -2000..2000) {
+                                    withContext(Dispatchers.Main) {
+                                        SmartMessage("Extreme loudness detected", context = this@PlayerService)
+                                    }
+
+                                    0
+                                } else it
                             }
 
-                            0
-                        } else it
-                    }
-                    try {
-                        //default
-                        //loudnessEnhancer?.setTargetGain(-((loudnessDb ?: 0f) * 100).toInt() + 500)
-                        loudnessEnhancer?.setTargetGain(baseGain.toMb() - loudnessMb)
-                        loudnessEnhancer?.enabled = true
-                    } catch (e: Exception) {
-                        Timber.e("PlayerService maybeNormalizeVolume apply targetGain ${e.stackTraceToString()}")
-                        println("PlayerService maybeNormalizeVolume apply targetGain ${e.stackTraceToString()}")
-                    }
-                }
+                            try {
+                                loudnessEnhancer?.setTargetGain(baseGain.toMb() - loudnessMb)
+                                loudnessEnhancer?.enabled = true
+                            } catch (e: Exception) {
+                                Timber.e("PlayerService maybeNormalizeVolume apply targetGain ${e.stackTraceToString()}")
+                                println("PlayerService maybeNormalizeVolume apply targetGain ${e.stackTraceToString()}")
+                            }
+                        }
             }
         }
     }

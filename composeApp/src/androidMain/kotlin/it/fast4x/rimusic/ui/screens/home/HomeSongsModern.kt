@@ -434,7 +434,7 @@ fun HomeSongsModern(
                     Database.transaction {
                         song.delete( it.song )
                         deleteSongFromPlaylists( songId )
-                        deleteFormat( songId )
+                        format.deleteById( songId )
                     }
 
                     SmartMessage(context.resources.getString(R.string.deleted), context = context)
@@ -470,8 +470,7 @@ fun HomeSongsModern(
                     binder?.downloadCache?.removeResource(songId)
 
                     Database.transaction {
-                        resetFormatContentLength(songId)
-                        deleteFormat(songId)
+                        format.deleteById( songId )
                         this.song.resetTotalPlayTime(songId)
                     }
                 }
@@ -1184,9 +1183,8 @@ fun HomeSongsModern(
                                 song = song.song,
                                 onDownloadClick = {
                                     binder?.cache?.removeResource(song.song.asMediaItem.mediaId)
-                                    Database.transaction {
-                                        resetFormatContentLength( song.song.asMediaItem.mediaId )
-                                    }
+                                    Database.format.safeResetContentLength( song.song.asMediaItem.mediaId )
+
                                     if (!isLocal)
                                         manageDownload(
                                             context = context,

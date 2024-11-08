@@ -447,15 +447,14 @@ class PlayerMediaBrowserService : MediaBrowserServiceCompat(), ServiceConnection
 
                     MediaId.favorites -> Database.song.favorites()
 
-                    MediaId.offline -> Database
-                        .songsWithContentLength()
-                        .first()
-                        .filter { song ->
-                            song.contentLength?.let {
-                                cache.isCached(song.song.id, 0, it)
-                            } ?: false
-                        }
-                        .map(SongWithContentLength::song)
+                    MediaId.offline -> Database.format
+                                               .songsWithContentLength()
+                                               .filter { song ->
+                                                   song.contentLength?.let {
+                                                       cache.isCached(song.song.id, 0, it)
+                                                   } ?: false
+                                               }
+                                               .map(SongWithContentLength::song)
 
                     MediaId.ondevice -> Database.song.onDevice()
 

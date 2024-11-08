@@ -40,7 +40,7 @@ interface DownloadAllDialog: ConfirmationDialog {
 
             listToProcess().forEach {
                 binder?.cache?.removeResource(it.mediaId)
-                resetFormatContentLength(it.mediaId)
+                format.safeResetContentLength( it.mediaId )
 
                 if (!it.isLocal)
                     manageDownload(
