@@ -289,6 +289,9 @@ dependencies {
 }
 
 dependencies {
+    // Kotlin
+    implementation(kotlin("reflect"))
+
     implementation(projects.composePersist)
     implementation(projects.composeRouting)
     implementation(projects.composeReordering)
