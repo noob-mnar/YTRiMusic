@@ -608,12 +608,3 @@ fun Modifier.conditional(condition : Boolean, modifier : Modifier.() -> Modifier
         this
     }
 }
-
-
-fun resetFormatContentLength(mediaId: String) {
-    val dbCoroutineScope = CoroutineScope(Dispatchers.IO)
-    dbCoroutineScope.launch {
-        Database.resetFormatContentLength(mediaId)
-    }
-
-}

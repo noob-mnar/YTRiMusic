@@ -458,9 +458,8 @@ fun PlaylistSongListModern(
                                             if (playlistPage?.songsPage?.items?.isNotEmpty() == true)
                                                 playlistPage?.songsPage?.items?.forEach {
                                                     binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                                    Database.transaction {
-                                                        resetFormatContentLength( it.asMediaItem.mediaId )
-                                                    }
+                                                    Database.format.safeResetContentLength( it.asMediaItem.mediaId )
+
                                                     manageDownload(
                                                         context = context,
                                                         mediaItem = it.asMediaItem,
@@ -486,9 +485,8 @@ fun PlaylistSongListModern(
                                             if (playlistPage?.songsPage?.items?.isNotEmpty() == true)
                                                 playlistPage?.songsPage?.items?.forEach {
                                                     binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                                    Database.transaction {
-                                                        resetFormatContentLength( it.asMediaItem.mediaId )
-                                                    }
+                                                    Database.format.safeResetContentLength( it.asMediaItem.mediaId )
+
                                                     manageDownload(
                                                         context = context,
                                                         mediaItem = it.asMediaItem,
@@ -762,9 +760,7 @@ fun PlaylistSongListModern(
                             song = song,
                             onDownloadClick = {
                                 binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                Database.transaction {
-                                    resetFormatContentLength( song.asMediaItem.mediaId )
-                                }
+                                Database.format.safeResetContentLength( song.asMediaItem.mediaId )
 
                                 if (!isLocal)
                                     manageDownload(

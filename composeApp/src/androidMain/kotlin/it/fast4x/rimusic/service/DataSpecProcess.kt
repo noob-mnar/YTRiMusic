@@ -194,7 +194,7 @@ suspend fun getInnerTubeFormatUrl(
                     }.also {
                         Database.transaction {
                             if ( songExist(videoId) > 0 )
-                                upsert(
+                                format.safeUpsert(
                                     Format(
                                         songId = videoId,
                                         itag = it?.itag?.toInt(),

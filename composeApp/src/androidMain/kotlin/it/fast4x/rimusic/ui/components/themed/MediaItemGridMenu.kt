@@ -412,9 +412,8 @@ fun MediaItemGridMenu (
                     ?.toString(),
                 onDownloadClick = {
                     binder?.cache?.removeResource(mediaItem.mediaId)
-                    Database.transaction {
-                        resetFormatContentLength( mediaItem.mediaId )
-                    }
+                    Database.format.safeResetContentLength( mediaItem.mediaId )
+
                     if (!isLocal)
                         manageDownload(
                             context = context,

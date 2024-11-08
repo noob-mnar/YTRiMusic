@@ -404,9 +404,8 @@ fun Podcast(
                                             if (podcastPage?.listEpisode?.isNotEmpty() == true)
                                                 podcastPage?.listEpisode?.forEach {
                                                     binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                                    Database.transaction {
-                                                        resetFormatContentLength( it.asMediaItem.mediaId )
-                                                    }
+                                                    Database.format.safeResetContentLength( it.asMediaItem.mediaId )
+
                                                     manageDownload(
                                                         context = context,
                                                         mediaItem = it.asMediaItem,
@@ -432,9 +431,8 @@ fun Podcast(
                                             if (podcastPage?.listEpisode?.isNotEmpty() == true)
                                                 podcastPage?.listEpisode?.forEach {
                                                     binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                                    Database.transaction {
-                                                        resetFormatContentLength( it.asMediaItem.mediaId )
-                                                    }
+                                                    Database.format.safeResetContentLength( it.asMediaItem.mediaId )
+
                                                     manageDownload(
                                                         context = context,
                                                         mediaItem = it.asMediaItem,
@@ -719,9 +717,7 @@ fun Podcast(
                             song = song.asMediaItem,
                             onDownloadClick = {
                                 binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                Database.transaction {
-                                    resetFormatContentLength( song.asMediaItem.mediaId )
-                                }
+                                Database.format.safeResetContentLength( song.asMediaItem.mediaId )
 
                                 if (!isLocal)
                                     manageDownload(

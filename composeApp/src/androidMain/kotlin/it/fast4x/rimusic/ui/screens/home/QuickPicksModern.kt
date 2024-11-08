@@ -446,9 +446,7 @@ fun QuickPicksModern(
                                     song = song,
                                     onDownloadClick = {
                                         binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                        Database.transaction {
-                                            resetFormatContentLength( song.asMediaItem.mediaId )
-                                        }
+                                        Database.format.safeResetContentLength( song.asMediaItem.mediaId )
 
                                         if (!isLocal)
                                             manageDownload(
@@ -485,9 +483,8 @@ fun QuickPicksModern(
                                                         },
                                                         onDownload = {
                                                             binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                                            Database.transaction {
-                                                                resetFormatContentLength(song.asMediaItem.mediaId)
-                                                            }
+                                                            Database.format.safeResetContentLength( song.asMediaItem.mediaId )
+
                                                             manageDownload(
                                                                 context = context,
                                                                 mediaItem = song.asMediaItem,
@@ -538,9 +535,8 @@ fun QuickPicksModern(
                                     song = song,
                                     onDownloadClick = {
                                         binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                        Database.transaction {
-                                            resetFormatContentLength( song.asMediaItem.mediaId )
-                                        }
+                                        Database.format.safeResetContentLength( song.asMediaItem.mediaId )
+
                                         if (!isLocal)
                                             manageDownload(
                                                 context = context,
@@ -562,9 +558,8 @@ fun QuickPicksModern(
                                                         mediaItem = song.asMediaItem,
                                                         onDownload = {
                                                             binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                                            Database.transaction {
-                                                                resetFormatContentLength( song.asMediaItem.mediaId )
-                                                            }
+                                                            Database.format.safeResetContentLength( song.asMediaItem.mediaId )
+
                                                             manageDownload(
                                                                 context = context,
                                                                 mediaItem = song.asMediaItem,

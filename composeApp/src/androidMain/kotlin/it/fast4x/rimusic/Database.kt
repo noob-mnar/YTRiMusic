@@ -61,6 +61,7 @@ import me.knighthat.database.migrator.From7To8Migration
 import me.knighthat.database.migrator.From8To9Migration
 import me.knighthat.database.table.AlbumTable
 import me.knighthat.database.table.ArtistTable
+import me.knighthat.database.table.FormatTable
 import me.knighthat.database.table.SongTable
 
 
@@ -77,14 +78,8 @@ interface Database {
         get() = DatabaseInitializer.Instance.artist
     val album: AlbumTable
         get() = DatabaseInitializer.Instance.album
-
-    @Transaction
-    @Query("SELECT * FROM Format WHERE songId = :songId ORDER BY bitrate DESC LIMIT 1")
-    fun getBestFormat(songId: String): Flow<Format?>
-
-    @Transaction
-    @Query("SELECT * FROM Format ORDER BY lastModified DESC LIMIT 1")
-    fun getLastBestFormat(): Flow<Format?>
+    val format: FormatTable
+        get() = DatabaseInitializer.Instance.format
 
     @Transaction
     @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
@@ -1182,22 +1177,6 @@ interface Database {
     @Query("SELECT thumbnailUrl FROM Song JOIN SongPlaylistMap ON id = songId WHERE playlistId = :id ORDER BY position LIMIT 4")
     fun playlistThumbnailUrls(id: Long): Flow<List<String>>
 
-    @Query("SELECT * FROM Format WHERE songId = :songId")
-    fun format(songId: String): Flow<Format?>
-
-    @Query("SELECT contentLength FROM Format WHERE songId = :songId")
-    fun formatContentLength(songId: String): Long
-
-    @Query("UPDATE Format SET contentLength = 0 WHERE songId = :songId")
-    fun resetFormatContentLength(songId: String)
-
-    @Query("DELETE FROM Format WHERE songId = :songId")
-    fun deleteFormat(songId: String)
-
-    @Transaction
-    @Query("SELECT Song.*, contentLength FROM Song JOIN Format ON id = songId WHERE contentLength IS NOT NULL AND totalPlayTimeMs > 0 ORDER BY Song.ROWID DESC")
-    fun songsWithContentLength(): Flow<List<SongWithContentLength>>
-
     @Transaction
     @Query("""
         UPDATE SongPlaylistMap SET position = 
@@ -1219,9 +1198,6 @@ interface Database {
 
     @Query("DELETE FROM SongPlaylistMap WHERE songId = :id")
     fun deleteSongFromPlaylists(id: String)
-
-    @Query("SELECT loudnessDb FROM Format WHERE songId = :songId")
-    fun loudnessDb(songId: String): Flow<Float?>
 
     @Query("SELECT * FROM Song WHERE title LIKE :query OR artistsText LIKE :query")
     fun search(query: String): Flow<List<Song>>
@@ -1292,9 +1268,6 @@ interface Database {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     @Throws(SQLException::class)
     fun insert(event: Event)
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insert(format: Format)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(searchQuery: SearchQuery)
@@ -1384,9 +1357,6 @@ interface Database {
 
     @Upsert
     fun upsert(songAlbumMap: SongAlbumMap)
-
-    @Upsert
-    fun upsert(format: Format)
 
     @Delete
     fun delete(searchQuery: SearchQuery)
@@ -1493,6 +1463,7 @@ abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
     abstract val song: SongTable
     abstract val artist: ArtistTable
     abstract val album: AlbumTable
+    abstract val format: FormatTable
 
     companion object {
 

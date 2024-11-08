@@ -1245,11 +1245,7 @@ fun LocalPlaylistSongs(
                                 song = song.song,
                                 onDownloadClick = {
                                     binder?.cache?.removeResource(song.asMediaItem.mediaId)
-
-                                    //query {
-                                    //    Database.resetFormatContentLength(song.asMediaItem.mediaId)
-                                    //}
-                                    resetFormatContentLength(song.asMediaItem.mediaId)
+                                    Database.format.safeResetContentLength( song.asMediaItem.mediaId )
 
                                     if (!isLocal) {
                                         manageDownload(
