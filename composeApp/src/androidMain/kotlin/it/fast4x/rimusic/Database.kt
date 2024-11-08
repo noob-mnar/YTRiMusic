@@ -61,6 +61,7 @@ import me.knighthat.database.table.AlbumTable
 import me.knighthat.database.table.ArtistTable
 import me.knighthat.database.table.EventTable
 import me.knighthat.database.table.FormatTable
+import me.knighthat.database.table.SearchQueryTable
 import me.knighthat.database.table.SongTable
 
 
@@ -81,6 +82,8 @@ interface Database {
         get() = DatabaseInitializer.Instance.format
     val event: EventTable
         get() = DatabaseInitializer.Instance.event
+    val searchQuery: SearchQueryTable
+        get() = DatabaseInitializer.Instance.searchQuery
 
 
     @Transaction
@@ -619,21 +622,11 @@ interface Database {
     @RewriteQueriesToDropUnusedColumns
     fun songsWithAlbumByPlayTimeDesc(showHiddenSongs: Int = 0): Flow<List<SongEntity>>
 
-
     @Query("SELECT * FROM QueuedMediaItem")
     fun queue(): List<QueuedMediaItem>
 
     @Query("DELETE FROM QueuedMediaItem")
     fun clearQueue()
-
-    @Query("SELECT * FROM SearchQuery WHERE `query` LIKE :query ORDER BY id DESC")
-    fun queries(query: String): Flow<List<SearchQuery>>
-
-    @Query("SELECT COUNT (*) FROM SearchQuery")
-    fun queriesCount(): Flow<Int>
-
-    @Query("DELETE FROM SearchQuery")
-    fun clearQueries()
 
     @Query("UPDATE Playlist SET name = '${PINNED_PREFIX}'||name WHERE id = :playlistId")
     fun pinPlaylist(playlistId: Long): Int
@@ -1348,9 +1341,6 @@ interface Database {
     fun upsert(songAlbumMap: SongAlbumMap)
 
     @Delete
-    fun delete(searchQuery: SearchQuery)
-
-    @Delete
     fun delete(playlist: Playlist)
 
     @Delete
@@ -1454,6 +1444,7 @@ abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
     abstract val album: AlbumTable
     abstract val format: FormatTable
     abstract val event: EventTable
+    abstract val searchQuery: SearchQueryTable
 
     companion object {
 
