@@ -265,7 +265,9 @@ fun PlaylistSongListModern(
             setValue = { text ->
 
                 Database.transaction {
-                    val playlistId = insert( Playlist(name = text, browseId = browseId) )
+                    // Not a best way
+                    // TODO: find a better way to handle error
+                    val playlistId = playlist.insert( Playlist(name = text, browseId = browseId) )
 
                     playlistPage?.songsPage
                                 ?.items

@@ -16,7 +16,6 @@ import androidx.room.RoomDatabase
 import androidx.room.RoomWarnings
 import androidx.room.Transaction
 import androidx.room.TypeConverters
-import androidx.room.Update
 import androidx.room.Upsert
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteQuery
@@ -35,7 +34,6 @@ import it.fast4x.rimusic.models.Info
 import it.fast4x.rimusic.models.Lyrics
 import it.fast4x.rimusic.models.Playlist
 import it.fast4x.rimusic.models.PlaylistPreview
-import it.fast4x.rimusic.models.PlaylistWithSongs
 import it.fast4x.rimusic.models.QueuedMediaItem
 import it.fast4x.rimusic.models.SearchQuery
 import it.fast4x.rimusic.models.Song
@@ -61,6 +59,7 @@ import me.knighthat.database.table.AlbumTable
 import me.knighthat.database.table.ArtistTable
 import me.knighthat.database.table.EventTable
 import me.knighthat.database.table.FormatTable
+import me.knighthat.database.table.PlaylistTable
 import me.knighthat.database.table.SearchQueryTable
 import me.knighthat.database.table.SongTable
 
@@ -84,6 +83,8 @@ interface Database {
         get() = DatabaseInitializer.Instance.event
     val searchQuery: SearchQueryTable
         get() = DatabaseInitializer.Instance.searchQuery
+    val playlist: PlaylistTable
+        get() = DatabaseInitializer.Instance.playlist
 
 
     @Transaction
@@ -139,18 +140,6 @@ interface Database {
     @Query("SELECT * FROM Song WHERE ROWID='wooowww' ")
     @RewriteQueriesToDropUnusedColumns
     fun fakeSongsList(): Flow<List<Song>>
-
-    @Transaction
-    //@Query("SELECT Playlist.*, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = Playlist.id) as songCount " +
-    //        "FROM Song JOIN SongPlaylistMap ON Song.id = SongPlaylistMap.songId " +
-    //        "JOIN Event ON Song.id = Event.songId JOIN Playlist ON Playlist.id = SongPlaylistMap.playlistId " +
-    //        "WHERE Event.timestamp BETWEEN :from AND :to GROUP BY Playlist.id ORDER BY Event.timestamp DESC LIMIT :limit")
-    @Query("SELECT Playlist.*, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = Playlist.id) as songCount " +
-            "FROM Song JOIN SongPlaylistMap ON Song.id = SongPlaylistMap.songId " +
-            "JOIN Event ON Song.id = Event.songId JOIN Playlist ON Playlist.id = SongPlaylistMap.playlistId " +
-            "WHERE (:to - Event.timestamp) <= :from GROUP BY Playlist.id ORDER BY SUM(Event.playTime) DESC LIMIT :limit")
-    @RewriteQueriesToDropUnusedColumns
-    fun playlistsMostPlayedByPeriod(from: Long,to: Long, limit:Int): Flow<List<PlaylistPreview>>
 
     @Transaction
     //@Query("SELECT Album.* FROM Song JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId " +
@@ -628,11 +617,6 @@ interface Database {
     @Query("DELETE FROM QueuedMediaItem")
     fun clearQueue()
 
-    @Query("UPDATE Playlist SET name = '${PINNED_PREFIX}'||name WHERE id = :playlistId")
-    fun pinPlaylist(playlistId: Long): Int
-    @Query("UPDATE Playlist SET name = REPLACE(name,'${PINNED_PREFIX}','') WHERE id = :playlistId")
-    fun unPinPlaylist(playlistId: Long): Int
-
     @Query("SELECT count(id) FROM Song WHERE id = :songId and likedAt IS NOT NULL")
     fun songliked(songId: String): Int
 
@@ -758,10 +742,6 @@ interface Database {
             }
         }
     }
-
-    @Transaction
-    @Query("SELECT max(position) maxPos FROM SongPlaylistMap WHERE playlistId = :id")
-    fun getSongMaxPositionToPlaylist(id: Long): Int
 
     @Transaction
     @Query("SELECT PM.playlistId FROM SongPlaylistMap PM WHERE PM.songId = :id")
@@ -1331,17 +1311,11 @@ interface Database {
         }
     }
 
-    @Update
-    fun update(playlist: Playlist)
-
     @Upsert
     fun upsert(lyrics: Lyrics)
 
     @Upsert
     fun upsert(songAlbumMap: SongAlbumMap)
-
-    @Delete
-    fun delete(playlist: Playlist)
 
     @Delete
     fun delete(songPlaylistMap: SongPlaylistMap)
@@ -1445,6 +1419,7 @@ abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
     abstract val format: FormatTable
     abstract val event: EventTable
     abstract val searchQuery: SearchQueryTable
+    abstract val playlist: PlaylistTable
 
     companion object {
 

@@ -214,7 +214,9 @@ fun Podcast(
             setValue = { text ->
 
                 Database.transaction {
-                    val playlistId = insert( Playlist(name = text, browseId = browseId) )
+                    // Not a best way
+                    // TODO: find a better way to handle error
+                    val playlistId = playlist.insert( Playlist(name = text, browseId = browseId) )
 
                     podcastPage?.listEpisode
                                ?.map( Innertube.Podcast.EpisodeItem::asMediaItem )

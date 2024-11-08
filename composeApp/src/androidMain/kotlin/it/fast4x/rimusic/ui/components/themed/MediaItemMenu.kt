@@ -556,7 +556,10 @@ fun BaseMediaItemMenu(
         onAddToPreferites = onAddToPreferites,
         onAddToPlaylist = { playlist, position ->
             Database.transaction {
-                val playlistId = insert(playlist).takeIf { it != -1L } ?: playlist.id
+                val playlistId = runCatching {
+                    // Insert ensures that record is written or an error is thrown.
+                    this.playlist.insert( playlist )
+                }.getOrDefault( playlist.id )
 
                 insert(mediaItem)
                 insert(
@@ -640,7 +643,10 @@ fun MiniMediaItemMenu(
         onDismiss = onDismiss,
         onAddToPlaylist = { playlist, position ->
             Database.transaction {
-                val playlistId = insert(playlist).takeIf { it != -1L } ?: playlist.id
+                val playlistId = runCatching {
+                    // Insert ensures that record is written or an error is thrown.
+                    this.playlist.insert( playlist )
+                }.getOrDefault( playlist.id )
 
                 insert(mediaItem)
                 insert(

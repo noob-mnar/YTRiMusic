@@ -95,15 +95,17 @@ fun ImportPipedPlaylists(){
                 //itemsPiped = it
                 Database.transaction {
                     it.forEach {
-                        val playlistExist = playlistExistByName("$PIPED_PREFIX${it.name}")
-                        if (playlistExist == 0L) {
-                            val playlistId =
-                                insert(
-                                    Playlist(
-                                        name = "$PIPED_PREFIX${it.name}",
-                                        browseId = it.id.toString()
-                                    )
-                                )
+                        val isPlaylistExist = playlist.findByName( "$PIPED_PREFIX${it.name}" ) != null
+                        if ( isPlaylistExist ) {
+                            val playlist = Playlist(
+                                name = "$PIPED_PREFIX${it.name}",
+                                browseId = it.id.toString()
+                            )
+                            // Not a best way
+                            // TODO: find a better way to handle error
+                            val playlistId = this@transaction.playlist
+                                                             .insert( playlist )
+
                             coroutineScope.launch(Dispatchers.IO) {
                                 async {
                                     Piped.playlist.songs(
@@ -193,8 +195,12 @@ fun createPipedPlaylist(context: Context, coroutineScope: CoroutineScope, pipedS
         async {
             Piped.playlist.create(session = pipedSession, name = name)
         }.await()?.map {
-           playlistId = Database.insert(Playlist(name = "$PIPED_PREFIX$name", browseId = it.id.toString()))
-           browseId = it.id.toString()
+            val playlist = Playlist(
+                name = "$PIPED_PREFIX$name",
+                browseId = it.id.toString()
+            )
+            playlistId = Database.playlist.insert( playlist )
+            browseId = it.id.toString()
         }
         Timber.d("SyncPipedUtils createPipedPlaylist pipedSession $pipedSession, name $name new playlistId $playlistId browseId $browseId")
     }

@@ -174,7 +174,11 @@ fun PlaylistsItemMenu(
                         placeholder = stringResource(R.string.enter_the_playlist_name),
                         setValue = { text ->
                             Database.transaction {
-                                val playlistId = insert( Playlist(name = text) )
+                                // Not a best way
+                                // TODO: find a better way to handle error
+                                val playlistId = this@transaction.playlist
+                                                                 .insert( Playlist(name = text) )
+
                                 onAddToPlaylist(
                                     PlaylistPreview(
                                         Playlist(

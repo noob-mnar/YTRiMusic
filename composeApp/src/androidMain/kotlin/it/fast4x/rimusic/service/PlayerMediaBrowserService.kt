@@ -471,12 +471,10 @@ class PlayerMediaBrowserService : MediaBrowserServiceCompat(), ServiceConnection
                         Database.event.trending( enum.number.toInt() )
                     }
 
-                    MediaId.playlists -> data
-                        .getOrNull(1)
-                        ?.toLongOrNull()
-                        ?.let(Database::playlistWithSongs)
-                        ?.first()
-                        ?.songs
+                    MediaId.playlists -> data.getOrNull(1)
+                                            ?.toLongOrNull()
+                                            ?.let( Database.playlist::playlistWithSongsById )
+                                            ?.songs
 
                     MediaId.albums -> data.getOrNull( 1 )
                                           ?.let( Database.album::findSongsOf )

@@ -101,6 +101,7 @@ import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.asSong
 import it.fast4x.rimusic.utils.bold
 import it.fast4x.rimusic.utils.center
+import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.forcePlay
@@ -125,6 +126,7 @@ import it.fast4x.rimusic.utils.showRelatedAlbumsKey
 import it.fast4x.rimusic.utils.showSearchTabKey
 import it.fast4x.rimusic.utils.showSimilarArtistsKey
 import it.fast4x.rimusic.utils.showTipsKey
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -172,7 +174,11 @@ fun QuickPicksModern(
 
     var localMonthlyPlaylists by persistList<PlaylistPreview>("home/monthlyPlaylists")
     LaunchedEffect(Unit) {
-        Database.monthlyPlaylistsPreview("").collect{ localMonthlyPlaylists = it }
+        Database.playlist
+                .flowMonthlyPreview()
+                .collect( CoroutineScope( Dispatchers.IO ) ) {
+                    localMonthlyPlaylists = it
+                }
     }
 
     var downloadState by remember {
