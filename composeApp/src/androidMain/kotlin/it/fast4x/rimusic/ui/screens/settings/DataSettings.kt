@@ -71,7 +71,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.launch
 import me.knighthat.colorPalette
@@ -255,7 +254,7 @@ fun DataSettings() {
     var pauseSearchHistory by rememberPreference(pauseSearchHistoryKey, false)
 
     val queriesCount by remember {
-        Database.queriesCount().distinctUntilChanged()
+        Database.searchQuery.flowCountAll()
     }.collectAsState(initial = 0)
 
     var cleanCacheOfflineSongs by remember {
@@ -649,7 +648,7 @@ fun DataSettings() {
                 stringResource(R.string.history_is_empty)
             },
             isEnabled = queriesCount > 0,
-            onClick = Database::clearQueries
+            onClick = Database.searchQuery::clear
         )
         SettingsGroupSpacer(
             modifier = Modifier.height(Dimensions.bottomSpacer)

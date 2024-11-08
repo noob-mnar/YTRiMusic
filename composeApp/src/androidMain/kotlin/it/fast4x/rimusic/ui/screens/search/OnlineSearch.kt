@@ -79,6 +79,7 @@ import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.align
 import it.fast4x.rimusic.utils.asMediaItem
+import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.forcePlay
 import it.fast4x.rimusic.utils.medium
@@ -87,6 +88,8 @@ import it.fast4x.rimusic.utils.preferences
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -107,17 +110,21 @@ fun OnlineSearch(
 ) {
     val context = LocalContext.current
     var history by persistList<SearchQuery>("search/online/history")
+    val pauseHistory = context.preferences.getBoolean(pauseSearchHistoryKey, false)
 
     var reloadHistory by remember {
         mutableStateOf(false)
     }
 
-    LaunchedEffect(textFieldValue.text, reloadHistory) {
-        if (!context.preferences.getBoolean(pauseSearchHistoryKey, false)) {
-            Database.queries("%${textFieldValue.text}%")
+    LaunchedEffect( textFieldValue.text, reloadHistory, pauseHistory ) {
+        if( pauseHistory ) return@LaunchedEffect
+
+        Database.searchQuery
+                .flowFindAllContain( textFieldValue.text )
                 .distinctUntilChanged { old, new -> old.size == new.size }
-                .collect { history = it }
-        }
+                .collect( CoroutineScope(Dispatchers.IO) ) {
+                    history = it
+                }
     }
 
     //var suggestionsResult by persist<Result<List<String>?>?>("search/online/suggestionsResult")
@@ -540,10 +547,10 @@ fun OnlineSearch(
                                 indication = rippleIndication,
                                 interactionSource = remember { MutableInteractionSource() },
                                 onClick = {
-                                    Database.transaction { delete(searchQuery) }
+                                    Database.transaction { this.searchQuery.delete( searchQuery ) }
                                 },
                                 onLongClick = {
-                                    Database.transaction { history.forEach( Database::delete ) }
+                                    Database.transaction { history.forEach( this@transaction.searchQuery::delete ) }
                                     reloadHistory = !reloadHistory
                                 }
                             )

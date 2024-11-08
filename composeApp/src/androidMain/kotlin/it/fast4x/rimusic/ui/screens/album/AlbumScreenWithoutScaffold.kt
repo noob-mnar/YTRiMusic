@@ -202,11 +202,10 @@ fun AlbumScreenWithoutScaffold(
                     pop()
                     searchResultRoute(query)
 
-                    if (!context.preferences.getBoolean(pauseSearchHistoryKey, false)) {
+                    if (!context.preferences.getBoolean(pauseSearchHistoryKey, false))
                         Database.transaction {
-                            insert( SearchQuery(query = query) )
+                            searchQuery.insert( SearchQuery(query = query) )
                         }
-                    }
                 },
                 onViewPlaylist = {}, //onPlaylistUrl,
                 onDismiss = { homeRoute::global }

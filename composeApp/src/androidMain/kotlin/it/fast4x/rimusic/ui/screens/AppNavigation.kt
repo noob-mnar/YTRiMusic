@@ -394,7 +394,7 @@ fun AppNavigation(
 
                     if (!context.preferences.getBoolean(pauseSearchHistoryKey, false))
                         Database.transaction {
-                            insert( SearchQuery(query = query) )
+                            searchQuery.insert( SearchQuery(query = query) )
                         }
                 },
             )
@@ -518,7 +518,7 @@ fun AppNavigation(
 
                     if (!context.preferences.getBoolean(pauseSearchHistoryKey, false))
                         Database.transaction {
-                            insert( SearchQuery(query = newQuery) )
+                            searchQuery.insert( SearchQuery(query = newQuery) )
                         }
                 },
             )
