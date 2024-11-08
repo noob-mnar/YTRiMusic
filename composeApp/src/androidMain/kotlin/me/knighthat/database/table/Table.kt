@@ -8,6 +8,7 @@ import androidx.room.Update
 import androidx.room.Upsert
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.DatabaseInitializer
+import me.knighthat.database.DatabaseTable
 import java.sql.SQLException
 
 
@@ -122,7 +123,13 @@ interface Table<E, K> {
      */
     @Transaction
     fun clear() = Database.transaction {
-        val className = this@Table::class.java.simpleName
+        val clazz = this@Table::class
+        // If class annotated with @DatabaseTable, extracts DatabaseTable#value.
+        // If not, use class name
+        val className =
+            runCatching {
+                (clazz.annotations.first { it is DatabaseTable } as DatabaseTable).value
+            }.getOrDefault( clazz.simpleName )
 
         DatabaseInitializer.Instance.query(
             "DELETE FROM $className",
