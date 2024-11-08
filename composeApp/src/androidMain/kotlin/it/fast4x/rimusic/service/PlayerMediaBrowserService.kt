@@ -467,11 +467,8 @@ class PlayerMediaBrowserService : MediaBrowserServiceCompat(), ServiceConnection
                     }
 
                     MediaId.top -> {
-                        val maxTopSongs = preferences.getEnum(MaxTopPlaylistItemsKey,
-                            MaxTopPlaylistItems.`10`).number.toInt()
-
-                        Database.trending(maxTopSongs)
-                                .first()
+                        val enum = preferences.getEnum(MaxTopPlaylistItemsKey, MaxTopPlaylistItems.`10`)
+                        Database.event.trending( enum.number.toInt() )
                     }
 
                     MediaId.playlists -> data

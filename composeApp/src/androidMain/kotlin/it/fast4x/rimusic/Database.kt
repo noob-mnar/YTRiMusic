@@ -1,6 +1,5 @@
 package it.fast4x.rimusic
 
-import android.database.SQLException
 import android.database.sqlite.SQLiteConstraintException
 import androidx.annotation.WorkerThread
 import androidx.media3.common.MediaItem
@@ -31,7 +30,6 @@ import it.fast4x.rimusic.enums.SortOrder
 import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.Artist
 import it.fast4x.rimusic.models.Event
-import it.fast4x.rimusic.models.EventWithSong
 import it.fast4x.rimusic.models.Format
 import it.fast4x.rimusic.models.Info
 import it.fast4x.rimusic.models.Lyrics
@@ -61,6 +59,7 @@ import me.knighthat.database.migrator.From7To8Migration
 import me.knighthat.database.migrator.From8To9Migration
 import me.knighthat.database.table.AlbumTable
 import me.knighthat.database.table.ArtistTable
+import me.knighthat.database.table.EventTable
 import me.knighthat.database.table.FormatTable
 import me.knighthat.database.table.SongTable
 
@@ -80,18 +79,8 @@ interface Database {
         get() = DatabaseInitializer.Instance.album
     val format: FormatTable
         get() = DatabaseInitializer.Instance.format
-
-    @Transaction
-    @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
-    @Query("SELECT DISTINCT (timestamp / 86400000) as timestampDay, event.* FROM event ORDER BY rowId DESC")
-    fun events(): Flow<List<EventWithSong>>
-
-    @Transaction
-    @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
-    @Query("SELECT Event.* FROM Event JOIN Song ON Song.id = songId WHERE " +
-            "Event.timestamp / 86400000 = :date / 86400000 LIMIT :limit")
-    @RewriteQueriesToDropUnusedColumns
-    fun eventWithSongByPeriod(date: Long, limit:Long = Long.MAX_VALUE): Flow<List<EventWithSong>>
+    val event: EventTable
+        get() = DatabaseInitializer.Instance.event
 
 
     @Transaction
@@ -1464,6 +1453,7 @@ abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
     abstract val artist: ArtistTable
     abstract val album: AlbumTable
     abstract val format: FormatTable
+    abstract val event: EventTable
 
     companion object {
 

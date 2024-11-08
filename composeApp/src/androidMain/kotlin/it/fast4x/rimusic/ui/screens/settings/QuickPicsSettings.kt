@@ -62,14 +62,16 @@ fun  QuickPicsSettings() {
     var showCharts by rememberPreference(showChartsKey, true)
     var enableQuickPicksPage by rememberPreference(enableQuickPicksPageKey, true)
     val eventsCount by remember {
-        Database.eventsCount().distinctUntilChanged()
+        Database.event
+                .flowCountAll()
+                .distinctUntilChanged()
     }.collectAsState(initial = 0)
     var clearEvents by remember { mutableStateOf(false) }
     if (clearEvents) {
         ConfirmationDialog(
             text = stringResource(R.string.do_you_really_want_to_delete_all_playback_events),
             onDismiss = { clearEvents = false },
-            onConfirm = { Database.transaction( Database::clearEvents ) }
+            onConfirm = Database.event::clear
         )
     }
 

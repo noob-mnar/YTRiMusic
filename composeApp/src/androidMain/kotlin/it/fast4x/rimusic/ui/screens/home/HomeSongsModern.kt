@@ -571,9 +571,9 @@ fun HomeSongsModern(
                             if (topPlaylistPeriod.duration == Duration.INFINITE)
                                 Database.songsEntityByPlayTimeWithLimitDesc(limit = maxTopPlaylistItems.number.toInt())
                             else
-                                Database.trendingSongEntity(
-                                    limit = maxTopPlaylistItems.number.toInt(),
-                                    period = topPlaylistPeriod.duration.inWholeMilliseconds
+                                Database.event.flowTrendingAsSongEntity(
+                                    maxTopPlaylistItems.number.toInt(),
+                                    topPlaylistPeriod.duration.inWholeMilliseconds
                                 )
 
                         filterCondition = { songs ->
