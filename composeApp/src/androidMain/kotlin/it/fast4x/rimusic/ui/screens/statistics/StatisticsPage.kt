@@ -85,6 +85,9 @@ import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.showStatsListeningTimeKey
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import me.knighthat.colorPalette
 import me.knighthat.typography
 import kotlin.time.Duration
@@ -190,10 +193,17 @@ fun StatisticsPage(
         Database.albumsMostPlayedByPeriod(from, now, maxStatisticsItems.number.toInt()).collect { albums = it }
     }
     LaunchedEffect(Unit) {
-        Database.playlistsMostPlayedByPeriod(from, now, maxStatisticsItems.number.toInt()).collect { playlists = it }
-    }
-    LaunchedEffect(Unit) {
         Database.songsMostPlayedByPeriod(from, now, maxStatisticsItems.number).collect { songs = it }
+    }
+    LaunchedEffect( Unit ) {
+        CoroutineScope( Dispatchers.IO ).launch {
+
+            Database.playlist
+                    .flowMostPlayedBetween( from, now, maxStatisticsItems.number )
+                    .collect {
+                        playlists = it
+                    }
+        }
     }
 
     var downloadState by remember {

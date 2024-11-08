@@ -189,7 +189,7 @@ fun HomeLibraryModern(
                     )
                 else
                     Database.transaction {
-                        insert( Playlist( name = newValue ) )
+                        playlist.safeUpsert( Playlist(name = newValue) )
                     }
 
                 onDismiss()
@@ -205,12 +205,14 @@ fun HomeLibraryModern(
             context,
             beforeTransaction = { _, row ->
                 plistId = row["PlaylistName"]?.let {
-                    Database.playlistExistByName( it )
+                    Database.playlist.findByName( it )?.id
                 } ?: 0L
 
                 if (plistId == 0L)
                     plistId = row["PlaylistName"]?.let {
-                        Database.insert( Playlist( plistId, it, row["PlaylistBrowseId"] ) )
+                        Database.playlist.insert(
+                            Playlist( plistId, it, row["PlaylistBrowseId"] )
+                        )
                     }!!
             },
             afterTransaction = { index, song ->

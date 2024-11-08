@@ -290,7 +290,7 @@ fun LocalPlaylistSongs(
                 Database.transaction {
                     playlistPreview?.playlist
                                    ?.copy(name = "$prefix$newValue")
-                                   ?.let( ::update )
+                                   ?.let( playlist::update )
                 }
 
                 if (isPipedPlaylist)
@@ -339,7 +339,7 @@ fun LocalPlaylistSongs(
 
             override fun onConfirm() {
                 Database.transaction {
-                    playlistPreview?.playlist?.let( ::delete )
+                    playlistPreview?.playlist?.let( playlist::delete )
                 }
 
                 if (
@@ -805,12 +805,12 @@ fun LocalPlaylistSongs(
                                             val isPinned = playlistPreview?.playlist
                                                                           ?.name
                                                                           ?.startsWith(PINNED_PREFIX, true)
+                                            if( isPinned != null ) {
+                                                val prefix = if( isPinned ) "" else PINNED_PREFIX
 
-                                            Database.transaction {
-                                                if( isPinned == true )
-                                                    Database.unPinPlaylist(playlistId)
-                                                else
-                                                    Database.pinPlaylist(playlistId)
+                                                Database.transaction {
+                                                    playlist.updateName( playlistId, "$prefix${playlistName.value}" )
+                                                }
                                             }
                                         },
                                         onLongClick = {

@@ -316,7 +316,7 @@ fun AlbumDetailsModern(
             setValue = {
                 if (it.isNotEmpty())
                     Database.transaction {
-                        insert( Playlist(name = it) )
+                        playlist.safeUpsert( Playlist(name = it) )
                     }
             }
         )
