@@ -338,7 +338,7 @@ fun HomeSongsModern(
             context,
             afterTransaction = { _, song ->
                 Database.song.safeUpsert( song )
-                Database.like( song.id, System.currentTimeMillis() )
+                Database.song.toggleLike( song.id )
             }
         )
     }
@@ -559,7 +559,7 @@ fun HomeSongsModern(
 
                         val downloads = MyDownloadHelper.downloads.value
 
-                        songFlow = Database.listAllSongsAsFlow()
+                        songFlow = Database.song.flowAllAsSongEntity()
                         dispatcher = Dispatchers.IO
                         filterCondition = { song ->
                             downloads[song.song.id]?.state == Download.STATE_COMPLETED
@@ -864,25 +864,9 @@ fun HomeSongsModern(
                                 }
                             },
                             onAddToPreferites = {
-                                if (listMediaItems.isNotEmpty()) {
-                                    listMediaItems.map {
-                                        Database.transaction {
-                                            like(
-                                                it.mediaId,
-                                                System.currentTimeMillis()
-                                            )
-                                        }
-                                    }
-                                } else {
-                                    items.map {
-                                        Database.transaction {
-                                            like(
-                                                it.asMediaItem.mediaId,
-                                                System.currentTimeMillis()
-                                            )
-                                        }
-                                    }
-                                }
+                                listMediaItems.ifEmpty { items.map( SongEntity::asMediaItem ) }
+                                              .map( MediaItem::mediaId )
+                                              .forEach( Database.song::toggleLike )
                             },
                             onAddToPlaylist = { playlistPreview ->
                                 if (builtInPlaylist == BuiltInPlaylist.OnDevice) items =

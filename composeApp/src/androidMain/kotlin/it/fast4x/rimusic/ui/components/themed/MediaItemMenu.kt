@@ -110,9 +110,11 @@ import it.fast4x.rimusic.utils.setLikeState
 import it.fast4x.rimusic.utils.thumbnail
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.withContext
 import me.knighthat.colorPalette
+import me.knighthat.database.DatabaseTable
 import me.knighthat.typography
 import timber.log.Timber
 import java.time.LocalTime.now
@@ -161,11 +163,7 @@ fun InHistoryMediaItemMenu(
         onDismiss = onDismiss,
         onHideFromDatabase = onHideFromDatabase,
         onDeleteFromDatabase = onDeleteFromDatabase,
-        onAddToPreferites = {
-            Database.transaction {
-                like( song.id, System.currentTimeMillis() )
-            }
-        },
+        onAddToPreferites = { Database.song.toggleLike( song.id ) },
         modifier = modifier,
         disableScrollingText = disableScrollingText
     )
@@ -211,11 +209,7 @@ fun InPlaylistMediaItemMenu(
                 )
             }
         },
-        onAddToPreferites = {
-            Database.transaction {
-                like( song.id, System.currentTimeMillis() )
-            }
-        },
+        onAddToPreferites = { Database.song.toggleLike( song.id ) },
         modifier = modifier,
         disableScrollingText = disableScrollingText
     )
@@ -288,14 +282,7 @@ fun NonQueuedMediaItemMenuLibrary(
             onRemoveFromPlaylist = onRemoveFromPlaylist,
             onHideFromDatabase = { isHiding = true },
             onRemoveFromQuickPicks = onRemoveFromQuickPicks,
-            onAddToPreferites = {
-                Database.transaction {
-                    like(
-                        mediaItem.mediaId,
-                        System.currentTimeMillis()
-                    )
-                }
-            },
+            onAddToPreferites = { Database.song.toggleLike( mediaItem.mediaId ) },
             modifier = modifier,
             disableScrollingText = disableScrollingText
         )
@@ -321,14 +308,7 @@ fun NonQueuedMediaItemMenuLibrary(
             onRemoveFromPlaylist = onRemoveFromPlaylist,
             onHideFromDatabase = { isHiding = true },
             onRemoveFromQuickPicks = onRemoveFromQuickPicks,
-            onAddToPreferites = {
-                Database.transaction {
-                    like(
-                        mediaItem.mediaId,
-                        System.currentTimeMillis()
-                    )
-                }
-            },
+            onAddToPreferites = { Database.song.toggleLike( mediaItem.mediaId ) },
             modifier = modifier,
             disableScrollingText = disableScrollingText
         )
@@ -463,14 +443,7 @@ fun QueuedMediaItemMenu(
             onGoToPlaylist = {
                 navController.navigate(route = "${NavRoutes.localPlaylist.name}/$it")
             },
-            onAddToPreferites = {
-                Database.transaction {
-                    like(
-                        mediaItem.mediaId,
-                        System.currentTimeMillis()
-                    )
-                }
-            },
+            onAddToPreferites = { Database.song.toggleLike( mediaItem.mediaId ) },
             disableScrollingText = disableScrollingText
         )
     } else {
@@ -497,14 +470,7 @@ fun QueuedMediaItemMenu(
             onGoToPlaylist = {
                 navController.navigate(route = "${NavRoutes.playlist.name}/$it")
             },
-            onAddToPreferites = {
-                Database.transaction {
-                    like(
-                        mediaItem.mediaId,
-                        System.currentTimeMillis()
-                    )
-                }
-            },
+            onAddToPreferites = { Database.song.toggleLike( mediaItem.mediaId ) },
             disableScrollingText = disableScrollingText
         )
     }
@@ -847,8 +813,13 @@ fun MediaItemMenu(
                 .collect( CoroutineScope(Dispatchers.IO) ) { artistsList = it }
     }
 
-    LaunchedEffect(Unit, mediaItem.mediaId) {
-        Database.likedAt(mediaItem.mediaId).collect { likedAt = it }
+    LaunchedEffect( mediaItem.mediaId ) {
+        Database.song
+                .flowLikedAt( mediaItem.mediaId )
+                // Collect on IO thread to keep it from interfering with UI thread
+                .collect( CoroutineScope(Dispatchers.IO) ) {
+                    likedAt = it
+                }
     }
 
     var showCircularSlider by remember {
@@ -863,13 +834,9 @@ fun MediaItemMenu(
         mutableStateOf(false)
     }
 
-    var songSaved by remember {
-        mutableStateOf(0)
-    }
+    var songSaved by remember { mutableStateOf( false ) }
     LaunchedEffect(Unit, mediaItem.mediaId) {
-        withContext(Dispatchers.IO) {
-            songSaved = Database.songExist(mediaItem.mediaId)
-        }
+        Database.query { song.contains( mediaItem.mediaId ) }
     }
 
     if (showDialogChangeSongTitle)
@@ -881,7 +848,7 @@ fun MediaItemMenu(
             setValue = {
                 if (it.isNotEmpty())
                     Database.transaction {
-                        updateSongTitle( mediaItem.mediaId, it )
+                        song.updateTitle( mediaItem.mediaId, it )
                     }
             },
             prefix = MODIFIED_PREFIX
@@ -896,7 +863,7 @@ fun MediaItemMenu(
             setValue = {
                 if (it.isNotEmpty())
                     Database.transaction {
-                        updateSongArtist( mediaItem.mediaId, it )
+                        song.updateArtist( mediaItem.mediaId, it )
                     }
             }
         )
@@ -1141,7 +1108,7 @@ fun MediaItemMenu(
                             //color = if (likedAt == null) colorPalette().textDisabled else colorPalette().text,
                             onClick = {
                                 Database.transaction {
-                                    if ( like(mediaItem.mediaId, setLikeState(likedAt)) == 0 )
+                                    if ( song.like(mediaItem.mediaId, setLikeState(likedAt)) == 0 )
                                         insert( mediaItem, Song::toggleLike )
                                 }
                             },
@@ -1214,7 +1181,7 @@ fun MediaItemMenu(
                         .height(8.dp)
                 )
 
-                if (!isLocal && songSaved > 0) {
+                if ( !isLocal && songSaved ) {
                     MenuEntry(
                         icon = R.drawable.title_edit,
                         text = stringResource(R.string.update_title),

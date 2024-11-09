@@ -315,10 +315,6 @@ interface Database {
     @Query("SELECT thumbnailUrl FROM Song WHERE likedAt IS NOT NULL AND id NOT LIKE '$LOCAL_KEY_PREFIX%'  LIMIT 4")
     fun preferitesThumbnailUrls(): Flow<List<String?>>
 
-    @Transaction
-    @Query("SELECT Song.*, contentLength FROM Song LEFT JOIN Format ON id = songId WHERE songId = :songId")
-    fun songCached(songId: String): Flow<SongWithContentLength?>
-
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Transaction
     @Query("SELECT Song.*, contentLength FROM Song INNER JOIN Format ON id = songId WHERE contentLength IS NOT NULL AND totalPlayTimeMs > 0 ORDER BY totalPlayTimeMs")
@@ -407,9 +403,6 @@ interface Database {
             }
         }
     }
-
-    @Query("SELECT thumbnailUrl FROM Song JOIN Format ON id = songId WHERE contentLength IS NOT NULL AND totalPlayTimeMs > 0  LIMIT 4")
-    fun offlineThumbnailUrls(): Flow<List<String?>>
 
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Transaction
@@ -616,21 +609,6 @@ interface Database {
 
     @Query("DELETE FROM QueuedMediaItem")
     fun clearQueue()
-
-    @Query("SELECT count(id) FROM Song WHERE id = :songId and likedAt IS NOT NULL")
-    fun songliked(songId: String): Int
-
-    @Query("SELECT * FROM Song WHERE id = :id")
-    fun song(id: String?): Flow<Song?>
-
-    @Query("SELECT count(id) FROM Song WHERE id = :id")
-    fun songExist(id: String): Int
-
-    @Query("SELECT likedAt FROM Song WHERE id = :songId")
-    fun likedAt(songId: String): Flow<Long?>
-
-    @Query("UPDATE Song SET likedAt = :likedAt WHERE id = :songId")
-    fun like(songId: String, likedAt: Long?): Int
 
     @Query("UPDATE Song SET durationText = :durationText WHERE id = :songId")
     fun updateDurationText(songId: String, durationText: String): Int

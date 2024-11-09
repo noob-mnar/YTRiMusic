@@ -60,10 +60,11 @@ data class YouTubeRadio(
             withContext(Dispatchers.IO) {
                 mediaItems?.forEach {
                     val songInPlaylist = Database.songUsedInPlaylists(it.mediaId)
-                    val songIsLiked = Database.songliked(it.mediaId)
-                    if (songInPlaylist == 0 && songIsLiked == 0) {
+                    val songIsLiked = Database.song.isLiked( it.mediaId )
+
+                    if( songInPlaylist == 0 && songIsLiked )
                         listMediaItems.add(it)
-                    }
+
                 }
             }
 

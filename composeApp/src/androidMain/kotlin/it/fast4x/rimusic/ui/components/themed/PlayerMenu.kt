@@ -113,14 +113,7 @@ fun PlayerMenu(
             onShowSleepTimer = {},
             onHideFromDatabase = { isHiding = true },
             onDismiss = onDismiss,
-            onAddToPreferites = {
-                transaction {
-                    Database.like(
-                        mediaItem.mediaId,
-                        System.currentTimeMillis()
-                    )
-                }
-            },
+            onAddToPreferites = { Database.song.toggleLike( mediaItem.mediaId ) },
             onClosePlayer = onClosePlayer,
             disableScrollingText = disableScrollingText
         )
@@ -154,14 +147,7 @@ fun MiniPlayerMenu(
             onGoToPlaylist = {
                 onClosePlayer()
             },
-            onAddToPreferites = {
-                Database.transaction {
-                    like(
-                        mediaItem.mediaId,
-                        System.currentTimeMillis()
-                    )
-                }
-            },
+            onAddToPreferites = { Database.song.toggleLike( mediaItem.mediaId ) },
             onDismiss = onDismiss,
             disableScrollingText = disableScrollingText
         )
@@ -172,14 +158,7 @@ fun MiniPlayerMenu(
             onGoToPlaylist = {
                 onClosePlayer()
             },
-            onAddToPreferites = {
-                Database.transaction {
-                    like(
-                        mediaItem.mediaId,
-                        System.currentTimeMillis()
-                    )
-                }
-            },
+            onAddToPreferites = { Database.song.toggleLike( mediaItem.mediaId ) },
             onDismiss = onDismiss,
             disableScrollingText = disableScrollingText
         )

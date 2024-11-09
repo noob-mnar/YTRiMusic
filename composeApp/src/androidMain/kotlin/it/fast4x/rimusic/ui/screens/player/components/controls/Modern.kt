@@ -218,7 +218,7 @@ fun InfoAlbumAndArtistModern(
                      val currentMediaItem = binder.player.currentMediaItem
 
                      Database.transaction {
-                         if ( like(mediaId, setLikeState(likedAt)) == 0 )
+                         if ( song.like(mediaId, setLikeState(likedAt)) == 0 )
                              currentMediaItem?.takeIf { it.mediaId == mediaId }
                                              ?.let { insert( currentMediaItem, Song::toggleLike  ) }
                      }

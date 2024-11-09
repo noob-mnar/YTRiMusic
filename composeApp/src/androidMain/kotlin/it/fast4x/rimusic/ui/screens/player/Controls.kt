@@ -51,6 +51,7 @@ import it.fast4x.rimusic.ui.screens.player.components.controls.InfoAlbumAndArtis
 import it.fast4x.rimusic.utils.GetControls
 import it.fast4x.rimusic.utils.GetSeekBar
 import it.fast4x.rimusic.utils.buttonzoomoutKey
+import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.conditional
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.effectRotationKey
@@ -68,6 +69,8 @@ import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.showlyricsthumbnailKey
 import it.fast4x.rimusic.utils.showthumbnailKey
 import it.fast4x.rimusic.utils.transparentBackgroundPlayerActionBarKey
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 
@@ -153,8 +156,13 @@ fun Controls(
     //val durationVisible by remember(isSeeking) { derivedStateOf { isSeeking } }
 
 
-    LaunchedEffect(mediaId) {
-        Database.likedAt(mediaId).distinctUntilChanged().collect { likedAt = it }
+    LaunchedEffect( mediaId ) {
+        Database.song
+                .flowLikedAt( mediaId )
+                .distinctUntilChanged()
+                .collect( CoroutineScope(Dispatchers.IO) ) {
+                    likedAt = it
+                }
     }
 
     var isDownloaded by rememberSaveable {

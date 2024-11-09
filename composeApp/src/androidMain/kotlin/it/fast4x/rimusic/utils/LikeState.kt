@@ -7,6 +7,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import it.fast4x.rimusic.Database
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 @Composable
@@ -15,8 +17,13 @@ fun getLikeState(mediaId: String): Int {
         mutableStateOf<Long?>(null)
     }
 
-    LaunchedEffect(mediaId) {
-        Database.likedAt(mediaId).distinctUntilChanged().collect { likedAt = it }
+    LaunchedEffect( mediaId ) {
+        Database.song
+                .flowLikedAt( mediaId )
+                .distinctUntilChanged()
+                .collect( CoroutineScope(Dispatchers.IO) ) {
+                    likedAt = it
+                }
     }
 
     return when (likedAt) {

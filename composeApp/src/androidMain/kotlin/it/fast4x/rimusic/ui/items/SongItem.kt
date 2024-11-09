@@ -51,6 +51,7 @@ import it.fast4x.rimusic.ui.styling.favoritesIcon
 import it.fast4x.rimusic.ui.styling.shimmer
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.asSong
+import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.conditional
 import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.getLikeState
@@ -60,6 +61,7 @@ import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.thumbnail
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import me.knighthat.colorPalette
@@ -334,8 +336,13 @@ fun SongItem(
             var likedAt by remember {
                 mutableStateOf<Long?>(null)
             }
-            LaunchedEffect(Unit, mediaItem.mediaId) {
-                Database.likedAt(mediaItem.mediaId).collect { likedAt = it }
+            LaunchedEffect( mediaItem.mediaId ) {
+                Database.song
+                        .flowLikedAt( mediaItem.mediaId )
+                        // Collect on IO thread to keep it from interfering with UI thread
+                        .collect( CoroutineScope(Dispatchers.IO) ) {
+                            likedAt = it
+                        }
             }
             if (likedAt != null)
                 HeaderIconButton(

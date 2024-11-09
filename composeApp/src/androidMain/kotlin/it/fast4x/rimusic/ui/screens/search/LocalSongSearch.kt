@@ -54,6 +54,7 @@ import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.align
 import it.fast4x.rimusic.utils.asMediaItem
+import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.forcePlay
 import it.fast4x.rimusic.utils.getDownloadState
@@ -62,7 +63,10 @@ import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.medium
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 import me.knighthat.colorPalette
 import me.knighthat.typography
 
@@ -86,11 +90,12 @@ fun LocalSongSearch(
     val menuState = LocalMenuState.current
 
     var items by persistList<Song>("search/local/songs")
-
-    LaunchedEffect(textFieldValue.text) {
-        if (textFieldValue.text.length > 1) {
-            Database.search("%${textFieldValue.text}%").collect { items = it }
-        }
+    LaunchedEffect( Unit ) {
+        Database.song
+                .flowAll()
+                .distinctUntilChanged()
+                // Collect on IO thread to keep it from interfering with UI thread
+                .collect( CoroutineScope(Dispatchers.IO) ) { items = it }
     }
 
     val thumbnailSizeDp = Dimensions.thumbnails.song
@@ -248,7 +253,10 @@ fun LocalSongSearch(
             }
 
             items(
-                items = items,
+                items = items.filter {
+                    it.title.contains( textFieldValue.text )
+                            || it.artistsText?.contains( textFieldValue.text ) == true
+                },
                 key = Song::id,
             ) { song ->
                 val isLocal by remember { derivedStateOf { song.asMediaItem.isLocal } }

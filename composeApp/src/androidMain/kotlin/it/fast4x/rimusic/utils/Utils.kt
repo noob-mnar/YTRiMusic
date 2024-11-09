@@ -54,49 +54,12 @@ import java.util.Date
 import java.util.GregorianCalendar
 import kotlin.time.Duration.Companion.minutes
 
-
-fun getDateTimeAsFormattedString(dateAsLongInMs: Long): String? {
-    try {
-        return SimpleDateFormat("dd/MM/yyyy").format(Date(dateAsLongInMs))
-    } catch (e: Exception) {
-        return null // parsing exception
-    }
-}
-
-fun getTimestampFromDate(date: String): Long {
-    return try {
-        SimpleDateFormat("dd-MM-yyyy").parse(date).time
-    } catch (e: Exception) {
-        return 0
-    }
-}
-
-fun songToggleLike( song: Song ) {
-    Database.transaction {
-        if ( songExist(song.asMediaItem.mediaId) == 0 )
-            insert(song.asMediaItem, Song::toggleLike)
-
-        if ( songliked(song.asMediaItem.mediaId) == 0 )
-            like(
-                song.asMediaItem.mediaId,
-                System.currentTimeMillis()
-            )
-        else like( song.asMediaItem.mediaId, null )
-    }
-}
-
 fun mediaItemToggleLike( mediaItem: MediaItem ) {
     Database.transaction {      // One step fails, whole block cancelled
-        if ( songExist(mediaItem.mediaId) == 0 )
+        if ( !song.contains( mediaItem.mediaId ) )
             insert(mediaItem, Song::toggleLike)
 
-        val likedAt =
-            if( songliked(mediaItem.mediaId) == 0 )
-                System.currentTimeMillis()
-            else
-                null
-
-        like( mediaItem.mediaId, likedAt )
+        song.toggleLike( mediaItem.mediaId )
     }
 }
 

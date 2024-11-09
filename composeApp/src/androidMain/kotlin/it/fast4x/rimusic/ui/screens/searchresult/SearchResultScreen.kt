@@ -296,6 +296,7 @@ fun SearchResultScreen(
                                                 .combine(
                                                     snapshotFlow { currentTabIndex }
                                                 ) { album, tabIndex -> album to tabIndex }
+                                                // Collect on IO thread to keep it from interfering with UI thread
                                                 .collect( CoroutineScope(Dispatchers.IO) ) {
                                                     if (albumPage != null) return@collect
 
@@ -321,6 +322,7 @@ fun SearchResultScreen(
                                                     .combine(
                                                         snapshotFlow { currentTabIndex }
                                                     ) { album, tabIndex -> album to tabIndex }
+                                                    // Collect on IO thread to keep it from interfering with UI thread
                                                     .collect( CoroutineScope(Dispatchers.IO) ) {
                                                         if (albumPage != null) return@collect
 
