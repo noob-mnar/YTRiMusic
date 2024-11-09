@@ -41,9 +41,7 @@ fun ApplyDiscoverToQueue() {
     var songInPlaylist by remember {
         mutableStateOf(0)
     }
-    var songIsLiked by remember {
-        mutableStateOf(0)
-    }
+    var songIsLiked by remember { mutableStateOf( false ) }
 
     LaunchedEffect(Unit) {
         listMediaItemsIndex.clear()
@@ -51,9 +49,9 @@ fun ApplyDiscoverToQueue() {
             if (window.firstPeriodIndex != player.currentMediaItemIndex) {
                 withContext(Dispatchers.IO) {
                     songInPlaylist = Database.songUsedInPlaylists(window.mediaItem.mediaId)
-                    songIsLiked = Database.songliked(window.mediaItem.mediaId)
+                    songIsLiked = Database.song.isLiked( window.mediaItem.mediaId )
                 }
-                if (songInPlaylist > 0 || songIsLiked > 0) {
+                if (songInPlaylist > 0 || songIsLiked ) {
                     listMediaItemsIndex.add(window.firstPeriodIndex)
                 }
             }

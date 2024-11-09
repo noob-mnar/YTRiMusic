@@ -92,6 +92,7 @@ fun ArtistLocalSongs(
     LaunchedEffect(Unit) {
         Database.artist
                 .flowSongsOf(browseId)
+                // Collect on IO thread to keep it from interfering with UI thread
                 .collect( CoroutineScope(Dispatchers.IO) ) { songs = it }
     }
 

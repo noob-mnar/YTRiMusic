@@ -337,7 +337,8 @@ class PlayerService : InvincibleService(),
     @FlowPreview
     private val isLikedState = mediaItemState
         .flatMapMerge { item ->
-            item?.mediaId?.let { Database.likedAt(it).distinctUntilChanged() } ?: flowOf(null)
+            val mediaId = item?.mediaId ?: return@flatMapMerge flowOf( null )
+            Database.song.flowLikedAt( mediaId ).distinctUntilChanged()
         }
         .map { it != null }
         .stateIn(coroutineScope, SharingStarted.Eagerly, false)
@@ -2006,10 +2007,7 @@ class PlayerService : InvincibleService(),
         @ExperimentalCoroutinesApi
         @FlowPreview
         fun toggleLike() = mediaItemState.value?.let { mediaItem ->
-            Database.transaction {
-                val likedAt = if (isLikedState.value) null else System.currentTimeMillis()
-                like( mediaItem.mediaId, likedAt )
-            }
+            Database.song.toggleLike( mediaItem.mediaId )
             updatePlaybackState()
         }
 

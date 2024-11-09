@@ -923,25 +923,9 @@ fun LocalPlaylistSongs(
                                                     )
                                             },
                                             onAddToPreferites = {
-                                                if (listMediaItems.isNotEmpty()) {
-                                                    listMediaItems.map {
-                                                        Database.transaction {
-                                                            like(
-                                                                it.mediaId,
-                                                                System.currentTimeMillis()
-                                                            )
-                                                        }
-                                                    }
-                                                } else {
-                                                    playlistSongs.map {
-                                                        Database.transaction {
-                                                            like(
-                                                                it.asMediaItem.mediaId,
-                                                                System.currentTimeMillis()
-                                                            )
-                                                        }
-                                                    }
-                                                }
+                                                listMediaItems.ifEmpty { playlistSongs.map( SongEntity::asMediaItem ) }
+                                                              .map( MediaItem::mediaId )
+                                                              .forEach( Database.song::toggleLike )
                                             },
                                             onAddToPlaylist = { playlistPreview ->
                                                 position =

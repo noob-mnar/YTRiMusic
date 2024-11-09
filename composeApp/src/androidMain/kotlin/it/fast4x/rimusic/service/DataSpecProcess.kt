@@ -193,7 +193,7 @@ suspend fun getInnerTubeFormatUrl(
                         it?.copy(url = "${it.url}&range=0-${it.contentLength ?: 10000000}")
                     }.also {
                         Database.transaction {
-                            if ( songExist(videoId) > 0 )
+                            if ( song.contains( videoId ) )
                                 format.safeUpsert(
                                     Format(
                                         songId = videoId,

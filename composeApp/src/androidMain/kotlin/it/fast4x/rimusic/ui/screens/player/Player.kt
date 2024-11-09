@@ -169,6 +169,7 @@ import it.fast4x.rimusic.utils.bottomgradientKey
 import it.fast4x.rimusic.utils.carouselKey
 import it.fast4x.rimusic.utils.carouselSizeKey
 import it.fast4x.rimusic.utils.clickOnLyricsTextKey
+import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.colorPaletteModeKey
 import it.fast4x.rimusic.utils.conditional
 import it.fast4x.rimusic.utils.controlsExpandedKey
@@ -248,6 +249,7 @@ import it.fast4x.rimusic.utils.timelineExpandedKey
 import it.fast4x.rimusic.utils.titleExpandedKey
 import it.fast4x.rimusic.utils.transparentBackgroundPlayerActionBarKey
 import it.fast4x.rimusic.utils.visualizerEnabledKey
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
@@ -499,8 +501,13 @@ fun Player(
     var likedAt by rememberSaveable {
         mutableStateOf<Long?>(null)
     }
-    LaunchedEffect(mediaItem.mediaId) {
-        Database.likedAt(mediaItem.mediaId).distinctUntilChanged().collect { likedAt = it }
+    LaunchedEffect( mediaItem.mediaId ) {
+        Database.song
+                .flowLikedAt( mediaItem.mediaId )
+                .distinctUntilChanged()
+                .collect( CoroutineScope(Dispatchers.IO) ) {
+                    likedAt = it
+                }
     }
 
 
@@ -982,18 +989,12 @@ fun Player(
             },
             onDoubleTap = {
                 val currentMediaItem = binder.player.currentMediaItem
-                query {
-                    if (Database.like(
-                            mediaItem.mediaId,
-                            if (likedAt == null) System.currentTimeMillis() else null
-                        ) == 0
-                    ) {
-                        currentMediaItem
-                            ?.takeIf { it.mediaId == mediaItem.mediaId }
-                            ?.let {
-                                Database.insert(currentMediaItem, Song::toggleLike)
-                            }
-                    }
+                val timestamp = if (likedAt == null) System.currentTimeMillis() else null
+
+                Database.transaction {
+                    if ( song.like( mediaItem.mediaId, timestamp ) == 0 )
+                        currentMediaItem?.takeIf { it.mediaId == mediaItem.mediaId }
+                                        ?.let { insert(currentMediaItem, Song::toggleLike) }
                 }
                 if (effectRotationEnabled) isRotated = !isRotated
             },
@@ -1682,16 +1683,6 @@ fun Player(
         LaunchedEffect(Unit, nextmedia.mediaId) {
             withContext(Dispatchers.IO) {
                 songPlaylist1 = Database.songUsedInPlaylists(nextmedia.mediaId)
-            }
-        }
-
-        var songLiked by remember {
-            mutableStateOf(0)
-        }
-
-        LaunchedEffect(Unit, nextmedia.mediaId) {
-            withContext(Dispatchers.IO) {
-                songLiked = Database.songliked(nextmedia.mediaId)
             }
         }
 

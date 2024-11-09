@@ -205,7 +205,7 @@ fun InfoAlbumAndArtistEssential(
                          val currentMediaItem = binder.player.currentMediaItem
 
                          Database.transaction {
-                             if ( like(mediaId, setLikeState(likedAt)) == 0 )
+                             if ( song.like(mediaId, setLikeState(likedAt)) == 0 )
                                  currentMediaItem?.takeIf { it.mediaId == mediaId }
                                                  ?.let { insert( currentMediaItem, Song::toggleLike ) }
                          }
@@ -346,9 +346,11 @@ fun ControlsEssential(
             onClick = {
                 val currentMediaItem = binder.player.currentMediaItem
 
-                if ( Database.like(mediaId, setLikeState(likedAt)) == 0 )
-                    currentMediaItem?.takeIf { it.mediaId == mediaId }
-                                    ?.let { Database.insert( currentMediaItem, Song::toggleLike ) }
+                Database.transaction {
+                    if ( song.like(mediaId, setLikeState(likedAt)) == 0 )
+                        currentMediaItem?.takeIf { it.mediaId == mediaId }
+                            ?.let { insert( currentMediaItem, Song::toggleLike ) }
+                }
 
                 if (effectRotationEnabled) isRotated = !isRotated
             },

@@ -77,6 +77,7 @@ import it.fast4x.rimusic.utils.DisposableListener
 import it.fast4x.rimusic.utils.backgroundProgressKey
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.service.modern.PlayerServiceModern
+import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.conditional
 import it.fast4x.rimusic.utils.disableClosingPlayerSwipingDownKey
 import it.fast4x.rimusic.utils.disableScrollingTextKey
@@ -93,6 +94,8 @@ import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.shouldBePlaying
 import it.fast4x.rimusic.utils.thumbnail
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import me.knighthat.colorPalette
 import me.knighthat.thumbnailShape
@@ -159,8 +162,13 @@ fun MiniPlayer(
         miniPlayerTypeKey,
         MiniPlayerType.Modern
     )
-    LaunchedEffect(mediaItem.mediaId) {
-        Database.likedAt(mediaItem.mediaId).distinctUntilChanged().collect { likedAt = it }
+    LaunchedEffect( mediaItem.mediaId ) {
+        Database.song
+                .flowLikedAt( mediaItem.mediaId )
+                .distinctUntilChanged()
+                .collect( CoroutineScope(Dispatchers.IO) ) {
+                    likedAt = it
+                }
     }
 
     var updateLike by rememberSaveable { mutableStateOf(false) }

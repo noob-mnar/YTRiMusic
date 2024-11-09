@@ -122,6 +122,7 @@ fun OnlineSearch(
         Database.searchQuery
                 .flowFindAllContain( textFieldValue.text )
                 .distinctUntilChanged { old, new -> old.size == new.size }
+                // Collect on IO thread to keep it from interfering with UI thread
                 .collect( CoroutineScope(Dispatchers.IO) ) {
                     history = it
                 }

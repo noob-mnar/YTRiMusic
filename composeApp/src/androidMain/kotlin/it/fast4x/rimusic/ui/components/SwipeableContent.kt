@@ -31,9 +31,11 @@ import it.fast4x.innertube.Innertube
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
+import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.isSwipeToActionEnabledKey
 import it.fast4x.rimusic.utils.mediaItemToggleLike
 import it.fast4x.rimusic.utils.rememberPreference
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.withContext
@@ -140,8 +142,13 @@ fun SwipeablePlaylistItem(
     var likedAt by rememberSaveable {
         mutableStateOf<Long?>(null)
     }
-    LaunchedEffect(mediaItem.mediaId) {
-        Database.likedAt(mediaItem.mediaId).distinctUntilChanged().collect { likedAt = it }
+    LaunchedEffect( mediaItem.mediaId ) {
+        Database.song
+                .flowLikedAt( mediaItem.mediaId )
+                .distinctUntilChanged()
+                .collect( CoroutineScope(Dispatchers.IO) ) {
+                    likedAt = it
+                }
     }
     var updateLike by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(updateLike) {

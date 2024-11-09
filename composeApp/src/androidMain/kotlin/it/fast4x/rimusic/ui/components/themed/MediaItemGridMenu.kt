@@ -88,6 +88,7 @@ import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.thumbnail
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.withContext
 import me.knighthat.colorPalette
@@ -308,8 +309,11 @@ fun MediaItemGridMenu (
     var likedAt by remember {
         mutableStateOf<Long?>(null)
     }
-    LaunchedEffect(Unit, mediaItem.mediaId, updateData) {
-        Database.likedAt(mediaItem.mediaId).collect { likedAt = it }
+    LaunchedEffect( mediaItem.mediaId ) {
+        Database.song
+                .flowLikedAt( mediaItem.mediaId )
+                .distinctUntilChanged()
+                .collect( CoroutineScope( Dispatchers.IO) ) { likedAt = it }
     }
 
     var downloadState by remember {
@@ -642,13 +646,9 @@ fun MediaItemGridMenu (
         mutableStateOf(false)
     }
 
-    var songSaved by remember {
-        mutableStateOf(0)
-    }
-    LaunchedEffect(Unit, mediaItem.mediaId) {
-        withContext(Dispatchers.IO) {
-            songSaved = Database.songExist(mediaItem.mediaId)
-        }
+    var songSaved by remember { mutableStateOf( false ) }
+    LaunchedEffect( mediaItem.mediaId ) {
+        Database.query { songSaved = song.contains( mediaItem.mediaId ) }
     }
 
     if (showDialogChangeSongTitle)
@@ -660,7 +660,7 @@ fun MediaItemGridMenu (
             setValue = {
                 if (it.isNotEmpty())
                     Database.transaction {
-                        updateSongTitle( mediaItem.mediaId, it )
+                        song.updateTitle( mediaItem.mediaId, it )
                     }
             },
             prefix = MODIFIED_PREFIX
@@ -854,7 +854,7 @@ fun MediaItemGridMenu (
                 }
             ) {
 
-                if (!isLocal && songSaved > 0) {
+                if ( !isLocal && songSaved ) {
                     GridMenuItem(
                         icon = R.drawable.title_edit,
                         title = R.string.update_title,
