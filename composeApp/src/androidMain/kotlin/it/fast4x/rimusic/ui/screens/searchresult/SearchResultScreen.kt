@@ -344,16 +344,16 @@ fun SearchResultScreen(
                                                                              )
                                                                          )
                                                                          songsPage?.items
-                                                                             ?.map( Innertube.SongItem::asMediaItem )
-                                                                             ?.onEach( Database::insert )
-                                                                             ?.mapIndexed { position, mediaItem ->
-                                                                                 SongAlbumMap(
-                                                                                     songId = mediaItem.mediaId,
-                                                                                     albumId = album.key,
-                                                                                     position = position
-                                                                                 )
-                                                                             }
-                                                                             ?.onEach( Database::insert )
+                                                                                  ?.map( Innertube.SongItem::asMediaItem )
+                                                                                  ?.onEach( Database::insert )
+                                                                                  ?.mapIndexed { position, mediaItem ->
+                                                                                      SongAlbumMap(
+                                                                                          songId = mediaItem.mediaId,
+                                                                                          albumId = album.key,
+                                                                                          position = position
+                                                                                      )
+                                                                                  }
+                                                                                  ?.onEach( Database.songAlbumMap::insert )
                                                                      }
                                                                  }
                                                     }

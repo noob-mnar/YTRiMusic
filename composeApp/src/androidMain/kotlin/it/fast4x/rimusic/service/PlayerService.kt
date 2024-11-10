@@ -1088,8 +1088,8 @@ class PlayerService : InvincibleService(),
         }.let { queuedMediaItems ->
 
             Database.transaction {
-                clearQueue()
-                insert( queuedMediaItems )
+                this.queuedMediaItem.clear()
+                this.queuedMediaItem.safeUpsert( queuedMediaItems )
             }
         }
     }
@@ -1110,7 +1110,7 @@ class PlayerService : InvincibleService(),
 
         if (!isPersistentQueueEnabled) return
 
-        val queuedSong = Database.queue()
+        val queuedSong = Database.queuedMediaItem.all()
         if (queuedSong.isEmpty()) return
 
         val index = queuedSong.indexOfFirst { it.position != null }.coerceAtLeast(0)

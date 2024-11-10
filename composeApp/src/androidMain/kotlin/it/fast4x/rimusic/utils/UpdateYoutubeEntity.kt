@@ -107,7 +107,7 @@ fun UpdateYoutubeAlbum (browseId: String) {
                                                   position
                                               )
                                           }
-                                          ?.onEach( Database::insert )
+                                          ?.also( Database.songAlbumMap::safeUpsert )
                              }
 
                              Database.album.deleteById( browseId )

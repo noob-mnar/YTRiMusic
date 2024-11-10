@@ -59,6 +59,7 @@ import me.knighthat.database.table.EventTable
 import me.knighthat.database.table.FormatTable
 import me.knighthat.database.table.LyricsTable
 import me.knighthat.database.table.PlaylistTable
+import me.knighthat.database.table.QueuedMediaItemTable
 import me.knighthat.database.table.SearchQueryTable
 import me.knighthat.database.table.SongAlbumMapTable
 import me.knighthat.database.table.SongArtistMapTable
@@ -95,6 +96,8 @@ interface Database {
         get() = DatabaseInitializer.Instance.songArtistMap
     val songAlbumMap: SongAlbumMapTable
         get() = DatabaseInitializer.Instance.songAlbumMap
+    val queuedMediaItem: QueuedMediaItemTable
+        get() = DatabaseInitializer.Instance.queuedMediaItem
 
 
     @Transaction
@@ -613,12 +616,6 @@ interface Database {
             "WHERE (Song.totalPlayTimeMs > :showHiddenSongs OR Song.likedAt NOT NULL) AND Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY Song.artistsText DESC")
     @RewriteQueriesToDropUnusedColumns
     fun songsWithAlbumByPlayTimeDesc(showHiddenSongs: Int = 0): Flow<List<SongEntity>>
-
-    @Query("SELECT * FROM QueuedMediaItem")
-    fun queue(): List<QueuedMediaItem>
-
-    @Query("DELETE FROM QueuedMediaItem")
-    fun clearQueue()
 
     @Query("UPDATE Song SET durationText = :durationText WHERE id = :songId")
     fun updateDurationText(songId: String, durationText: String): Int
@@ -1348,6 +1345,7 @@ abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
     abstract val lyrics: LyricsTable
     abstract val songArtistMap: SongArtistMapTable
     abstract val songAlbumMap: SongAlbumMapTable
+    abstract val queuedMediaItem: QueuedMediaItemTable
 
     companion object {
 
