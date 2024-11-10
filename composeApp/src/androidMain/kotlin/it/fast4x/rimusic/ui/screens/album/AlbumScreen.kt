@@ -146,7 +146,7 @@ fun AlbumScreen(
                                                  ?.mapIndexed { position, mediaItem ->
                                                      SongAlbumMap( mediaItem.mediaId, browseId, position )
                                                  }
-                                                 ?.onEach( Database::insert )
+                                                 ?.onEach( Database.songAlbumMap::safeUpsert )
                              }
                 }
     }

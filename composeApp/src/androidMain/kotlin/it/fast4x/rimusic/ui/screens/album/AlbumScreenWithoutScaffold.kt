@@ -154,7 +154,7 @@ fun AlbumScreenWithoutScaffold(
                                                   position
                                               )
                                           }
-                                          ?.onEach( Database::insert )
+                                          ?.onEach( Database.songAlbumMap::safeUpsert )
                              }
 
                          }
