@@ -57,6 +57,7 @@ import me.knighthat.database.table.AlbumTable
 import me.knighthat.database.table.ArtistTable
 import me.knighthat.database.table.EventTable
 import me.knighthat.database.table.FormatTable
+import me.knighthat.database.table.LyricsTable
 import me.knighthat.database.table.PlaylistTable
 import me.knighthat.database.table.SearchQueryTable
 import me.knighthat.database.table.SongPlaylistMapTable
@@ -84,6 +85,10 @@ interface Database {
         get() = DatabaseInitializer.Instance.searchQuery
     val playlist: PlaylistTable
         get() = DatabaseInitializer.Instance.playlist
+    val songPlaylistMap: SongPlaylistMapTable
+        get() = DatabaseInitializer.Instance.songPlaylistMap
+    val lyrics: LyricsTable
+        get() = DatabaseInitializer.Instance.lyrics
 
 
     @Transaction
@@ -611,9 +616,6 @@ interface Database {
 
     @Query("UPDATE Song SET durationText = :durationText WHERE id = :songId")
     fun updateDurationText(songId: String, durationText: String): Int
-
-    @Query("SELECT * FROM Lyrics WHERE songId = :songId")
-    fun lyrics(songId: String): Flow<Lyrics?>
 
     @Query("SELECT * FROM Artist WHERE bookmarkedAt IS NOT NULL ORDER BY name")
     fun preferitesArtistsByName(): Flow<List<Artist>>
@@ -1242,9 +1244,6 @@ interface Database {
     }
 
     @Upsert
-    fun upsert(lyrics: Lyrics)
-
-    @Upsert
     fun upsert(songAlbumMap: SongAlbumMap)
 
     @RawQuery
@@ -1348,6 +1347,7 @@ abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
     abstract val searchQuery: SearchQueryTable
     abstract val playlist: PlaylistTable
     abstract val songPlaylistMap: SongPlaylistMapTable
+    abstract val lyrics: LyricsTable
 
     companion object {
 
