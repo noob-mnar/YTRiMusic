@@ -602,7 +602,7 @@ fun PlaylistSongListModern(
                                                             runCatching {
                                                                 Database.transaction {
                                                                     this.song.safeUpsert( song.asSong )
-                                                                    insert(
+                                                                    songPlaylistMap.safeUpsert(
                                                                         SongPlaylistMap(
                                                                             songId = song.asMediaItem.mediaId,
                                                                             playlistId = playlistPreview.playlist.id,

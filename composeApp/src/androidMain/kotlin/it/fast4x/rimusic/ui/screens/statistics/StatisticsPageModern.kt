@@ -93,12 +93,9 @@ import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.showStatsListeningTimeKey
 import it.fast4x.rimusic.utils.statisticsCategoryKey
-import it.fast4x.rimusic.utils.thumbnail
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import me.knighthat.colorPalette
 import me.knighthat.typography
@@ -450,11 +447,10 @@ fun StatisticsPageModern(
                         count = playlists.count()
                     ) {
                         val thumbnails by remember {
-                            Database.playlistThumbnailUrls(playlists[it].playlist.id).distinctUntilChanged().map {
-                                it.map { url ->
-                                    url.thumbnail(playlistThumbnailSizePx / 2)
-                                }
-                            }
+                            Database.songPlaylistMap.thumbnailsOf(
+                                playlists[it].playlist.id,
+                                playlistThumbnailSizePx
+                            )
                         }.collectAsState(initial = emptyList(), context = Dispatchers.IO)
 
                         PlaylistItem(

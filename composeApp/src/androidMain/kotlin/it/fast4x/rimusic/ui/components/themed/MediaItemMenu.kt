@@ -110,11 +110,9 @@ import it.fast4x.rimusic.utils.setLikeState
 import it.fast4x.rimusic.utils.thumbnail
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.withContext
 import me.knighthat.colorPalette
-import me.knighthat.database.DatabaseTable
 import me.knighthat.typography
 import timber.log.Timber
 import java.time.LocalTime.now
@@ -194,8 +192,8 @@ fun InPlaylistMediaItemMenu(
         onDismiss = onDismiss,
         onRemoveFromPlaylist = {
             Database.transaction {
-                move( playlistId, positionInPlaylist, Int.MAX_VALUE )
-                delete( SongPlaylistMap(song.id, playlistId, Int.MAX_VALUE) )
+                songPlaylistMap.move( playlistId, positionInPlaylist, Int.MAX_VALUE )
+                songPlaylistMap.delete( SongPlaylistMap(song.id, playlistId, Int.MAX_VALUE) )
             }
 
             if (playlist?.playlist?.name?.startsWith(PIPED_PREFIX) == true && isPipedEnabled && pipedSession.token.isNotEmpty()) {
@@ -528,7 +526,7 @@ fun BaseMediaItemMenu(
                 }.getOrDefault( playlist.id )
 
                 insert(mediaItem)
-                insert(
+                songPlaylistMap.safeUpsert(
                     SongPlaylistMap(
                         songId = mediaItem.mediaId,
                         playlistId = playlistId,
@@ -615,7 +613,7 @@ fun MiniMediaItemMenu(
                 }.getOrDefault( playlist.id )
 
                 insert(mediaItem)
-                insert(
+                songPlaylistMap.safeUpsert(
                     SongPlaylistMap(
                         songId = mediaItem.mediaId,
                         playlistId = playlistId,
@@ -887,7 +885,7 @@ fun MediaItemMenu(
             }.collectAsState(initial = emptyList(), context = Dispatchers.IO)
 
             val playlistIds by remember {
-                Database.getPlaylistsWithSong(mediaItem.mediaId)
+                Database.songPlaylistMap.flowMapsOf( mediaItem.mediaId )
             }.collectAsState(initial = emptyList(), context = Dispatchers.IO)
 
             val pinnedPlaylists = playlistPreviews.filter {

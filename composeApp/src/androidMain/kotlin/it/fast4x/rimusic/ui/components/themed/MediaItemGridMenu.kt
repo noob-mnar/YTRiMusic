@@ -178,7 +178,7 @@ fun BaseMediaItemGridMenu(
                 }.getOrDefault( playlist.id )
 
                 insert( mediaItem )
-                insert(
+                songPlaylistMap.safeUpsert(
                     SongPlaylistMap(
                         songId = mediaItem.mediaId,
                         playlistId = playlistId,
@@ -249,7 +249,7 @@ fun MiniMediaItemGridMenu(
                 }.getOrDefault( playlist.id )
 
                 insert( mediaItem )
-                insert(
+                songPlaylistMap.safeUpsert(
                     SongPlaylistMap(
                         songId = mediaItem.mediaId,
                         playlistId = playlistId,
@@ -685,7 +685,7 @@ fun MediaItemGridMenu (
             }.collectAsState(initial = emptyList(), context = Dispatchers.IO)
 
             val playlistIds by remember {
-                Database.getPlaylistsWithSong(mediaItem.mediaId)
+                Database.songPlaylistMap.flowMapsOf( mediaItem.mediaId )
             }.collectAsState(initial = emptyList(), context = Dispatchers.IO)
 
             val pinnedPlaylists = playlistPreviews.filter {

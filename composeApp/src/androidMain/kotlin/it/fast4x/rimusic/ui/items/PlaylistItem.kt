@@ -33,11 +33,12 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import it.fast4x.innertube.Innertube
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.MONTHLY_PREFIX
+import it.fast4x.rimusic.PINNED_PREFIX
+import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.models.PlaylistPreview
 import it.fast4x.rimusic.ui.components.themed.TextPlaceholder
-import it.fast4x.rimusic.PINNED_PREFIX
-import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.ui.styling.onOverlay
 import it.fast4x.rimusic.ui.styling.overlay
 import it.fast4x.rimusic.ui.styling.shimmer
@@ -51,8 +52,6 @@ import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.thumbnail
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import me.knighthat.colorPalette
 import me.knighthat.thumbnailShape
 import me.knighthat.typography
@@ -117,11 +116,10 @@ fun PlaylistItem(
     initialisePlaylistThumbnail()
 
     val thumbnails by remember {
-        Database.playlistThumbnailUrls(playlist.playlist.id).distinctUntilChanged().map {
-            it.map { url ->
-                url.thumbnail(thumbnailSizePx / 2)
-            }
-        }
+        Database.songPlaylistMap.thumbnailsOf(
+            playlist.playlist.id,
+            thumbnailSizePx
+        )
     }.collectAsState(initial = emptyList(), context = Dispatchers.IO)
 
     PlaylistItem(

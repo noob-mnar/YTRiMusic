@@ -5,7 +5,6 @@ import androidx.annotation.WorkerThread
 import androidx.media3.common.MediaItem
 import androidx.room.AutoMigration
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -41,7 +40,6 @@ import it.fast4x.rimusic.models.SongAlbumMap
 import it.fast4x.rimusic.models.SongArtistMap
 import it.fast4x.rimusic.models.SongEntity
 import it.fast4x.rimusic.models.SongPlaylistMap
-import it.fast4x.rimusic.models.SongWithContentLength
 import it.fast4x.rimusic.models.SortedSongPlaylistMap
 import it.fast4x.rimusic.service.LOCAL_KEY_PREFIX
 import kotlinx.coroutines.flow.Flow
@@ -61,6 +59,7 @@ import me.knighthat.database.table.EventTable
 import me.knighthat.database.table.FormatTable
 import me.knighthat.database.table.PlaylistTable
 import me.knighthat.database.table.SearchQueryTable
+import me.knighthat.database.table.SongPlaylistMapTable
 import me.knighthat.database.table.SongTable
 
 
@@ -783,25 +782,6 @@ interface Database {
             "INNER JOIN Artist A ON A.id=SM.artistId WHERE A.bookmarkedAt IS NOT NULL")
     fun songsInAllFollowedArtists(): Flow<List<Song>?>
 
-    @Transaction
-    @Query("SELECT DISTINCT S.* FROM Song S INNER JOIN songplaylistmap SM ON S.id=SM.songId")
-    fun songsInAllPlaylists(): Flow<List<Song>?>
-
-    @Transaction
-    @Query("SELECT DISTINCT S.* FROM Song S INNER JOIN songplaylistmap SM ON S.id=SM.songId " +
-            "INNER JOIN Playlist P ON P.id=SM.playlistId WHERE P.name LIKE '${PIPED_PREFIX}' || '%'")
-    fun songsInAllPipedPlaylists(): Flow<List<Song>?>
-
-    @Transaction
-    @Query("SELECT DISTINCT S.* FROM Song S INNER JOIN songplaylistmap SM ON S.id=SM.songId " +
-            "INNER JOIN Playlist P ON P.id=SM.playlistId WHERE P.name LIKE '${PINNED_PREFIX}' || '%'")
-    fun songsInAllPinnedPlaylists(): Flow<List<Song>?>
-
-    @Transaction
-    @Query("SELECT DISTINCT S.* FROM Song S INNER JOIN songplaylistmap SM ON S.id=SM.songId " +
-            "INNER JOIN Playlist P ON P.id=SM.playlistId WHERE P.name LIKE '${MONTHLY_PREFIX}' || '%'")
-    fun songsInAllMonthlyPlaylists(): Flow<List<Song>?>
-
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Transaction
     @Query("SELECT S.*, Album.title as albumTitle FROM Song S INNER JOIN songplaylistmap SP ON S.id=SP.songId " +
@@ -1114,34 +1094,6 @@ interface Database {
         }
     }
 
-    @Query("SELECT thumbnailUrl FROM Song JOIN SongPlaylistMap ON id = songId WHERE playlistId = :id ORDER BY position LIMIT 4")
-    fun playlistThumbnailUrls(id: Long): Flow<List<String>>
-
-    @Transaction
-    @Query("""
-        UPDATE SongPlaylistMap SET position = 
-          CASE 
-            WHEN position < :fromPosition THEN position + 1
-            WHEN position > :fromPosition THEN position - 1
-            ELSE :toPosition
-          END 
-        WHERE playlistId = :playlistId AND position BETWEEN MIN(:fromPosition,:toPosition) and MAX(:fromPosition,:toPosition)
-    """)
-    fun move(playlistId: Long, fromPosition: Int, toPosition: Int)
-
-    @Transaction
-    @Query("UPDATE SongPlaylistMap SET position = :toPosition WHERE playlistId = :playlistId and songId = :songId")
-    fun updateSongPosition(playlistId: Long, songId: String, toPosition: Int)
-
-    @Query("DELETE FROM SongPlaylistMap WHERE playlistId = :id")
-    fun clearPlaylist(id: Long)
-
-    @Query("DELETE FROM SongPlaylistMap WHERE songId = :id")
-    fun deleteSongFromPlaylists(id: String)
-
-    @Query("SELECT * FROM Song WHERE title LIKE :query OR artistsText LIKE :query")
-    fun search(query: String): Flow<List<Song>>
-
     @Query("SELECT albumId AS id, NULL AS name, 0 AS size FROM SongAlbumMap WHERE songId = :songId")
     fun songAlbumInfo(songId: String): Info?
 
@@ -1295,9 +1247,6 @@ interface Database {
     @Upsert
     fun upsert(songAlbumMap: SongAlbumMap)
 
-    @Delete
-    fun delete(songPlaylistMap: SongPlaylistMap)
-
     @RawQuery
     fun raw(supportSQLiteQuery: SupportSQLiteQuery): Int
 
@@ -1398,6 +1347,7 @@ abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
     abstract val event: EventTable
     abstract val searchQuery: SearchQueryTable
     abstract val playlist: PlaylistTable
+    abstract val songPlaylistMap: SongPlaylistMapTable
 
     companion object {
 

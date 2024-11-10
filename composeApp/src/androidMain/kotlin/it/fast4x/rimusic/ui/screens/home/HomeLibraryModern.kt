@@ -163,10 +163,10 @@ fun HomeLibraryModern(
 
             override fun query(): Flow<List<Song>?> =
                 when( playlistType ) {
-                    PlaylistsType.Playlist -> Database.songsInAllPlaylists()
-                    PlaylistsType.PinnedPlaylist -> Database.songsInAllPinnedPlaylists()
-                    PlaylistsType.MonthlyPlaylist -> Database.songsInAllMonthlyPlaylists()
-                    PlaylistsType.PipedPlaylist -> Database.songsInAllPipedPlaylists()
+                    PlaylistsType.Playlist -> Database.songPlaylistMap.flowSongsOf( "" )
+                    PlaylistsType.PinnedPlaylist -> Database.songPlaylistMap.flowSongsOf( PINNED_PREFIX )
+                    PlaylistsType.MonthlyPlaylist -> Database.songPlaylistMap.flowSongsOf( MONTHLY_PREFIX )
+                    PlaylistsType.PipedPlaylist -> Database.songPlaylistMap.flowSongsOf( PIPED_PREFIX )
                 }
         }
     }
@@ -218,7 +218,7 @@ fun HomeLibraryModern(
             afterTransaction = { index, song ->
 
                 Database.song.safeUpsert( song )
-                Database.insert(
+                Database.songPlaylistMap.safeUpsert(
                     SongPlaylistMap(
                         songId = song.id,
                         playlistId = plistId,

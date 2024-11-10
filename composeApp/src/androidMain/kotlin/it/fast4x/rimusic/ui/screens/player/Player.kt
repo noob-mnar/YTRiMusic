@@ -1070,12 +1070,10 @@ fun Player(
         }
     }
 
-    var songPlaylist by remember {
-        mutableStateOf(0)
-    }
-    LaunchedEffect(Unit, mediaItem.mediaId) {
+    var isSongMapped by remember { mutableStateOf( false ) }
+    LaunchedEffect( mediaItem.mediaId ) {
         withContext(Dispatchers.IO) {
-            songPlaylist = Database.songUsedInPlaylists(mediaItem.mediaId)
+            isSongMapped = Database.songPlaylistMap.isMapped( mediaItem.mediaId )
         }
     }
     val playlistindicator by rememberPreference(playlistindicatorKey, false)
@@ -1431,14 +1429,14 @@ fun Player(
                         if (showButtonPlayerAddToPlaylist)
                             IconButton(
                                 icon = R.drawable.add_in_playlist,
-                                color = if (songPlaylist > 0 && playlistindicator) colorPalette().text else colorPalette().accent,
+                                color = if ( isSongMapped && playlistindicator ) colorPalette().text else colorPalette().accent,
                                 onClick = {
                                     menuState.display {
                                         MiniPlayerMenu(
                                             navController = navController,
                                             onDismiss = {
-                                                Database.transaction {
-                                                    songPlaylist = songUsedInPlaylists( mediaItem.mediaId )
+                                                Database.query {
+                                                    isSongMapped = songPlaylistMap.isMapped( mediaItem.mediaId )
                                                 }
                                                 menuState.hide()
                                             },
@@ -1454,13 +1452,13 @@ fun Player(
                                 modifier = Modifier
                                     //.padding(horizontal = 4.dp)
                                     .size(24.dp)
-                                    .conditional(songPlaylist > 0 && playlistindicator) {
+                                    .conditional( isSongMapped && playlistindicator ) {
                                         background(
                                             color.accent,
                                             CircleShape
                                         )
                                     }
-                                    .conditional(songPlaylist > 0 && playlistindicator) {
+                                    .conditional( isSongMapped && playlistindicator ) {
                                         padding(
                                             all = 5.dp
                                         )
@@ -1673,19 +1671,6 @@ fun Player(
             MediaItem.EMPTY
         }
         */
-        val nextmedia = if(binder.player.mediaItemCount > 1
-            && binder.player.currentMediaItemIndex + 1 < binder.player.mediaItemCount )
-            binder.player.getMediaItemAt(binder.player.currentMediaItemIndex + 1) else MediaItem.EMPTY
-
-        var songPlaylist1 by remember {
-            mutableStateOf(0)
-        }
-        LaunchedEffect(Unit, nextmedia.mediaId) {
-            withContext(Dispatchers.IO) {
-                songPlaylist1 = Database.songUsedInPlaylists(nextmedia.mediaId)
-            }
-        }
-
         val thumbnailRoundness by rememberPreference(thumbnailRoundnessKey, ThumbnailRoundness.Heavy)
         val thumbnailType by rememberPreference(thumbnailTypeKey, ThumbnailType.Modern)
         val statsfornerds by rememberPreference(statsfornerdsKey, false)

@@ -17,7 +17,6 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -308,13 +307,11 @@ fun SongItem(
     val duration = mediaItem.mediaMetadata.extras?.getString("durationText")
 
     val playlistindicator by rememberPreference(playlistindicatorKey,false)
-    var songPlaylist by remember {
-        mutableIntStateOf(0)
-    }
+    var isSongMapped by remember { mutableStateOf( false ) }
     if (playlistindicator)
         LaunchedEffect(Unit, mediaItem.mediaId) {
             withContext(Dispatchers.IO) {
-                songPlaylist = Database.songUsedInPlaylists(mediaItem.mediaId)
+                isSongMapped = Database.songPlaylistMap.isMapped( mediaItem.mediaId )
             }
         }
 
@@ -396,7 +393,7 @@ fun SongItem(
                                 .size(18.dp)
                         )
 
-                    if (playlistindicator && (songPlaylist > 0)) {
+                    if ( playlistindicator && isSongMapped ) {
                         IconButton(
                             icon = R.drawable.add_in_playlist,
                             color = colorPalette().text,
@@ -492,7 +489,7 @@ fun SongItem(
                             .conditional(!disableScrollingText) { basicMarquee(iterations = Int.MAX_VALUE) }
                             .weight(1f)
                     )
-                if (playlistindicator && (songPlaylist > 0)) {
+                if ( playlistindicator && isSongMapped ) {
                     IconButton(
                         icon = R.drawable.add_in_playlist,
                         color = colorPalette().text,

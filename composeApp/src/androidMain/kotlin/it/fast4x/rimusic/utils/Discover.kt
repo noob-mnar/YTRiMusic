@@ -43,17 +43,19 @@ fun ApplyDiscoverToQueue() {
     }
     var songIsLiked by remember { mutableStateOf( false ) }
 
+    var isSongMapped by remember { mutableStateOf( false ) }
+    var isSongLiked by remember { mutableStateOf( false ) }
     LaunchedEffect(Unit) {
         listMediaItemsIndex.clear()
         windows.forEach { window ->
             if (window.firstPeriodIndex != player.currentMediaItemIndex) {
                 withContext(Dispatchers.IO) {
-                    songInPlaylist = Database.songUsedInPlaylists(window.mediaItem.mediaId)
-                    songIsLiked = Database.song.isLiked( window.mediaItem.mediaId )
+                    isSongMapped = Database.songPlaylistMap.isMapped(window.mediaItem.mediaId)
+                    isSongLiked = Database.song.isLiked(window.mediaItem.mediaId)
                 }
-                if (songInPlaylist > 0 || songIsLiked ) {
+
+                if (isSongMapped || songIsLiked)
                     listMediaItemsIndex.add(window.firstPeriodIndex)
-                }
             }
         }.also {
             if (listMediaItemsIndex.isNotEmpty()) {

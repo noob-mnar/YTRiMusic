@@ -63,7 +63,7 @@ fun CheckMonthlyPlaylist() {
 
                                 playlistId.let {
                                     songs.forEachIndexed{ position, song ->
-                                        insert(
+                                        songPlaylistMap.safeUpsert(
                                             SongPlaylistMap(
                                                 songId = song.id,
                                                 playlistId = it,

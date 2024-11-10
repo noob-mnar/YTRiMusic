@@ -41,7 +41,7 @@ fun syncSongsInPipedPlaylist(context: Context,coroutineScope: CoroutineScope, pi
 
             playlistId.let {
                 Database.transaction {
-                    clearPlaylist( it )
+                    songPlaylistMap.deleteById( it )
                 }
             }
 
@@ -59,7 +59,7 @@ fun syncSongsInPipedPlaylist(context: Context,coroutineScope: CoroutineScope, pi
                     Database.song.safeUpsert( song )
             }
             playlist.videos.forEachIndexed { index, song ->
-                Database.insert(
+                Database.songPlaylistMap.safeUpsert(
                     SongPlaylistMap(
                         songId = song.id.toString(),
                         playlistId = playlistId,
@@ -129,7 +129,7 @@ fun ImportPipedPlaylists(){
                                     }
                                     playlist.videos.forEachIndexed { index, song ->
                                         if (!song.id.isNullOrBlank() || !song.id.isNullOrEmpty()) {
-                                            insert(
+                                            songPlaylistMap.safeUpsert(
                                                 SongPlaylistMap(
                                                     songId = song.id.toString(),
                                                     playlistId = playlistId,
