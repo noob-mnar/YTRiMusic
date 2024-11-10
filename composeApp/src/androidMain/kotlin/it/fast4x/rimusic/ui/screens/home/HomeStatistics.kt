@@ -46,11 +46,14 @@ import it.fast4x.rimusic.ui.components.themed.InputTextDialog
 import it.fast4x.rimusic.ui.items.PlaylistItem
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.favoritesIcon
+import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.playlistSortByKey
 import it.fast4x.rimusic.utils.playlistSortOrderKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.showSearchTabKey
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import me.knighthat.colorPalette
 import me.knighthat.thumbnailShape
 
@@ -103,7 +106,11 @@ fun HomeStatistics(
     var items by persistList<PlaylistPreview>("home/playlists")
 
     LaunchedEffect(sortBy, sortOrder) {
-        Database.playlistPreviews(sortBy, sortOrder).collect { items = it }
+        Database.playlist
+                .flowAllPreviews( sortBy, sortOrder )
+                .collect( CoroutineScope( Dispatchers.IO) ) {
+                    items = it
+                }
     }
 /*
     val sortOrderIconRotation by animateFloatAsState(

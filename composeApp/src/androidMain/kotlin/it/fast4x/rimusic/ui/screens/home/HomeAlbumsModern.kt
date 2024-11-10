@@ -61,10 +61,13 @@ import it.fast4x.rimusic.utils.addNext
 import it.fast4x.rimusic.utils.albumSortByKey
 import it.fast4x.rimusic.utils.albumSortOrderKey
 import it.fast4x.rimusic.utils.asMediaItem
+import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.showFloatingIconKey
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import me.knighthat.colorPalette
 import me.knighthat.component.tab.TabHeader
@@ -150,7 +153,7 @@ fun HomeAlbumsModern(
             override val binder = binder
             override val context = context
 
-            override fun query(): Flow<List<Song>?> = Database.songsInAllBookmarkedAlbums()
+            override fun query(): Flow<List<Song>?> = Database.album.flowSongsOfBookmarked()
         }
     }
 
@@ -162,7 +165,11 @@ fun HomeAlbumsModern(
     var items by randomizer.itemsState
 
     LaunchedEffect(sort.sortByState.value, sort.sortOrderState.value, searchInput) {
-        Database.albums(sort.sortByState.value, sort.sortOrderState.value).collect { items = it }
+        Database.album
+                .flowAll( sort.sortByState.value, sort.sortOrderState.value )
+                .collect( CoroutineScope(Dispatchers.IO) ) {
+                    items = it
+                }
     }
 
     if ( searchInput.isNotBlank() )

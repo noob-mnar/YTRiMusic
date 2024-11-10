@@ -155,43 +155,47 @@ class PlayerMediaBrowserService : MediaBrowserServiceCompat(), ServiceConnection
                         artistsBrowserMediaItem
                     )
 
-                    MediaId.songs -> Database
-                        .songsByPlayTimeDesc()
-                        .first()
-                        .take(500)
-                        .also { lastSongs = it.map { it.song } }
-                        .map { it.song.asBrowserMediaItem }
-                        .toMutableList()
-                        .apply {
-                            if (isNotEmpty()) add(0, shuffleBrowserMediaItem)
-                        }
+                    MediaId.songs -> Database.song
+                                             .sortByPlayTime( 0, Long.MAX_VALUE )
+                                             .first()
+                                             .reversed()
+                                             .take(500)
+                                             .also { lastSongs = it.map { it.song } }
+                                             .map { it.song.asBrowserMediaItem }
+                                             .toMutableList()
+                                             .apply {
+                                                 if ( isNotEmpty() )
+                                                     add(0, shuffleBrowserMediaItem)
+                                             }
 
-                    MediaId.playlists -> Database
-                        .playlistPreviewsByNameAsc()
-                        .first()
-                        .map { it.asBrowserMediaItem }
-                        .sortedBy { it.description.title.toString() }
-                        .map { it.asCleanMediaItem }
-                        .toMutableList()
-                        .apply {
-                            add(0, favoritesBrowserMediaItem)
-                            add(1, offlineBrowserMediaItem)
-                            add(2, downloadedBrowserMediaItem)
-                            add(3, topBrowserMediaItem)
-                            add(4, ondeviceBrowserMediaItem)
-                        }
+                    MediaId.playlists -> Database.playlist
+                                                 .sortByName()
+                                                 .first()
+                                                 .map { it.asBrowserMediaItem }
+                                                 .sortedBy { it.description.title.toString() }
+                                                 .map { it.asCleanMediaItem }
+                                                 .toMutableList()
+                                                 .apply {
+                                                     add(0, favoritesBrowserMediaItem)
+                                                     add(1, offlineBrowserMediaItem)
+                                                     add(2, downloadedBrowserMediaItem)
+                                                     add(3, topBrowserMediaItem)
+                                                     add(4, ondeviceBrowserMediaItem)
+                                                 }
 
-                    MediaId.albums -> Database
-                        .albumsByRowIdDesc()
-                        .first()
-                        .map { it.asBrowserMediaItem }
-                        .toMutableList()
+                    MediaId.albums -> Database.album
+                                              .sortByRowId()
+                                              .first()
+                                              .reversed()
+                                              .map{ it.asBrowserMediaItem }
+                                              .toMutableList()
 
-                    MediaId.artists -> Database
-                        .artistsByRowIdDesc()
-                        .first()
-                        .map { it.asBrowserMediaItem }
-                        .toMutableList()
+                    MediaId.artists -> Database.artist
+                                               .sortByRowIdAsc()
+                                               .first()
+                                               .reversed()
+                                               .map { it.asBrowserMediaItem }
+                                               .toMutableList()
 
                     else -> mutableListOf()
                 }

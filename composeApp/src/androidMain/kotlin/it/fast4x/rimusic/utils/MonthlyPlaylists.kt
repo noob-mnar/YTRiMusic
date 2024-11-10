@@ -48,7 +48,7 @@ fun CheckMonthlyPlaylist() {
                 var songsMostPlayed by remember { mutableStateOf<List<Song>?>(null) }
             LaunchedEffect(Unit) {
                 withContext(Dispatchers.IO) {
-                    songsMostPlayed = Database.songsMostPlayedByYearMonthNoFlow(y, m)
+                    songsMostPlayed = Database.song.mostPlayedByYearMonth( y, m, Long.MAX_VALUE )
                 }
             }
 

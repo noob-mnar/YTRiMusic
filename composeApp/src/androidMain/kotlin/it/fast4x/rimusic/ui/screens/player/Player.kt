@@ -459,8 +459,8 @@ fun Player(
 
     LaunchedEffect(mediaItem.mediaId) {
         withContext(Dispatchers.IO) {
-            albumInfo = Database.songAlbumInfo(mediaItem.mediaId)
-            artistsInfo = Database.songArtistInfo(mediaItem.mediaId)
+            albumInfo = Database.album.info( mediaItem.mediaId )
+            artistsInfo = Database.artist.info( mediaItem.mediaId )
         }
     }
 

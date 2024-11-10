@@ -794,9 +794,9 @@ fun MediaItemMenu(
     LaunchedEffect( mediaItem.mediaId ) {
         withContext(Dispatchers.IO) {
             if (albumInfo?.id.isNullOrEmpty())
-                albumInfo = Database.songAlbumInfo(mediaItem.mediaId)
+                albumInfo = Database.album.info( mediaItem.mediaId )
             if (artistsInfo.isNullOrEmpty())
-                artistsInfo = Database.songArtistInfo(mediaItem.mediaId)
+                artistsInfo = Database.artist.info( mediaItem.mediaId )
         }
 
         withContext( Dispatchers.Default ) {
@@ -881,7 +881,7 @@ fun MediaItemMenu(
             val sortBy by rememberPreference(playlistSortByKey, PlaylistSortBy.DateAdded)
             val sortOrder by rememberPreference(playlistSortOrderKey, SortOrder.Descending)
             val playlistPreviews by remember {
-                Database.playlistPreviews(sortBy, sortOrder)
+                Database.playlist.flowAllPreviews( sortBy, sortOrder )
             }.collectAsState(initial = emptyList(), context = Dispatchers.IO)
 
             val playlistIds by remember {

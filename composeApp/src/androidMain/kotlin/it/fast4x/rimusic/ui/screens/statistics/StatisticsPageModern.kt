@@ -185,30 +185,28 @@ fun StatisticsPageModern(
         }?.toLong() ?: 0
     }
 
-    if (showStatsListeningTime) {
-        LaunchedEffect(Unit) {
-            Database.songsMostPlayedByPeriod(from, now).collect { allSongs = it }
-        }
-    }
-    LaunchedEffect(Unit) {
-        Database.artistsMostPlayedByPeriod(from, now, maxStatisticsItems.number.toInt())
-            .collect { artists = it }
-    }
-    LaunchedEffect(Unit) {
-        Database.albumsMostPlayedByPeriod(from, now, maxStatisticsItems.number.toInt())
-            .collect { albums = it }
-    }
-    LaunchedEffect(Unit) {
-        Database.songsMostPlayedByPeriod(from, now, maxStatisticsItems.number)
-            .collect { songs = it }
-    }
     LaunchedEffect( Unit ) {
         CoroutineScope( Dispatchers.IO ).launch {
 
             Database.playlist
                     .flowMostPlayedBetween( from, now, maxStatisticsItems.number )
+                    .collect { playlists = it }
+
+            Database.album
+                    .flowMostPlayedBetween( from, now, maxStatisticsItems.number )
+                    .collect { albums = it }
+
+            Database.artist
+                    .flowMostPlayedBetween( from, now, maxStatisticsItems.number )
+                    .collect { artists = it }
+
+            Database.song
+                    .flowMostPlayedBetween( from, now, maxStatisticsItems.number )
                     .collect {
-                        playlists = it
+                        if( showStatsListeningTime )
+                            allSongs = it
+
+                        songs = it
                     }
         }
     }

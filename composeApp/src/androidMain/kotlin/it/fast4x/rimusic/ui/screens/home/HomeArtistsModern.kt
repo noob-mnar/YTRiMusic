@@ -13,14 +13,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -58,9 +55,12 @@ import it.fast4x.rimusic.ui.items.ArtistItem
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.utils.artistSortByKey
 import it.fast4x.rimusic.utils.artistSortOrderKey
+import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.showFloatingIconKey
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import me.knighthat.colorPalette
 import me.knighthat.component.tab.TabHeader
@@ -147,7 +147,7 @@ fun HomeArtistsModern(
             override val binder = binder
             override val context = context
 
-            override fun query(): Flow<List<Song>?> = Database.songsInAllFollowedArtists()
+            override fun query(): Flow<List<Song>> = Database.artist.flowSongsOfFollowing()
         }
     }
 
@@ -159,7 +159,11 @@ fun HomeArtistsModern(
     var items by randomizer.itemsState
 
     LaunchedEffect(sort.sortByState.value, sort.sortOrderState.value, inputState) {
-        Database.artists(sort.sortByState.value, sort.sortOrderState.value).collect { items = it }
+        Database.artist
+                .flowAll( sort.sortByState.value, sort.sortOrderState.value )
+                .collect( CoroutineScope( Dispatchers.IO) ) {
+                    items = it
+                }
     }
 
     if ( searchInput.isNotBlank() )
