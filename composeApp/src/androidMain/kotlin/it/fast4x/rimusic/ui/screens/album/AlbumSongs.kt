@@ -608,7 +608,7 @@ fun AlbumSongs(
                                                             songs.forEachIndexed { index, song ->
                                                                 Database.transaction {
                                                                     insert( song.asMediaItem )
-                                                                    insert(
+                                                                    songPlaylistMap.safeUpsert(
                                                                         SongPlaylistMap(
                                                                             songId = song.asMediaItem.mediaId,
                                                                             playlistId = playlistPreview.playlist.id,
@@ -623,7 +623,7 @@ fun AlbumSongs(
                                                                 //Log.d("mediaItemMaxPos", position.toString())
                                                                 Database.transaction {
                                                                     Database.insert( song )
-                                                                    Database.insert(
+                                                                    songPlaylistMap.safeUpsert(
                                                                         SongPlaylistMap(
                                                                             songId = song.mediaId,
                                                                             playlistId = playlistPreview.playlist.id,

@@ -957,7 +957,7 @@ fun QueueModern(
                                             windows.forEachIndexed { index, song ->
                                                 Database.transaction {
                                                     insert(song.mediaItem)
-                                                    insert(
+                                                    songPlaylistMap.safeUpsert(
                                                         SongPlaylistMap(
                                                             songId = song.mediaItem.mediaId,
                                                             playlistId = playlistPreview.playlist.id,
@@ -972,7 +972,7 @@ fun QueueModern(
                                                 //Log.d("mediaItemMaxPos", position.toString())
                                                 Database.transaction {
                                                     insert(song)
-                                                    insert(
+                                                    songPlaylistMap.safeUpsert(
                                                         SongPlaylistMap(
                                                             songId = song.mediaId,
                                                             playlistId = playlistPreview.playlist.id,

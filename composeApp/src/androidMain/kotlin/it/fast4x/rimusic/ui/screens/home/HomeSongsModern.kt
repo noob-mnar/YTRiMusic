@@ -433,7 +433,7 @@ fun HomeSongsModern(
 
                     Database.transaction {
                         song.delete( it.song )
-                        deleteSongFromPlaylists( songId )
+                        songPlaylistMap.removeSong( songId )
                         format.deleteById( songId )
                     }
 
@@ -879,7 +879,7 @@ fun HomeSongsModern(
                                     runCatching {
                                         CoroutineScope(Dispatchers.IO).launch {
                                             Database.insert(song.song.asMediaItem)
-                                            Database.insert(
+                                            Database.songPlaylistMap.safeUpsert(
                                                 SongPlaylistMap(
                                                     songId = song.song.asMediaItem.mediaId,
                                                     playlistId = playlistPreview.playlist.id,

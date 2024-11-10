@@ -17,7 +17,10 @@ import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.models.PlaylistPreview
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.ui.items.PlaylistItem
+import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.thumbnail
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 
 @Composable
 fun Playlist(
@@ -32,7 +35,11 @@ fun Playlist(
 ) {
     var songs by persistList<Song>("playlist${playlist.playlist.id}/songsThumbnails")
     LaunchedEffect(playlist.playlist.id) {
-        Database.songsPlaylistTop4Positions(playlist.playlist.id).collect{ songs = it }
+        Database.songPlaylistMap
+                .flowFindSongsById( playlist.playlist.id, 4UL )
+                .collect( CoroutineScope(Dispatchers.IO) ) {
+                    songs = it
+                }
     }
     val thumbnails = songs
         .takeWhile { it.thumbnailUrl?.isNotEmpty() ?: false }

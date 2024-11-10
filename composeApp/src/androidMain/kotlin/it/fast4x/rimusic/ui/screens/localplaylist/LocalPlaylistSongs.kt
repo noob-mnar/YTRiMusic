@@ -113,6 +113,7 @@ import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.autosyncKey
 import it.fast4x.rimusic.utils.center
 import it.fast4x.rimusic.utils.checkFileExists
+import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.completed
 import it.fast4x.rimusic.utils.deleteFileIfExists
@@ -368,7 +369,7 @@ fun LocalPlaylistSongs(
             override val messageId = -1
 
             /**
-             * [List.shuffled] and [Database.updateSongPosition] are heavy tasks,
+             * [List.shuffled] and [me.knighthat.database.table.SongPlaylistMapTable.updatePosition] are heavy tasks,
              * they shouldn't be run on [Dispatchers.Main] thread.
              */
             override fun onConfirm() = runBlocking( Dispatchers.Default ) {
@@ -376,7 +377,7 @@ fun LocalPlaylistSongs(
                 Database.transaction {
                     playlistSongs.shuffled()
                                  .forEachIndexed { index, song ->
-                                     updateSongPosition( playlistId, song.song.id, index )
+                                     songPlaylistMap.updatePosition( playlistId, song.song.id, index )
                                  }
                 }
 
@@ -500,7 +501,12 @@ fun LocalPlaylistSongs(
         }
 
     LaunchedEffect(Unit) {
-        Database.singlePlaylistPreview(playlistId).collect { playlistPreview = it }
+        Database.songPlaylistMap
+                .flowPreview( playlistId )
+                // Collect on IO thread to keep it from interfering with UI thread
+                .collect( CoroutineScope( Dispatchers.IO) ) {
+                    playlistPreview = it
+                }
     }
 
     //**** SMART RECOMMENDATION
@@ -552,7 +558,7 @@ fun LocalPlaylistSongs(
         key = playlistSongs,
         onDragEnd = { fromIndex, toIndex ->
             Database.transaction {
-                Database.move( playlistId, fromIndex, toIndex )
+                songPlaylistMap.move( playlistId, fromIndex, toIndex )
             }
         },
         extraItemCount = 1
@@ -597,7 +603,7 @@ fun LocalPlaylistSongs(
                 // to preserve data integrity due to the nature of cancel-and-reverse
                 // policy upon error
                 Database.transaction {
-                    clearPlaylist( playlistId )
+                    songPlaylistMap.deleteById( playlistId )
 
                     playlistPage.songsPage
                                 ?.items
@@ -937,7 +943,7 @@ fun LocalPlaylistSongs(
                                                     playlistSongs.forEachIndexed { index, song ->
                                                         Database.transaction {
                                                             insert( song.asMediaItem )
-                                                            insert(
+                                                            songPlaylistMap.safeUpsert(
                                                                 SongPlaylistMap(
                                                                     songId = song.asMediaItem.mediaId,
                                                                     playlistId = playlistPreview.playlist.id,
@@ -967,7 +973,7 @@ fun LocalPlaylistSongs(
                                                         //Log.d("mediaItemMaxPos", position.toString())
                                                         Database.transaction {
                                                             insert(song)
-                                                            insert(
+                                                            songPlaylistMap.safeUpsert(
                                                                 SongPlaylistMap(
                                                                     songId = song.mediaId,
                                                                     playlistId = playlistPreview.playlist.id,
@@ -1190,8 +1196,8 @@ fun LocalPlaylistSongs(
                             mediaItem = song.asMediaItem,
                             onSwipeToLeft = {
                                 Database.transaction {
-                                    move( playlistId, positionInPlaylist, Int.MAX_VALUE )
-                                    delete(
+                                    songPlaylistMap.move( playlistId, positionInPlaylist, Int.MAX_VALUE )
+                                    songPlaylistMap.delete(
                                         SongPlaylistMap(
                                             song.song.id,
                                             playlistId,

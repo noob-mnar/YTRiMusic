@@ -333,7 +333,7 @@ fun HomeAlbumsModern(
                                                 songs.forEachIndexed { index, song ->
                                                     Database.transaction {
                                                         insert(song.asMediaItem)
-                                                        insert(
+                                                        songPlaylistMap.safeUpsert(
                                                             SongPlaylistMap(
                                                                 songId = song.asMediaItem.mediaId,
                                                                 playlistId = playlistPreview.playlist.id,

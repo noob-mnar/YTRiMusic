@@ -57,15 +57,12 @@ data class YouTubeRadio(
 
         if (isDiscoverEnabled) {
             var listMediaItems = mutableListOf<MediaItem>()
-            withContext(Dispatchers.IO) {
-                mediaItems?.forEach {
-                    val songInPlaylist = Database.songUsedInPlaylists(it.mediaId)
-                    val songIsLiked = Database.song.isLiked( it.mediaId )
 
-                    if( songInPlaylist == 0 && songIsLiked )
-                        listMediaItems.add(it)
-
-                }
+            withContext( Dispatchers.IO ) {
+                mediaItems?.filter {
+                    // Requires song to be mapped and liked
+                    Database.songPlaylistMap.isMapped(it.mediaId) && Database.song.isLiked(it.mediaId)
+                }?.let( listMediaItems::addAll )
             }
 
             SmartMessage(context.resources.getString(R.string.discover_has_been_applied_to_radio).format(

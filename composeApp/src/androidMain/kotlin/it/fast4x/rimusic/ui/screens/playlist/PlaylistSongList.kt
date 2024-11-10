@@ -430,7 +430,7 @@ fun PlaylistSongList(
                                             playlistPage!!.songsPage?.items?.forEachIndexed { index, song ->
                                                 runCatching {
                                                     Database.insert(song.asMediaItem)
-                                                    Database.insert(
+                                                    Database.songPlaylistMap.safeUpsert(
                                                         SongPlaylistMap(
                                                             songId = song.asMediaItem.mediaId,
                                                             playlistId = playlistPreview.playlist.id,
