@@ -382,7 +382,7 @@ fun Lyrics(
         LaunchedEffect(mediaId, isShowingSynchronizedLyrics, checkLyrics) {
             withContext(Dispatchers.IO) {
 
-                Database.lyrics(mediaId).collect { currentLyrics ->
+                Database.lyrics.flowFindBySongId(mediaId).collect { currentLyrics ->
                     if (isShowingSynchronizedLyrics && currentLyrics?.synced == null) {
                         lyrics = null
                         val mediaMetadata = mediaMetadataProvider()
@@ -427,7 +427,7 @@ fun Lyrics(
                                         }
 
                                 isError = false
-                                Database.upsert(
+                                Database.lyrics.safeUpsert(
                                     Lyrics(
                                         songId = mediaId,
                                         fixed = currentLyrics?.fixed,
@@ -476,7 +476,7 @@ fun Lyrics(
                                                 }
 
                                         isError = false
-                                        Database.upsert(
+                                        Database.lyrics.safeUpsert(
                                             Lyrics(
                                                 songId = mediaId,
                                                 fixed = currentLyrics?.fixed,
@@ -511,7 +511,7 @@ fun Lyrics(
                         kotlin.runCatching {
                             Innertube.lyrics(NextBody(videoId = mediaId))
                                 ?.onSuccess { fixedLyrics ->
-                                    Database.upsert(
+                                    Database.lyrics.safeUpsert(
                                         Lyrics(
                                             songId = mediaId,
                                             fixed = fixedLyrics ?: "",
@@ -545,7 +545,7 @@ fun Lyrics(
                 setValue = {
                     query {
                         ensureSongInserted()
-                        Database.upsert(
+                        Database.lyrics.safeUpsert(
                             Lyrics(
                                 songId = mediaId,
                                 fixed = if (isShowingSynchronizedLyrics) lyrics?.fixed else it,
@@ -2246,9 +2246,8 @@ fun Lyrics(
                                             text = stringResource(R.string.fetch_lyrics_again),
                                             enabled = lyrics != null,
                                             onClick = {
-                                                menuState.hide()
-                                                query {
-                                                    Database.upsert(
+                                                Database.transaction {
+                                                    upsert(
                                                         Lyrics(
                                                             songId = mediaId,
                                                             fixed = if (isShowingSynchronizedLyrics) lyrics?.fixed else null,
@@ -2309,7 +2308,7 @@ fun SelectLyricFromTrack(
                     } ${stringResource(R.string.id)} ${it.id}) ",
                     onClick = {
                         Database.transaction {
-                            upsert(
+                            this.lyrics.safeUpsert(
                                 Lyrics(
                                     songId = mediaId,
                                     fixed = lyrics?.fixed,
