@@ -228,7 +228,7 @@ fun Podcast(
                                        position = index
                                    )
                                }
-                               ?.let( ::insertSongPlaylistMaps )
+                               ?.let( songPlaylistMap::safeUpsert )
                 }
 
                 SmartMessage(context.resources.getString(R.string.done), PopupType.Success, context = context)

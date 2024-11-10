@@ -214,7 +214,8 @@ fun QuickPicksModern(
 
                 when (playEventType) {
                     PlayEventsType.MostPlayed ->
-                        Database.songsMostPlayedByPeriod( from, now, 1 )
+                        Database.song
+                                .flowMostPlayedBetween( from, now, 1L )
                                 .distinctUntilChanged()
                                 .collect {
                                     song = it.firstOrNull()
@@ -272,7 +273,12 @@ fun QuickPicksModern(
 
 
     LaunchedEffect(Unit) {
-        Database.preferitesArtistsByName().collect { preferitesArtists = it }
+        Database.artist
+                .sortByNameAsc()
+                .distinctUntilChanged()
+                .collect( CoroutineScope( Dispatchers.IO) ) {
+                    preferitesArtists = it
+                }
     }
 
     val songThumbnailSizeDp = Dimensions.thumbnails.song

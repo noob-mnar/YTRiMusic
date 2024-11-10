@@ -113,6 +113,7 @@ import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.autoShuffleKey
 import it.fast4x.rimusic.utils.builtInPlaylistKey
 import it.fast4x.rimusic.utils.center
+import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.defaultFolderKey
 import it.fast4x.rimusic.utils.disableScrollingTextKey
@@ -145,6 +146,7 @@ import it.fast4x.rimusic.utils.topPlaylistPeriodKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
@@ -525,10 +527,13 @@ fun HomeSongsModern(
 
     when (builtInPlaylist) {
         BuiltInPlaylist.All -> {
-            LaunchedEffect(sortBy, sortOrder, searchInput, showHiddenSongs, includeLocalSongs) {
-                //Database.songs(sortBy, sortOrder, showHiddenSongs).collect { items = it }
-                Database.songs(sortBy, sortOrder, showHiddenSongs).collect { items = it }
-
+            LaunchedEffect( sortBy, sortOrder, showHiddenSongs ) {
+                Database.song
+                        .flowAll( sortBy, sortOrder, showHiddenSongs )
+                        .distinctUntilChanged()
+                        .collect( CoroutineScope(Dispatchers.IO) ) {
+                            items = it
+                        }
             }
         }
         BuiltInPlaylist.Downloaded, BuiltInPlaylist.Favorites, BuiltInPlaylist.Offline, BuiltInPlaylist.Top -> {
@@ -542,12 +547,12 @@ fun HomeSongsModern(
                 when( builtInPlaylist ) {
                     BuiltInPlaylist.Favorites -> {
 
-                        songFlow = Database.songsFavorites(sortBy, sortOrder)
+                        songFlow = Database.song.flowAllFavorites( sortBy, sortOrder )
                         filterCondition = { true }
                     }
                     BuiltInPlaylist.Offline -> {
 
-                        songFlow = Database.songsOffline( sortBy, sortOrder )
+                        songFlow = Database.song.flowAllOffline( sortBy, sortOrder )
                         dispatcher = Dispatchers.IO
                         filterCondition = { song ->
                             song.contentLength?.let {
@@ -569,7 +574,7 @@ fun HomeSongsModern(
 
                         songFlow =
                             if (topPlaylistPeriod.duration == Duration.INFINITE)
-                                Database.songsEntityByPlayTimeWithLimitDesc(limit = maxTopPlaylistItems.number.toInt())
+                                Database.song.sortByPlayTime( 0, maxTopPlaylistItems.number )
                             else
                                 Database.event.flowTrendingAsSongEntity(
                                     maxTopPlaylistItems.number.toInt(),

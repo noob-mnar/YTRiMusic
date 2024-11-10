@@ -70,6 +70,7 @@ import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.ui.styling.shimmer
 import it.fast4x.rimusic.utils.center
+import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.isLandscape
 import it.fast4x.rimusic.utils.rememberPreference
@@ -77,6 +78,9 @@ import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.showSearchTabKey
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.distinctUntilChanged
 import me.knighthat.colorPalette
 import me.knighthat.typography
 
@@ -117,7 +121,12 @@ fun HomeDiscovery(
         discoverPage = Innertube.discoverPage()
     }
     LaunchedEffect(Unit) {
-        Database.preferitesArtistsByName().collect { preferitesArtists = it }
+        Database.artist
+                .sortByNameAsc()
+                .distinctUntilChanged()
+                .collect( CoroutineScope(Dispatchers.IO) ) {
+                    preferitesArtists = it
+                }
     }
     val showSearchTab by rememberPreference(showSearchTabKey, false)
 

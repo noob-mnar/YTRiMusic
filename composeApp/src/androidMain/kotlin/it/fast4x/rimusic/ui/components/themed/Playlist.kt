@@ -36,7 +36,7 @@ fun Playlist(
     var songs by persistList<Song>("playlist${playlist.playlist.id}/songsThumbnails")
     LaunchedEffect(playlist.playlist.id) {
         Database.songPlaylistMap
-                .flowFindSongsById( playlist.playlist.id, 4UL )
+                .flowFindSongsById( playlist.playlist.id, 4L )
                 .collect( CoroutineScope(Dispatchers.IO) ) {
                     songs = it
                 }

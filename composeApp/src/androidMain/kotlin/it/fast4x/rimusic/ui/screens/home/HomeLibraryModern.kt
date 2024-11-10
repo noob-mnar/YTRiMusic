@@ -66,6 +66,7 @@ import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.utils.CheckMonthlyPlaylist
 import it.fast4x.rimusic.utils.ImportPipedPlaylists
 import it.fast4x.rimusic.utils.autosyncKey
+import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.createPipedPlaylist
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.enableCreateMonthlyPlaylistsKey
@@ -80,7 +81,10 @@ import it.fast4x.rimusic.utils.showFloatingIconKey
 import it.fast4x.rimusic.utils.showMonthlyPlaylistsKey
 import it.fast4x.rimusic.utils.showPinnedPlaylistsKey
 import it.fast4x.rimusic.utils.showPipedPlaylistsKey
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import me.knighthat.colorPalette
 import me.knighthat.component.header.TabToolBar
 import me.knighthat.component.tab.TabHeader
@@ -243,7 +247,12 @@ fun HomeLibraryModern(
     val searchInput by search.inputState
 
     LaunchedEffect(sort.sortByState.value, sort.sortOrderState.value, searchInput) {
-        Database.playlistPreviews(sort.sortByState.value, sort.sortOrderState.value).collect { items = it }
+        Database.playlist
+                .flowAllPreviews( sort.sortByState.value, sort.sortOrderState.value )
+                .distinctUntilChanged()
+                .collect( CoroutineScope(Dispatchers.IO) ) {
+                    items = it
+                }
     }
 
     if ( searchInput.isNotBlank() )

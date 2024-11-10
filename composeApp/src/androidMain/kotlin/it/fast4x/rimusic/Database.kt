@@ -5,44 +5,27 @@ import androidx.annotation.WorkerThread
 import androidx.media3.common.MediaItem
 import androidx.room.AutoMigration
 import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
 import androidx.room.RawQuery
-import androidx.room.RewriteQueriesToDropUnusedColumns
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.RoomWarnings
 import androidx.room.Transaction
 import androidx.room.TypeConverters
-import androidx.room.Upsert
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteQuery
 import it.fast4x.rimusic.database.Converters
-import it.fast4x.rimusic.enums.AlbumSortBy
-import it.fast4x.rimusic.enums.ArtistSortBy
-import it.fast4x.rimusic.enums.PlaylistSongSortBy
-import it.fast4x.rimusic.enums.PlaylistSortBy
-import it.fast4x.rimusic.enums.SongSortBy
-import it.fast4x.rimusic.enums.SortOrder
 import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.Artist
 import it.fast4x.rimusic.models.Event
 import it.fast4x.rimusic.models.Format
-import it.fast4x.rimusic.models.Info
 import it.fast4x.rimusic.models.Lyrics
 import it.fast4x.rimusic.models.Playlist
-import it.fast4x.rimusic.models.PlaylistPreview
 import it.fast4x.rimusic.models.QueuedMediaItem
 import it.fast4x.rimusic.models.SearchQuery
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongAlbumMap
 import it.fast4x.rimusic.models.SongArtistMap
-import it.fast4x.rimusic.models.SongEntity
 import it.fast4x.rimusic.models.SongPlaylistMap
 import it.fast4x.rimusic.models.SortedSongPlaylistMap
-import it.fast4x.rimusic.service.LOCAL_KEY_PREFIX
-import kotlinx.coroutines.flow.Flow
 import me.knighthat.appContext
 import me.knighthat.database.migrator.From10To11Migration
 import me.knighthat.database.migrator.From11To12Migration
@@ -1237,9 +1220,6 @@ interface Database {
             }.onEach( songArtistMap::safeUpsert )
         }
     }
-
-    @Upsert
-    fun upsert(songAlbumMap: SongAlbumMap)
 
     @RawQuery
     fun raw(supportSQLiteQuery: SupportSQLiteQuery): Int

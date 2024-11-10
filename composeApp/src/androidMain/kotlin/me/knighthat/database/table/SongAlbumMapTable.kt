@@ -4,4 +4,10 @@ import androidx.room.Dao
 import it.fast4x.rimusic.models.SongAlbumMap
 
 @Dao
-interface SongAlbumMapTable: Table<SongAlbumMap, Unit>
+interface SongAlbumMapTable: Table<SongAlbumMap, Unit> {
+
+    /*
+                START SONGS FROM ALBUM
+     */
+
+}

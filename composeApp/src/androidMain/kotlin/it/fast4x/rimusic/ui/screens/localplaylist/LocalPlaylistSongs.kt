@@ -477,7 +477,7 @@ fun LocalPlaylistSongs(
     LaunchedEffect( sortOrder, sortBy ) {
 
         val fromDatabase = withContext( Dispatchers.IO ) {
-            Database.songsPlaylist(playlistId, sortBy, sortOrder)
+            Database.songPlaylistMap.songsFrom( playlistId, sortBy, sortOrder )
         }
 
         withContext( Dispatchers.Default ) {
@@ -521,15 +521,17 @@ fun LocalPlaylistSongs(
 
     if (isRecommendationEnabled) {
         LaunchedEffect(Unit, isRecommendationEnabled) {
-            Database.songsPlaylist(playlistId, sortBy, sortOrder).distinctUntilChanged()
-                .collect { songs ->
-                    val song = songs.firstOrNull()
-                    if (relatedSongsRecommendationResult == null || songBaseRecommendation?.song?.id != song?.song?.id) {
-                        relatedSongsRecommendationResult =
-                            Innertube.relatedSongs(NextBody(videoId = (song?.song?.id ?: "HZnNt9nnEhw")))
+            Database.songPlaylistMap
+                    .songsFrom( playlistId, sortBy, sortOrder )
+                    .distinctUntilChanged()
+                    .collect { songs ->
+                        val song = songs.firstOrNull()
+                        if (relatedSongsRecommendationResult == null || songBaseRecommendation?.song?.id != song?.song?.id) {
+                            relatedSongsRecommendationResult =
+                                Innertube.relatedSongs(NextBody(videoId = (song?.song?.id ?: "HZnNt9nnEhw")))
+                        }
+                        songBaseRecommendation = song
                     }
-                    songBaseRecommendation = song
-                }
         }
         if (relatedSongsRecommendationResult != null) {
             for (index in 0..recommendationsNumber.number) {
@@ -616,7 +618,7 @@ fun LocalPlaylistSongs(
                                         position = position
                                     )
                                 }
-                                ?.let( ::insertSongPlaylistMaps )
+                                ?.let( songPlaylistMap::safeUpsert )
                 }
             }
         }
