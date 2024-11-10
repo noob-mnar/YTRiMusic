@@ -60,6 +60,7 @@ import me.knighthat.database.table.FormatTable
 import me.knighthat.database.table.LyricsTable
 import me.knighthat.database.table.PlaylistTable
 import me.knighthat.database.table.SearchQueryTable
+import me.knighthat.database.table.SongAlbumMapTable
 import me.knighthat.database.table.SongArtistMapTable
 import me.knighthat.database.table.SongPlaylistMapTable
 import me.knighthat.database.table.SongTable
@@ -92,6 +93,8 @@ interface Database {
         get() = DatabaseInitializer.Instance.lyrics
     val songArtistMap: SongArtistMapTable
         get() = DatabaseInitializer.Instance.songArtistMap
+    val songAlbumMap: SongAlbumMapTable
+        get() = DatabaseInitializer.Instance.songAlbumMap
 
 
     @Transaction
@@ -1179,9 +1182,6 @@ interface Database {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insertSongPlaylistMaps(songPlaylistMaps: List<SongPlaylistMap>)
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun insert( songAlbumMap: SongAlbumMap )
-
     @Transaction
     fun insert(
         mediaItem: MediaItem,
@@ -1222,7 +1222,7 @@ interface Database {
             )
         )
 
-        insert(
+        songAlbumMap.safeUpsert(
             SongAlbumMap(
                 songId = song.id,
                 albumId = albumId,
@@ -1347,6 +1347,7 @@ abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
     abstract val songPlaylistMap: SongPlaylistMapTable
     abstract val lyrics: LyricsTable
     abstract val songArtistMap: SongArtistMapTable
+    abstract val songAlbumMap: SongAlbumMapTable
 
     companion object {
 
