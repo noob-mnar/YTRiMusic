@@ -60,6 +60,7 @@ import me.knighthat.database.table.FormatTable
 import me.knighthat.database.table.LyricsTable
 import me.knighthat.database.table.PlaylistTable
 import me.knighthat.database.table.SearchQueryTable
+import me.knighthat.database.table.SongArtistMapTable
 import me.knighthat.database.table.SongPlaylistMapTable
 import me.knighthat.database.table.SongTable
 
@@ -89,6 +90,8 @@ interface Database {
         get() = DatabaseInitializer.Instance.songPlaylistMap
     val lyrics: LyricsTable
         get() = DatabaseInitializer.Instance.lyrics
+    val songArtistMap: SongArtistMapTable
+        get() = DatabaseInitializer.Instance.songArtistMap
 
 
     @Transaction
@@ -779,11 +782,6 @@ interface Database {
             "INNER JOIN Album A ON A.id=SM.albumId WHERE A.bookmarkedAt IS NOT NULL")
     fun songsInAllBookmarkedAlbums(): Flow<List<Song>?>
 
-    @Transaction
-    @Query("SELECT DISTINCT S.* FROM Song S INNER JOIN SongArtistMap SM ON S.id=SM.songId " +
-            "INNER JOIN Artist A ON A.id=SM.artistId WHERE A.bookmarkedAt IS NOT NULL")
-    fun songsInAllFollowedArtists(): Flow<List<Song>?>
-
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Transaction
     @Query("SELECT S.*, Album.title as albumTitle FROM Song S INNER JOIN songplaylistmap SP ON S.id=SP.songId " +
@@ -1239,7 +1237,7 @@ interface Database {
 
             artistIds.map { artistId ->
                 SongArtistMap(songId = song.id, artistId = artistId)
-            }.onEach( ::insert )
+            }.onEach( songArtistMap::safeUpsert )
         }
     }
 
@@ -1348,6 +1346,7 @@ abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
     abstract val playlist: PlaylistTable
     abstract val songPlaylistMap: SongPlaylistMapTable
     abstract val lyrics: LyricsTable
+    abstract val songArtistMap: SongArtistMapTable
 
     companion object {
 
