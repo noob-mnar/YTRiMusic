@@ -130,7 +130,7 @@ fun AlbumScreenWithoutScaffold(
                          ?.onSuccess { currentAlbumPage ->
                              albumPage = currentAlbumPage
 
-                             Database.clearAlbum(browseId)
+                             Database.album.deleteById( browseId )
 
                              currentAlbumPage.run {
                                  Database.album.safeUpsert(

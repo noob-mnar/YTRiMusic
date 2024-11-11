@@ -35,10 +35,9 @@ private suspend fun getPipedFormatUrl(
                 AudioQualityFormat.Medium -> it?.mediumQualityFormat
                 AudioQualityFormat.Low -> it?.lowestQualityFormat
             }.also {
-                //println("PlayerService MyDownloadHelper DataSpecProcess getPipedFormatUrl before upsert format $it")
-                query {
-                    if (Database.songExist(videoId) > 0)
-                        Database.upsert(
+                Database.transaction {
+                    if( song.findById( videoId ) == null )
+                        format.safeUpsert(
                             Format(
                                 songId = videoId,
                                 itag = it?.itag?.toInt(),
@@ -48,7 +47,6 @@ private suspend fun getPipedFormatUrl(
                             )
                         )
                 }
-                //println("PlayerService MyDownloadHelper DataSpecProcess getPipedFormatUrl after upsert format $it")
             }
         },
         {
@@ -74,9 +72,10 @@ private suspend fun getInvidiousFormatUrl(
                 AudioQualityFormat.Low -> it?.lowestQualityFormat
             }.also {
                 //println("PlayerService MyDownloadHelper DataSpecProcess getInvidiousFormatUrl before upsert format $it")
-                query {
-                    if (Database.songExist(videoId) > 0)
-                        Database.upsert(
+
+                Database.transaction {
+                    if( song.findById( videoId ) == null )
+                        format.safeUpsert(
                             Format(
                                 songId = videoId,
                                 itag = it?.itag?.toInt(),
@@ -85,7 +84,6 @@ private suspend fun getInvidiousFormatUrl(
                             )
                         )
                 }
-                //println("PlayerService MyDownloadHelper DataSpecProcess getInvidiousFormatUrl after upsert format $it")
             }
         },
         {

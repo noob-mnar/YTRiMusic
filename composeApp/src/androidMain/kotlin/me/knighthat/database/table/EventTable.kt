@@ -44,6 +44,28 @@ interface EventTable: Table<Event, Unit> {
         SELECT Song.* 
         FROM Event 
         JOIN Song ON Song.id = songId 
+        WHERE Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' 
+        GROUP BY songId 
+        ORDER BY SUM(playTime) DESC 
+        LIMIT :limit
+    """)
+    fun flowTrending( limit: Int ): Flow<List<Song>>
+
+    @Query("""
+        SELECT Song.* 
+        FROM Event 
+        JOIN Song ON Song.id = songId 
+        WHERE Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' 
+        GROUP BY songId 
+        ORDER BY SUM(playTime) DESC 
+        LIMIT :limit
+    """)
+    fun flowTrendingAsSongEntity( limit: Int ): Flow<List<SongEntity>>
+
+    @Query("""
+        SELECT Song.* 
+        FROM Event 
+        JOIN Song ON Song.id = songId 
         WHERE (:now - Event.timestamp) <= :period 
         AND Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' 
         GROUP BY songId 

@@ -17,7 +17,6 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -148,6 +147,7 @@ import it.fast4x.rimusic.ui.components.themed.PlayerMenu
 import it.fast4x.rimusic.ui.components.themed.SecondaryTextButton
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.components.themed.ThumbnailOffsetDialog
+import it.fast4x.rimusic.ui.components.themed.VinylThumbnailCoverAnimation
 import it.fast4x.rimusic.ui.components.themed.animateBrushRotation
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.collapsedPlayerProgressBar
@@ -188,7 +188,6 @@ import it.fast4x.rimusic.utils.fadingedgeKey
 import it.fast4x.rimusic.utils.forcePlayAtIndex
 import it.fast4x.rimusic.utils.formatAsDuration
 import it.fast4x.rimusic.utils.formatAsTime
-import it.fast4x.rimusic.utils.getBitmapFromUrl
 import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.getIconQueueLoopState
 import it.fast4x.rimusic.utils.horizontalFadingEdge
@@ -227,6 +226,7 @@ import it.fast4x.rimusic.utils.showButtonPlayerVideoKey
 import it.fast4x.rimusic.utils.showNextSongsInPlayerKey
 import it.fast4x.rimusic.utils.showTopActionsBarKey
 import it.fast4x.rimusic.utils.showTotalTimeQueueKey
+import it.fast4x.rimusic.utils.showVinylThumbnailAnimationKey
 import it.fast4x.rimusic.utils.showalbumcoverKey
 import it.fast4x.rimusic.utils.showlyricsthumbnailKey
 import it.fast4x.rimusic.utils.showsongsKey
