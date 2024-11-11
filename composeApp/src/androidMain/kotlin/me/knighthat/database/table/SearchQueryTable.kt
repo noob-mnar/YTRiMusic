@@ -16,7 +16,7 @@ interface SearchQueryTable: Table<SearchQuery, Unit> {
         SELECT * 
         FROM SearchQuery 
         WHERE `query` LIKE :query 
-        ORDER BY id DESC
+        ORDER BY id
     """)
     fun flowFindAllContain( query: String ): Flow<List<SearchQuery>>
 

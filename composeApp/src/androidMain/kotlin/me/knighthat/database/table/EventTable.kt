@@ -19,7 +19,7 @@ interface EventTable: Table<Event, Unit> {
     @Query("""
         SELECT DISTINCT (timestamp / 86400000) AS timestampDay, event.* 
         FROM event 
-        ORDER BY rowId DESC
+        ORDER BY rowId
     """)
     fun flowEventsWithSongs(): Flow<List<EventWithSong>>
 
@@ -35,7 +35,7 @@ interface EventTable: Table<Event, Unit> {
         JOIN Song ON Song.id = songId 
         WHERE Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' 
         GROUP BY songId 
-        ORDER BY SUM(playTime) DESC 
+        ORDER BY SUM(playTime) 
         LIMIT :limit
     """)
     fun trending(limit: Int ): List<Song>
@@ -46,7 +46,7 @@ interface EventTable: Table<Event, Unit> {
         JOIN Song ON Song.id = songId 
         WHERE Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' 
         GROUP BY songId 
-        ORDER BY SUM(playTime) DESC 
+        ORDER BY SUM(playTime) 
         LIMIT :limit
     """)
     fun flowTrending( limit: Int ): Flow<List<Song>>
@@ -57,7 +57,7 @@ interface EventTable: Table<Event, Unit> {
         JOIN Song ON Song.id = songId 
         WHERE Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' 
         GROUP BY songId 
-        ORDER BY SUM(playTime) DESC 
+        ORDER BY SUM(playTime) 
         LIMIT :limit
     """)
     fun flowTrendingAsSongEntity( limit: Int ): Flow<List<SongEntity>>
@@ -69,7 +69,7 @@ interface EventTable: Table<Event, Unit> {
         WHERE (:now - Event.timestamp) <= :period 
         AND Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' 
         GROUP BY songId 
-        ORDER BY SUM(playTime) DESC 
+        ORDER BY SUM(playTime) 
         LIMIT :limit
     """)
     fun flowTrendingAsSongEntity(
@@ -85,7 +85,7 @@ interface EventTable: Table<Event, Unit> {
         WHERE playTime > 0 
         AND Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' 
         GROUP BY songId 
-        ORDER BY timestamp DESC 
+        ORDER BY timestamp 
         LIMIT :limit
     """)
     fun lastPlayed( limit: Int ): Flow<List<Song>>

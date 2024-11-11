@@ -82,7 +82,7 @@ interface AlbumTable: Table<Album, Long> {
         JOIN Album ON Album.id = SongAlbumMap.albumId 
         WHERE (:to - Event.timestamp) <= :from 
         GROUP BY Album.id 
-        ORDER BY SUM(Event.playTime) DESC 
+        ORDER BY SUM(Event.playTime) 
         LIMIT :limit
     """)
     fun flowMostPlayedBetween( from: Long, to: Long, limit: Long ): Flow<List<Album>>
