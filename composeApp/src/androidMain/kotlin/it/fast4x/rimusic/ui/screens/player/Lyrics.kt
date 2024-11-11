@@ -132,7 +132,9 @@ import it.fast4x.rimusic.utils.otherLanguageAppKey
 import it.fast4x.rimusic.utils.playerBackgroundColorsKey
 import it.fast4x.rimusic.utils.playerEnableLyricsPopupMessageKey
 import it.fast4x.rimusic.utils.rememberPreference
+import it.fast4x.rimusic.utils.romanizationEnabeledKey
 import it.fast4x.rimusic.utils.showBackgroundLyricsKey
+import it.fast4x.rimusic.utils.showSecondLineKey
 import it.fast4x.rimusic.utils.showlyricsthumbnailKey
 import it.fast4x.rimusic.utils.showthumbnailKey
 import it.fast4x.rimusic.utils.verticalFadingEdge
@@ -142,6 +144,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.bush.translator.Language
+import me.bush.translator.Translation
 import me.bush.translator.Translator
 import me.knighthat.colorPalette
 import me.knighthat.thumbnailShape
@@ -149,11 +152,6 @@ import me.knighthat.typography
 import timber.log.Timber
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
-import it.fast4x.rimusic.enums.LyricsBackground
-import it.fast4x.rimusic.utils.lyricsAlignmentKey
-import it.fast4x.rimusic.utils.romanizationEnabeledKey
-import it.fast4x.rimusic.utils.showSecondLineKey
-import me.bush.translator.Translation
 
 
 @UnstableApi
@@ -543,7 +541,7 @@ fun Lyrics(
                 value = text ?: "",
                 placeholder = stringResource(R.string.enter_the_lyrics),
                 setValue = {
-                    query {
+                    Database.transaction {
                         ensureSongInserted()
                         Database.lyrics.safeUpsert(
                             Lyrics(
@@ -553,7 +551,6 @@ fun Lyrics(
                             )
                         )
                     }
-
                 }
             )
         }
@@ -2247,7 +2244,7 @@ fun Lyrics(
                                             enabled = lyrics != null,
                                             onClick = {
                                                 Database.transaction {
-                                                    upsert(
+                                                    this.lyrics.safeUpsert(
                                                         Lyrics(
                                                             songId = mediaId,
                                                             fixed = if (isShowingSynchronizedLyrics) lyrics?.fixed else null,

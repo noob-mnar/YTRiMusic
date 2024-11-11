@@ -41,7 +41,6 @@ import it.fast4x.innertube.models.bodies.BrowseBody
 import it.fast4x.innertube.models.bodies.ContinuationBody
 import it.fast4x.innertube.requests.artistPage
 import it.fast4x.innertube.requests.itemsPage
-import it.fast4x.innertube.requests.playlistPage
 import it.fast4x.innertube.utils.from
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
@@ -70,11 +69,10 @@ import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.addNext
 import it.fast4x.rimusic.utils.asMediaItem
+import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.completed
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.enqueue
-import it.fast4x.rimusic.utils.forcePlay
-import it.fast4x.rimusic.utils.forcePlayAtIndex
 import it.fast4x.rimusic.utils.forcePlayFromBeginning
 import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.isDownloadedSong

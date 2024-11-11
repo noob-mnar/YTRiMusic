@@ -20,6 +20,9 @@ interface SongTable: Table<Song, Long> {
     @Query("SELECT * FROM Song WHERE id = :id")
     fun findById( id: String ): Song?
 
+    @Query("SELECT * FROM Song WHERE id = :id")
+    fun flowFindById( id: String ): Flow<Song?>
+
     @Query("SELECT * FROM Song")
     fun all(): List<Song>
 
@@ -36,6 +39,9 @@ interface SongTable: Table<Song, Long> {
         LIKE '$LOCAL_KEY_PREFIX%'
     """)
     fun onDevice(): List<Song>
+
+    @Query("SELECT * FROM Song WHERE id LIKE '${LOCAL_KEY_PREFIX}%'")
+    fun flowOnDeviceAsSongEntity(): Flow<List<SongEntity>>
 
     @Query("""
         SELECT * 
@@ -436,5 +442,12 @@ interface SongTable: Table<Song, Long> {
             END ALL ONLINE SONGS
     */
 
-
+    @Query("""
+        SELECT * 
+        FROM Song 
+        INNER JOIN Format ON id = songId 
+        WHERE contentLength IS NOT NULL 
+        AND totalPlayTimeMs > 0
+    """)
+    fun allOffline(): List<Song>
 }

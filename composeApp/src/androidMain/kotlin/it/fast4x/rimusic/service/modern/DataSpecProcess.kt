@@ -3,7 +3,6 @@ package it.fast4x.rimusic.service.modern
 import android.content.Context
 import android.net.Uri
 import androidx.annotation.OptIn
-import androidx.media3.common.PlaybackException
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSpec
 import it.fast4x.innertube.Innertube
@@ -13,7 +12,6 @@ import it.fast4x.innertube.requests.player
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.enums.AudioQualityFormat
 import it.fast4x.rimusic.models.Format
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.LoginRequiredException
 import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.service.NoInternetException
@@ -44,10 +42,9 @@ private suspend fun getPipedFormatUrl(
                 AudioQualityFormat.Medium -> it?.mediumQualityFormat
                 AudioQualityFormat.Low -> it?.lowestQualityFormat
             }.also {
-                //println("PlayerService MyDownloadHelper DataSpecProcess getPipedFormatUrl before upsert format $it")
-                query {
-                    if (Database.songExist(videoId) > 0)
-                        Database.upsert(
+                Database.transaction {
+                    if( song.findById( videoId ) == null )
+                        format.safeUpsert(
                             Format(
                                 songId = videoId,
                                 itag = it?.itag?.toInt(),
@@ -57,7 +54,6 @@ private suspend fun getPipedFormatUrl(
                             )
                         )
                 }
-                //println("PlayerService MyDownloadHelper DataSpecProcess getPipedFormatUrl after upsert format $it")
             }
         },
         {
@@ -82,10 +78,9 @@ private suspend fun getInvidiousFormatUrl(
                 AudioQualityFormat.Medium -> it?.mediumQualityFormat
                 AudioQualityFormat.Low -> it?.lowestQualityFormat
             }.also {
-                //println("PlayerService MyDownloadHelper DataSpecProcess getInvidiousFormatUrl before upsert format $it")
-                query {
-                    if (Database.songExist(videoId) > 0)
-                        Database.upsert(
+                Database.transaction {
+                    if( song.findById( videoId ) == null )
+                        format.safeUpsert(
                             Format(
                                 songId = videoId,
                                 itag = it?.itag?.toInt(),
@@ -94,7 +89,6 @@ private suspend fun getInvidiousFormatUrl(
                             )
                         )
                 }
-                //println("PlayerService MyDownloadHelper DataSpecProcess getInvidiousFormatUrl after upsert format $it")
             }
         },
         {
@@ -202,9 +196,9 @@ suspend fun getInnerTubeFormatUrl(
                         it?.copy(url = "${it.url}&range=0-${it.contentLength ?: 10000000}")
                     }.also {
                         //println("PlayerService MyDownloadHelper DataSpecProcess getMediaFormat before upsert format $it")
-                        query {
-                            if (Database.songExist(videoId) > 0)
-                                Database.upsert(
+                        Database.transaction {
+                            if( song.findById( videoId ) == null )
+                                format.safeUpsert(
                                     Format(
                                         songId = videoId,
                                         itag = it?.itag?.toInt(),
