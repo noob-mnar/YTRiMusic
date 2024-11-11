@@ -97,7 +97,7 @@ interface SongTable: Table<Song, Long> {
         JOIN Song ON Song.id = songId 
         WHERE (:to - Event.timestamp) <= :from 
         GROUP BY songId 
-        ORDER BY SUM(playTime) DESC 
+        ORDER BY SUM(playTime) 
         LIMIT :limit
     """)
     fun flowMostPlayedBetween( from: Long, to: Long, limit: Long ): Flow<List<Song>>
@@ -111,7 +111,7 @@ interface SongTable: Table<Song, Long> {
             AND 
             CAST(strftime('%Y',timestamp / 1000,'unixepoch') as INTEGER) = :year
         GROUP BY songId 
-        ORDER BY timestamp DESC 
+        ORDER BY timestamp 
         LIMIT :limit
     """)
     fun mostPlayedByYearMonth( year: Long, month: Long, limit: Long ): List<Song>

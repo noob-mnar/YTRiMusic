@@ -41,7 +41,7 @@ interface FormatTable: Table<Format, Unit> {
         JOIN Format ON id = songId 
         WHERE contentLength IS NOT NULL 
         AND totalPlayTimeMs > 0 
-        ORDER BY Song.ROWID DESC
+        ORDER BY Song.ROWID
     """)
     fun songsWithContentLength(): List<SongWithContentLength>
 }
