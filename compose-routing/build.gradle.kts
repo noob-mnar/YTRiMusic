@@ -1,20 +1,30 @@
+
 plugins {
     id("com.android.library")
     kotlin("android")
+    alias(libs.plugins.kotlin.compose)
 }
 
+/*
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin)
+    //alias(libs.plugins.kotlin.compose)
+}
+ */
+
 android {
-    namespace = "it.vfsfitvnm.compose.routing"
-    compileSdk = 34
+    namespace = "it.fast4x.compose.routing"
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 21
-        targetSdk = 34
+        //targetSdk = 34
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = true
+            isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }
     }
@@ -28,8 +38,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     composeOptions {
@@ -38,7 +48,7 @@ android {
 
     kotlinOptions {
         freeCompilerArgs += "-Xcontext-receivers"
-        jvmTarget = "17"
+        jvmTarget = "21"
     }
 }
 
