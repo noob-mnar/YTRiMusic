@@ -1334,16 +1334,6 @@ class PlayerServiceModern : MediaLibraryService(),
                     queuedSong[index].position ?: C.TIME_UNSET
                 )
                 player.prepare()
-
-                runCatching {
-                    ContextCompat.startForegroundService(
-                        this@PlayerServiceModern,
-                        intent<PlayerServiceModern>()
-                    )
-                }.onFailure {
-                    Timber.e("maybeRestorePlayerQueue startForegroundService ${it.stackTraceToString()}")
-                }
-
             }
         }
 
