@@ -338,7 +338,6 @@ fun Lyrics(
                     try {
                         var translation: Translation?
                         var translation2: Translation?
-                        val regex = "\\s+".toRegex()
                         if(destinationLanguage == Language.AUTO){
                             translation = translator.translate(
                                 textToTranslate,
@@ -358,9 +357,9 @@ fun Lyrics(
                             translation.sourceLanguage
                         )
                         val outputText = if(romanizationEnabeled){
-                            if (showSecondLine && isSync && textToTranslate != "" && !regex.matches(textToTranslate) && translation.sourceLanguage != translation.targetLanguage) {(translation2.pronunciation ?: translation2.sourceText) + "\\n[${translation.translatedText}]"} else translation.pronunciation ?: translation.translatedText
+                            if (showSecondLine && isSync && textToTranslate != "" && translation.sourceLanguage != translation.targetLanguage) {(translation2.pronunciation ?: translation2.sourceText) + "\\n[${translation.translatedText}]"} else translation.pronunciation ?: translation.translatedText
                         }else{
-                            if (showSecondLine && isSync && textToTranslate != "" && !regex.matches(textToTranslate) && translation.sourceLanguage != translation.targetLanguage) {textToTranslate + "\\n[${translation.translatedText}]"} else translation.translatedText
+                            if (showSecondLine && isSync && textToTranslate != "" && translation.sourceLanguage != translation.targetLanguage) {textToTranslate + "\\n[${translation.translatedText}]"} else translation.translatedText
                         }
                         outputText.replace("\\r","\r").replace("\\n","\n")
                     } catch (e: Exception) {
@@ -744,17 +743,18 @@ fun Lyrics(
                             items = synchronizedLyrics.sentences
                         ) { index, sentence ->
                             var translatedText by remember { mutableStateOf("") }
+                            val trimmedSentence = sentence.second.trim()
                             if (translateEnabled) {
                                 val mutState = remember { mutableStateOf("") }
-                                translateLyricsWithRomanization(mutState, sentence.second, true, languageDestination)()
+                                translateLyricsWithRomanization(mutState, trimmedSentence, true, languageDestination)()
                                 translatedText = mutState.value
                             } else {
                                 if (romanizationEnabeled) {
                                     val mutState = remember { mutableStateOf("") }
-                                    translateLyricsWithRomanization(mutState, sentence.second, true)()
+                                    translateLyricsWithRomanization(mutState, trimmedSentence, true)()
                                     translatedText = mutState.value
                                 } else {
-                                    translatedText = sentence.second
+                                    translatedText = trimmedSentence
                                 }
                             }
 
@@ -1090,7 +1090,6 @@ fun Lyrics(
                                         BasicText(
                                             text = translatedText,
                                             style = TextStyle(
-                                                textAlign = lyricsAlignment.selected,
                                                 drawStyle = Stroke(
                                                     width = if (fontSize == LyricsFontSize.Large)
                                                         if (lyricsOutline == LyricsOutline.White) 3.0f
@@ -1219,6 +1218,7 @@ fun Lyrics(
                                             ),
                                             modifier = Modifier
                                                 .padding(vertical = 4.dp, horizontal = 32.dp)
+                                                .align(if (lyricsAlignment == LyricsAlignment.Left) Alignment.CenterStart else if (lyricsAlignment == LyricsAlignment.Right) Alignment.CenterEnd else Alignment.Center)
                                                 .clickable {
                                                     if (clickLyricsText)
                                                         binder?.player?.seekTo(sentence.first)
@@ -1228,7 +1228,6 @@ fun Lyrics(
                                         BasicText(
                                             text = translatedText,
                                             style = TextStyle(
-                                                textAlign = lyricsAlignment.selected,
                                                 brush = brushrainbowdark,
                                                 drawStyle = Stroke(
                                                     width = if (fontSize == LyricsFontSize.Large) if (index == synchronizedLyrics.index) 5.0f else 4f
@@ -1270,12 +1269,12 @@ fun Lyrics(
                                                     if (clickLyricsText)
                                                         binder?.player?.seekTo(sentence.first)
                                                 }
+                                                .align(if (lyricsAlignment == LyricsAlignment.Left) Alignment.CenterStart else if (lyricsAlignment == LyricsAlignment.Right) Alignment.CenterEnd else Alignment.Center)
                                         )
                                     else //For Glow Outline//
                                         BasicText(
                                             text = translatedText,
                                             style = TextStyle(
-                                                textAlign = lyricsAlignment.selected,
                                                 shadow = Shadow(
                                                     color = if (index == synchronizedLyrics.index)
                                                         if (lyricsColor == LyricsColor.Thememode) Color.White.copy(
@@ -1339,6 +1338,7 @@ fun Lyrics(
                                                     if (clickLyricsText)
                                                         binder?.player?.seekTo(sentence.first)
                                                 }
+                                                .align(if (lyricsAlignment == LyricsAlignment.Left) Alignment.CenterStart else if (lyricsAlignment == LyricsAlignment.Right) Alignment.CenterEnd else Alignment.Center)
                                         )
                             }
                         }
