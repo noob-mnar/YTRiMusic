@@ -58,6 +58,7 @@ import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.Artist
 import it.fast4x.rimusic.models.PlaylistPreview
 import it.fast4x.rimusic.models.Song
+import it.fast4x.rimusic.query
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.themed.HeaderWithIcon
 import it.fast4x.rimusic.ui.components.themed.NonQueuedMediaItemMenu
@@ -72,11 +73,12 @@ import it.fast4x.rimusic.ui.styling.shimmer
 import it.fast4x.rimusic.utils.UpdateYoutubeAlbum
 import it.fast4x.rimusic.utils.UpdateYoutubeArtist
 import it.fast4x.rimusic.utils.asMediaItem
-import it.fast4x.rimusic.utils.downloadedStateMedia
+import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.durationTextToMillis
 import it.fast4x.rimusic.utils.forcePlayAtIndex
 import it.fast4x.rimusic.utils.formatAsTime
 import it.fast4x.rimusic.utils.getDownloadState
+import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isLandscape
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.maxStatisticsItemsKey
@@ -129,6 +131,7 @@ fun StatisticsPage(
     )
 
     val showStatsListeningTime by rememberPreference(showStatsListeningTimeKey,   true)
+    val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
     val context = LocalContext.current
 
@@ -306,16 +309,17 @@ fun StatisticsPage(
                         count = songs.count(),
                         ) {
                         downloadState = getDownloadState(songs.get(it).asMediaItem.mediaId)
-                        val isDownloaded = downloadedStateMedia(songs.get(it).asMediaItem.mediaId)
+                        val isDownloaded = isDownloadedSong(songs.get(it).asMediaItem.mediaId)
                         SongItem(
                             song = songs.get(it).asMediaItem,
-                            isDownloaded = isDownloaded,
                             onDownloadClick = {
                                 binder?.cache?.removeResource(songs.get(it).asMediaItem.mediaId)
+                                query {
+                                    Database.resetFormatContentLength(songs.get(it).asMediaItem.mediaId)
+                                }
                                 manageDownload(
                                     context = context,
-                                    songId = songs.get(it).asMediaItem.mediaId,
-                                    songTitle = songs.get(it).asMediaItem.mediaMetadata.title.toString(),
+                                    mediaItem = songs.get(it).asMediaItem,
                                     downloadState = isDownloaded
                                 )
                             },
@@ -331,7 +335,8 @@ fun StatisticsPage(
                                             NonQueuedMediaItemMenu(
                                                 navController = navController,
                                                 mediaItem = songs.get(it).asMediaItem,
-                                                onDismiss = menuState::hide
+                                                onDismiss = menuState::hide,
+                                                disableScrollingText = disableScrollingText
                                             )
                                             /*
                                                 BuiltInPlaylist.Offline -> InHistoryMediaItemMenu(
@@ -352,7 +357,8 @@ fun StatisticsPage(
                                     }
                                 )
                                 .animateItemPlacement()
-                                .width(itemInHorizontalGridWidth)
+                                .width(itemInHorizontalGridWidth),
+                            disableScrollingText = disableScrollingText
                         )
 
                     }
@@ -385,7 +391,8 @@ fun StatisticsPage(
                                     //onGoToArtist(artists[it].id)
                                     navController.navigate("${NavRoutes.artist.name}/${artists[it].id}")
                                 }
-                            })
+                            }),
+                        disableScrollingText = disableScrollingText
                     )
                 }
             }
@@ -416,7 +423,8 @@ fun StatisticsPage(
                                 if (albums[it].id != "" )
                                 //onGoToAlbum(albums[it].id)
                                     navController.navigate("${NavRoutes.album.name}/${albums[it].id}")
-                            })
+                            }),
+                        disableScrollingText = disableScrollingText
                     )
                 }
             }
@@ -450,7 +458,8 @@ fun StatisticsPage(
                                  //       null
                                  //   )
 
-                            })
+                            }),
+                        disableScrollingText = disableScrollingText
                     )
                 }
 

@@ -122,6 +122,7 @@ import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.autoShuffleKey
 import it.fast4x.rimusic.utils.center
 import it.fast4x.rimusic.utils.color
+import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.durationTextToMillis
 import it.fast4x.rimusic.utils.enqueue
@@ -130,12 +131,14 @@ import it.fast4x.rimusic.utils.forcePlayAtIndex
 import it.fast4x.rimusic.utils.forcePlayFromBeginning
 import it.fast4x.rimusic.utils.formatAsTime
 import it.fast4x.rimusic.utils.getDownloadState
+import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isLandscape
 import it.fast4x.rimusic.utils.isRecommendationEnabledKey
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.maxSongsInQueueKey
 import it.fast4x.rimusic.utils.recommendationsNumberKey
 import it.fast4x.rimusic.utils.rememberPreference
+import it.fast4x.rimusic.utils.resetFormatContentLength
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.showSearchTabKey
@@ -171,6 +174,8 @@ fun BuiltInPlaylistSongs(
     var sortBy by rememberPreference(songSortByKey, SongSortBy.DateAdded)
     var sortOrder by rememberPreference(songSortOrderKey, SortOrder.Descending)
     var autoShuffle by rememberPreference(autoShuffleKey, false)
+
+    val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
     var filter: String? by rememberSaveable { mutableStateOf(null) }
 
@@ -553,7 +558,8 @@ fun BuiltInPlaylistSongs(
                         thumbnailSizeDp = playlistThumbnailSizeDp,
                         alternative = false,
                         modifier = Modifier
-                            .padding(top = 14.dp)
+                            .padding(top = 14.dp),
+                        disableScrollingText = disableScrollingText
                     )
 
                     if (songs.isNotEmpty())
@@ -596,7 +602,8 @@ fun BuiltInPlaylistSongs(
                         alternative = true,
                         showName = false,
                         modifier = Modifier
-                            .padding(top = 14.dp)
+                            .padding(top = 14.dp),
+                        disableScrollingText = disableScrollingText
                     )
 
 
@@ -722,10 +729,15 @@ fun BuiltInPlaylistSongs(
                                 if (songs.isNotEmpty() == true)
                                     songs.forEach {
                                         binder?.cache?.removeResource(it.asMediaItem.mediaId)
+                                        resetFormatContentLength(it.asMediaItem.mediaId)
+                                        /*
+                                        query {
+                                            Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                                        }
+                                         */
                                         manageDownload(
                                             context = context,
-                                            songId = it.asMediaItem.mediaId,
-                                            songTitle = it.asMediaItem.mediaMetadata.title.toString(),
+                                            mediaItem = it.asMediaItem,
                                             downloadState = false
                                         )
                                     }
@@ -760,10 +772,15 @@ fun BuiltInPlaylistSongs(
                                     if (songs.isNotEmpty() == true)
                                         songs.forEach {
                                             binder?.cache?.removeResource(it.asMediaItem.mediaId)
+                                            resetFormatContentLength(it.asMediaItem.mediaId)
+                                            /*
+                                            query {
+                                                Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                                            }
+                                             */
                                             manageDownload(
                                                 context = context,
-                                                songId = it.asMediaItem.mediaId,
-                                                songTitle = it.asMediaItem.mediaMetadata.title.toString(),
+                                                mediaItem = it.asMediaItem,
                                                 downloadState = true
                                             )
                                         }
@@ -966,7 +983,8 @@ fun BuiltInPlaylistSongs(
                                     },
                                     onGoToPlaylist = {
                                         navController.navigate("${NavRoutes.localPlaylist.name}/$it")
-                                    }
+                                    },
+                                    disableScrollingText = disableScrollingText
                                 )
                             }
                         }
@@ -1142,11 +1160,9 @@ fun BuiltInPlaylistSongs(
                     songRecommended?.asMediaItem?.let {
                         SongItem(
                             song = it,
-                            duration = duration,
                             isRecommended = true,
                             thumbnailSizeDp = thumbnailSizeDp,
                             thumbnailSizePx = thumbnailSizePx,
-                            isDownloaded = false,
                             onDownloadClick = {},
                             downloadState = Download.STATE_STOPPED,
                             trailingContent = {},
@@ -1155,8 +1171,8 @@ fun BuiltInPlaylistSongs(
                                 .clickable {
                                     binder?.stopRadio()
                                     binder?.player?.forcePlay(it)
-                                }
-
+                                },
+                            disableScrollingText = disableScrollingText
                         )
                     }
                 }
@@ -1166,30 +1182,24 @@ fun BuiltInPlaylistSongs(
                         val isLocal by remember { derivedStateOf { song.asMediaItem.isLocal } }
                         downloadState = getDownloadState(song.asMediaItem.mediaId)
                         val isDownloaded =
-                            if (!isLocal) downloadedStateMedia(song.asMediaItem.mediaId) else true
+                            if (!isLocal) isDownloadedSong(song.asMediaItem.mediaId) else true
                         val checkedState = rememberSaveable { mutableStateOf(false) }
                         SongItem(
                             song = song,
-                            isDownloaded = isDownloaded,
                             onDownloadClick = {
                                 binder?.cache?.removeResource(song.asMediaItem.mediaId)
+                                resetFormatContentLength(song.asMediaItem.mediaId)
+                                /*
                                 query {
-                                    Database.insert(
-                                        Song(
-                                            id = song.asMediaItem.mediaId,
-                                            title = song.asMediaItem.mediaMetadata.title.toString(),
-                                            artistsText = song.asMediaItem.mediaMetadata.artist.toString(),
-                                            thumbnailUrl = song.thumbnailUrl,
-                                            durationText = null
-                                        )
-                                    )
+                                    Database.resetFormatContentLength(song.asMediaItem.mediaId)
                                 }
+
+                                 */
 
                                 if (!isLocal)
                                     manageDownload(
                                         context = context,
-                                        songId = song.asMediaItem.mediaId,
-                                        songTitle = song.asMediaItem.mediaMetadata.title.toString(),
+                                        mediaItem = song.asMediaItem,
                                         downloadState = isDownloaded
                                     )
                             },
@@ -1270,13 +1280,15 @@ fun BuiltInPlaylistSongs(
                                                 BuiltInPlaylist.Top -> NonQueuedMediaItemMenuLibrary(
                                                     navController = navController,
                                                     mediaItem = song.asMediaItem,
-                                                    onDismiss = menuState::hide
+                                                    onDismiss = menuState::hide,
+                                                    disableScrollingText = disableScrollingText
                                                 )
 
                                                 BuiltInPlaylist.Offline -> InHistoryMediaItemMenu(
                                                     navController = navController,
                                                     song = song,
-                                                    onDismiss = menuState::hide
+                                                    onDismiss = menuState::hide,
+                                                    disableScrollingText = disableScrollingText
                                                 )
 
                                                 BuiltInPlaylist.OnDevice, BuiltInPlaylist.All -> {}
@@ -1300,7 +1312,8 @@ fun BuiltInPlaylistSongs(
                                     }
                                 )
                                 .background(color = colorPalette().background0)
-                                .animateItemPlacement()
+                                .animateItemPlacement(),
+                            disableScrollingText = disableScrollingText
                         )
                     /*
                     },

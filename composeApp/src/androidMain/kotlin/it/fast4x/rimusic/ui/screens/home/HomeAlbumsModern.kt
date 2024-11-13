@@ -10,6 +10,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -17,11 +18,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -65,6 +68,7 @@ import it.fast4x.rimusic.utils.addNext
 import it.fast4x.rimusic.utils.albumSortByKey
 import it.fast4x.rimusic.utils.albumSortOrderKey
 import it.fast4x.rimusic.utils.asMediaItem
+import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.showFloatingIconKey
@@ -97,6 +101,8 @@ fun HomeAlbumsModern(
     val context = LocalContext.current
     val binder = LocalPlayerServiceBinder.current
     val lazyGridState = rememberLazyGridState()
+
+    val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
     // Search states
     val visibleState = rememberSaveable { mutableStateOf(false) }
@@ -145,7 +151,7 @@ fun HomeAlbumsModern(
             override fun onClick(item: Album) = onAlbumClick(item)
         }
     }
-    val shuffle = remember {
+    val shuffle = remember(binder) {
         object: SongsShuffle{
             override val binder = binder
             override val context = context
@@ -185,8 +191,8 @@ fun HomeAlbumsModern(
     ) {
         Column( Modifier.fillMaxSize() ) {
             // Sticky tab's title
-            TabHeader( R.string.albums ) {
-                HeaderInfo( items.size.toString(), R.drawable.album )
+            TabHeader(R.string.albums) {
+                HeaderInfo(items.size.toString(), R.drawable.album)
             }
 
             // Sticky tab's tool bar
@@ -216,9 +222,9 @@ fun HomeAlbumsModern(
                 state = lazyGridState,
                 columns = GridCells.Adaptive( itemSize.sizeState.value.dp ),
                 //contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
-                modifier = Modifier
-                    .background(colorPalette().background0)
-                    .fillMaxSize()
+                modifier = Modifier.background( colorPalette().background0 )
+                                   .fillMaxSize(),
+                contentPadding = PaddingValues( bottom = Dimensions.bottomSpacer )
             ) {
                 items(
                     items = items,
@@ -342,7 +348,8 @@ fun HomeAlbumsModern(
                                                     //Log.d("mediaItemPos", "added position ${position + index}")
                                                 }
                                                 //}
-                                            }
+                                            },
+                                            disableScrollingText = disableScrollingText
                                         )
                                     }
                                 },
@@ -356,16 +363,9 @@ fun HomeAlbumsModern(
                                     onAlbumClick( album )
                                 }
                             )
-                            .clip(thumbnailShape())
+                            .clip(thumbnailShape()),
+                        disableScrollingText = disableScrollingText
                     )
-                }
-
-                item(
-                    key = "footer",
-                    contentType = 0,
-                    span = { GridItemSpan(maxLineSpan) }
-                ) {
-                    Spacer(modifier = Modifier.height(Dimensions.bottomSpacer))
                 }
             }
         }

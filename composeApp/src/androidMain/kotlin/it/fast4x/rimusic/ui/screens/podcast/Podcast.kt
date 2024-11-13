@@ -105,7 +105,7 @@ import it.fast4x.rimusic.ui.styling.favoritesIcon
 import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.addNext
 import it.fast4x.rimusic.utils.asMediaItem
-import it.fast4x.rimusic.utils.downloadedStateMedia
+import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.durationTextToMillis
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.fadingEdge
@@ -113,6 +113,7 @@ import it.fast4x.rimusic.utils.forcePlayAtIndex
 import it.fast4x.rimusic.utils.forcePlayFromBeginning
 import it.fast4x.rimusic.utils.formatAsTime
 import it.fast4x.rimusic.utils.getDownloadState
+import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isLandscape
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.medium
@@ -198,6 +199,8 @@ fun Podcast(
         thumbnailRoundnessKey,
         ThumbnailRoundness.Heavy
     )
+
+    val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
     var totalPlayTimes = 0L
     podcastPage?.listEpisode?.forEach {
@@ -404,20 +407,11 @@ fun Podcast(
                                                 podcastPage?.listEpisode?.forEach {
                                                     binder?.cache?.removeResource(it.asMediaItem.mediaId)
                                                     query {
-                                                        Database.insert(
-                                                            Song(
-                                                                id = it.asMediaItem.mediaId,
-                                                                title = it.asMediaItem.mediaMetadata.title.toString(),
-                                                                artistsText = it.asMediaItem.mediaMetadata.artist.toString(),
-                                                                thumbnailUrl = it.thumbnail?.firstOrNull()?.url,
-                                                                durationText = null
-                                                            )
-                                                        )
+                                                        Database.resetFormatContentLength(it.asMediaItem.mediaId)
                                                     }
                                                     manageDownload(
                                                         context = context,
-                                                        songId = it.asMediaItem.mediaId,
-                                                        songTitle = it.asMediaItem.mediaMetadata.title.toString(),
+                                                        mediaItem = it.asMediaItem,
                                                         downloadState = false
                                                     )
                                                 }
@@ -440,10 +434,12 @@ fun Podcast(
                                             if (podcastPage?.listEpisode?.isNotEmpty() == true)
                                                 podcastPage?.listEpisode?.forEach {
                                                     binder?.cache?.removeResource(it.asMediaItem.mediaId)
+                                                    query {
+                                                        Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                                                    }
                                                     manageDownload(
                                                         context = context,
-                                                        songId = it.asMediaItem.mediaId,
-                                                        songTitle = it.asMediaItem.mediaMetadata.title.toString(),
+                                                        mediaItem = it.asMediaItem,
                                                         downloadState = true
                                                     )
                                                 }
@@ -571,9 +567,8 @@ fun Podcast(
                                                     },
                                                     onGoToPlaylist = {
                                                         navController.navigate("${NavRoutes.localPlaylist.name}/$it")
-                                                    }
-
-
+                                                    },
+                                                    disableScrollingText = disableScrollingText
                                                 )
                                             }
                                         },
@@ -721,29 +716,19 @@ fun Podcast(
                     ) {
                         val isLocal by remember { derivedStateOf { song.asMediaItem.isLocal } }
                         downloadState = getDownloadState(song.asMediaItem.mediaId)
-                        val isDownloaded = if (!isLocal) downloadedStateMedia(song.asMediaItem.mediaId) else true
+                        val isDownloaded = if (!isLocal) isDownloadedSong(song.asMediaItem.mediaId) else true
                         SongItem(
                             song = song.asMediaItem,
-                            isDownloaded = isDownloaded,
                             onDownloadClick = {
                                 binder?.cache?.removeResource(song.asMediaItem.mediaId)
                                 query {
-                                    Database.insert(
-                                        Song(
-                                            id = song.asMediaItem.mediaId,
-                                            title = song.asMediaItem.mediaMetadata.title.toString(),
-                                            artistsText = song.asMediaItem.mediaMetadata.artist.toString(),
-                                            thumbnailUrl = song.thumbnail.firstOrNull()?.url,
-                                            durationText = null
-                                        )
-                                    )
+                                    Database.resetFormatContentLength(song.asMediaItem.mediaId)
                                 }
 
                                 if (!isLocal)
                                     manageDownload(
                                         context = context,
-                                        songId = song.asMediaItem.mediaId,
-                                        songTitle = song.asMediaItem.mediaMetadata.title.toString(),
+                                        mediaItem = song.asMediaItem,
                                         downloadState = isDownloaded
                                     )
                             },
@@ -758,6 +743,7 @@ fun Podcast(
                                                 navController = navController,
                                                 onDismiss = menuState::hide,
                                                 mediaItem = song.asMediaItem,
+                                                disableScrollingText = disableScrollingText
                                             )
                                         };
                                         hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -771,7 +757,8 @@ fun Podcast(
                                                 binder?.player?.forcePlayAtIndex(mediaItems, index)
                                             }
                                     }
-                                )
+                                ),
+                            disableScrollingText = disableScrollingText
                         )
                     }
                 }

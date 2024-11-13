@@ -68,6 +68,7 @@ import it.fast4x.rimusic.utils.CheckMonthlyPlaylist
 import it.fast4x.rimusic.utils.ImportPipedPlaylists
 import it.fast4x.rimusic.utils.autosyncKey
 import it.fast4x.rimusic.utils.createPipedPlaylist
+import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.enableCreateMonthlyPlaylistsKey
 import it.fast4x.rimusic.utils.getPipedSession
 import it.fast4x.rimusic.utils.isPipedEnabledKey
@@ -119,6 +120,7 @@ fun HomeLibraryModern(
     var autosync by rememberPreference(autosyncKey, false)
     var playlistType by rememberPreference(playlistTypeKey, PlaylistsType.Playlist)
     val isPipedEnabled by rememberPreference(isPipedEnabledKey, false)
+    val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
     var items by persistList<PlaylistPreview>("home/playlists")
 
@@ -155,7 +157,7 @@ fun HomeLibraryModern(
             override val sizeState = sizeState
         }
     }
-    val shuffle = remember {
+    val shuffle = remember(binder) {
         object: SongsShuffle {
             override val binder = binder
             override val context = context
@@ -229,7 +231,7 @@ fun HomeLibraryModern(
         object: ImportSongsFromCSV {
             override val context = context
 
-            override fun onShortClick() = importLauncher.launch( arrayOf( "text/csv" ) )
+            override fun onShortClick() = importLauncher.launch( arrayOf("text/csv", "text/comma-separated-values") )
         }
     }
 
@@ -378,7 +380,8 @@ fun HomeLibraryModern(
                                                        isSearchBarFocused = false
 
                                                onPlaylistClick( preview.playlist )
-                                           })
+                                           }),
+                        disableScrollingText = disableScrollingText
                     )
                 }
 

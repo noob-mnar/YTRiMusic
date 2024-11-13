@@ -66,10 +66,11 @@ import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.addNext
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.asSong
-import it.fast4x.rimusic.utils.downloadedStateMedia
+import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.forcePlay
 import it.fast4x.rimusic.utils.getDownloadState
+import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.parentalControlEnabledKey
 import it.fast4x.rimusic.utils.playVideo
@@ -110,6 +111,8 @@ fun SearchResultScreen(
 
     val isVideoEnabled = LocalContext.current.preferences.getBoolean(showButtonPlayerVideoKey, false)
     val parentalControlEnabled by rememberPreference(parentalControlEnabledKey, false)
+
+    val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
     PersistMapCleanup(tagPrefix = "searchResults/$query/")
 
@@ -214,28 +217,18 @@ fun SearchResultScreen(
                                     ) {
                                         downloadState = getDownloadState(song.asMediaItem.mediaId)
                                         val isDownloaded =
-                                            downloadedStateMedia(song.asMediaItem.mediaId)
+                                            isDownloadedSong(song.asMediaItem.mediaId)
                                         SongItem(
                                             song = song,
-                                            isDownloaded = isDownloaded,
                                             onDownloadClick = {
                                                 localBinder?.cache?.removeResource(song.asMediaItem.mediaId)
                                                 query {
-                                                    Database.insert(
-                                                        Song(
-                                                            id = song.asMediaItem.mediaId,
-                                                            title = song.asMediaItem.mediaMetadata.title.toString(),
-                                                            artistsText = song.asMediaItem.mediaMetadata.artist.toString(),
-                                                            thumbnailUrl = song.thumbnail?.url,
-                                                            durationText = null
-                                                        )
-                                                    )
+                                                    Database.resetFormatContentLength(song.asMediaItem.mediaId)
                                                 }
 
                                                 manageDownload(
                                                     context = context,
-                                                    songId = song.asMediaItem.mediaId,
-                                                    songTitle = song.asMediaItem.mediaMetadata.title.toString(),
+                                                    mediaItem = song.asMediaItem,
                                                     downloadState = isDownloaded
                                                 )
                                             },
@@ -250,6 +243,7 @@ fun SearchResultScreen(
                                                                 navController = navController,
                                                                 onDismiss = menuState::hide,
                                                                 mediaItem = song.asMediaItem,
+                                                                disableScrollingText = disableScrollingText
                                                             )
                                                         };
                                                         hapticFeedback.performHapticFeedback(
@@ -261,7 +255,8 @@ fun SearchResultScreen(
                                                         localBinder?.player?.forcePlay(song.asMediaItem)
                                                         localBinder?.setupRadio(song.info?.endpoint)
                                                     }
-                                                )
+                                                ),
+                                            disableScrollingText = disableScrollingText
                                         )
                                     }
                                 },
@@ -426,7 +421,8 @@ fun SearchResultScreen(
                                                     },
                                                     onLongClick = {}
 
-                                                )
+                                                ),
+                                            disableScrollingText = disableScrollingText
                                         )
                                     }
                                 },
@@ -467,9 +463,9 @@ fun SearchResultScreen(
                                         thumbnailSizeDp = thumbnailSizeDp,
                                         modifier = Modifier
                                             .clickable(onClick = {
-                                                //artistRoute(artist.key)
                                                 navController.navigate("${NavRoutes.artist.name}/${artist.key}")
-                                            })
+                                            }),
+                                        disableScrollingText = disableScrollingText
                                     )
                                 },
                                 itemPlaceholderContent = {
@@ -522,7 +518,8 @@ fun SearchResultScreen(
                                                             NonQueuedMediaItemMenu(
                                                                 navController = navController,
                                                                 mediaItem = video.asMediaItem,
-                                                                onDismiss = menuState::hide
+                                                                onDismiss = menuState::hide,
+                                                                disableScrollingText = disableScrollingText
                                                             )
                                                         };
                                                         hapticFeedback.performHapticFeedback(
@@ -537,7 +534,8 @@ fun SearchResultScreen(
                                                             localBinder?.player?.forcePlay(video.asMediaItem)
                                                         //binder?.setupRadio(video.info?.endpoint)
                                                     }
-                                                )
+                                                ),
+                                            disableScrollingText = disableScrollingText
                                         )
                                     }
                                 },
@@ -593,7 +591,8 @@ fun SearchResultScreen(
                                             .clickable(onClick = {
                                                 //playlistRoute(playlist.key)
                                                 navController.navigate("${NavRoutes.playlist.name}/${playlist.key}")
-                                            })
+                                            }),
+                                        disableScrollingText = disableScrollingText
                                     )
                                 },
                                 itemPlaceholderContent = {
@@ -638,7 +637,8 @@ fun SearchResultScreen(
                                                 //playlistRoute(playlist.key)
                                                 println("mediaItem searchResultScreen playlist key ${playlist.key}")
                                                 navController.navigate("${NavRoutes.podcast.name}/${playlist.key}")
-                                            })
+                                            }),
+                                        disableScrollingText = disableScrollingText
                                     )
                                 },
                                 itemPlaceholderContent = {

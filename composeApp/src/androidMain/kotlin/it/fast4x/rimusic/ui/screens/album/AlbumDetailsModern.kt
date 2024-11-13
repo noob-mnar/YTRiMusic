@@ -5,6 +5,7 @@ import android.content.Intent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -105,6 +106,8 @@ import it.fast4x.rimusic.utils.align
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.center
 import it.fast4x.rimusic.utils.color
+import it.fast4x.rimusic.utils.conditional
+import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.durationTextToMillis
 import it.fast4x.rimusic.utils.enqueue
@@ -114,6 +117,7 @@ import it.fast4x.rimusic.utils.forcePlayFromBeginning
 import it.fast4x.rimusic.utils.formatAsTime
 import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.getHttpClient
+import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isLandscape
 import it.fast4x.rimusic.utils.languageDestination
 import it.fast4x.rimusic.utils.manageDownload
@@ -155,6 +159,7 @@ fun AlbumDetailsModern(
     var album by persist<Album?>("album/$browseId")
     //val albumPage by persist<Innertube.PlaylistOrAlbumPage?>("album/$browseId/albumPage")
     val parentalControlEnabled by rememberPreference(parentalControlEnabledKey, false)
+    val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
     LaunchedEffect(Unit) {
         Database.albumSongs(browseId).collect {
@@ -326,10 +331,12 @@ fun AlbumDetailsModern(
                     if (songs.isNotEmpty() == true)
                         songs.forEach {
                             binder?.cache?.removeResource(it.asMediaItem.mediaId)
+                            query {
+                                Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                            }
                             manageDownload(
                                 context = context,
-                                songId = it.asMediaItem.mediaId,
-                                songTitle = it.asMediaItem.mediaMetadata.title.toString(),
+                                mediaItem = it.asMediaItem,
                                 downloadState = true
                             )
                         }
@@ -337,10 +344,12 @@ fun AlbumDetailsModern(
                     runCatching {
                         listMediaItems.forEach {
                             binder?.cache?.removeResource(it.mediaId)
+                            query {
+                                Database.resetFormatContentLength(it.mediaId)
+                            }
                             manageDownload(
                                 context = context,
-                                songId = it.mediaId,
-                                songTitle = it.mediaMetadata.title.toString(),
+                                mediaItem = it,
                                 downloadState = true
                             )
                             //listMediaItems.clear()
@@ -366,20 +375,11 @@ fun AlbumDetailsModern(
                         songs.forEach {
                             binder?.cache?.removeResource(it.asMediaItem.mediaId)
                             query {
-                                Database.insert(
-                                    Song(
-                                        id = it.asMediaItem.mediaId,
-                                        title = it.asMediaItem.mediaMetadata.title.toString(),
-                                        artistsText = it.asMediaItem.mediaMetadata.artist.toString(),
-                                        thumbnailUrl = it.thumbnailUrl,
-                                        durationText = null
-                                    )
-                                )
+                                Database.resetFormatContentLength(it.asMediaItem.mediaId)
                             }
                             manageDownload(
                                 context = context,
-                                songId = it.asMediaItem.mediaId,
-                                songTitle = it.asMediaItem.mediaMetadata.title.toString(),
+                                mediaItem = it.asMediaItem,
                                 downloadState = false
                             )
                         }
@@ -388,20 +388,11 @@ fun AlbumDetailsModern(
                         listMediaItems.forEach {
                             binder?.cache?.removeResource(it.mediaId)
                             query {
-                                Database.insert(
-                                    Song(
-                                        id = it.mediaId,
-                                        title = it.mediaMetadata.title.toString(),
-                                        artistsText = it.mediaMetadata.artist.toString(),
-                                        thumbnailUrl = it.mediaMetadata.artworkUri.toString(),
-                                        durationText = null
-                                    )
-                                )
+                                Database.resetFormatContentLength(it.mediaId)
                             }
                             manageDownload(
                                 context = context,
-                                songId = it.mediaId,
-                                songTitle = it.mediaMetadata.title.toString(),
+                                mediaItem = it,
                                 downloadState = false
                             )
                             //listMediaItems.clear()
@@ -510,6 +501,7 @@ fun AlbumDetailsModern(
                                 modifier = Modifier
                                     .align(Alignment.BottomCenter)
                                     .padding(horizontal = 30.dp)
+                                    .conditional(!disableScrollingText) { basicMarquee(iterations = Int.MAX_VALUE) }
                                 //.padding(bottom = 20.dp)
                             )
 
@@ -884,6 +876,7 @@ fun AlbumDetailsModern(
                                                     selectItems = false
                                                 }
                                             },
+                                            disableScrollingText = disableScrollingText
                                         )
                                     }
                                 }
@@ -918,36 +911,23 @@ fun AlbumDetailsModern(
                         val isLocal by remember { derivedStateOf { song.asMediaItem.isLocal } }
                         downloadState = getDownloadState(song.asMediaItem.mediaId)
                         val isDownloaded =
-                            if (!isLocal) downloadedStateMedia(song.asMediaItem.mediaId) else true
+                            if (!isLocal) isDownloadedSong(song.asMediaItem.mediaId) else true
                         val checkedState = rememberSaveable { mutableStateOf(false) }
                         SongItem(
-                            title = song.title,
-                            totalPlayTimeMs = 1,
-                            isDownloaded = isDownloaded,
+                            mediaItem = song.asMediaItem,
                             downloadState = downloadState,
                             onDownloadClick = {
                                 binder?.cache?.removeResource(song.asMediaItem.mediaId)
                                 query {
-                                    Database.insert(
-                                        Song(
-                                            id = song.asMediaItem.mediaId,
-                                            title = song.asMediaItem.mediaMetadata.title.toString(),
-                                            artistsText = song.asMediaItem.mediaMetadata.artist.toString(),
-                                            thumbnailUrl = song.thumbnailUrl,
-                                            durationText = null
-                                        )
-                                    )
+                                    Database.resetFormatContentLength(song.asMediaItem.mediaId)
                                 }
                                 if (!isLocal)
                                     manageDownload(
                                         context = context,
-                                        songId = song.asMediaItem.mediaId,
-                                        songTitle = song.asMediaItem.mediaMetadata.title.toString(),
+                                        mediaItem = song.asMediaItem,
                                         downloadState = isDownloaded
                                     )
                             },
-                            authors = song.artistsText,
-                            duration = song.durationText,
                             thumbnailSizeDp = thumbnailSizeDp,
                             thumbnailContent = {
                                 /*
@@ -982,6 +962,7 @@ fun AlbumDetailsModern(
                                                 navController = navController,
                                                 onDismiss = menuState::hide,
                                                 mediaItem = song.asMediaItem,
+                                                disableScrollingText = disableScrollingText
                                             )
                                         };
                                         hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -1016,7 +997,8 @@ fun AlbumDetailsModern(
                                     )
                                 else checkedState.value = false
                             },
-                            mediaId = song.asMediaItem.mediaId
+                            //mediaId = song.asMediaItem.mediaId
+                            disableScrollingText = disableScrollingText
                         )
                     }
                 }
@@ -1060,7 +1042,8 @@ fun AlbumDetailsModern(
                                     .clickable {
                                         //albumRoute(album.key)
                                         navController.navigate(route = "${NavRoutes.album.name}/${album.key}")
-                                    }
+                                    },
+                                disableScrollingText = disableScrollingText
                             )
                         },
                         itemPlaceholderContent = {

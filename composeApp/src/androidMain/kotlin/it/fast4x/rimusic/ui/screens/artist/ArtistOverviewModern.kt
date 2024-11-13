@@ -5,6 +5,7 @@ import android.content.Intent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -55,6 +56,10 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import it.fast4x.compose.persist.persist
 import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.models.NavigationEndpoint
+import it.fast4x.innertube.models.bodies.BrowseBody
+import it.fast4x.innertube.requests.itemsPage
+import it.fast4x.innertube.utils.from
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerAwareWindowInsets
 import it.fast4x.rimusic.LocalPlayerServiceBinder
@@ -93,12 +98,16 @@ import it.fast4x.rimusic.utils.addNext
 import it.fast4x.rimusic.utils.align
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.color
+import it.fast4x.rimusic.utils.conditional
 import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.fadingEdge
+import it.fast4x.rimusic.utils.forcePlay
 import it.fast4x.rimusic.utils.forcePlayAtIndex
+import it.fast4x.rimusic.utils.forcePlayFromBeginning
 import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.getHttpClient
+import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isLandscape
 import it.fast4x.rimusic.utils.languageDestination
 import it.fast4x.rimusic.utils.manageDownload
@@ -109,7 +118,10 @@ import it.fast4x.rimusic.utils.resize
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.showFloatingIconKey
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.bush.translator.Language
 import me.bush.translator.Translator
@@ -137,6 +149,7 @@ fun ArtistOverviewModern(
     onSettingsClick: () -> Unit,
     thumbnailContent: @Composable () -> Unit,
     headerContent: @Composable (textButton: (@Composable () -> Unit)?) -> Unit,
+    disableScrollingText: Boolean
 ) {
     val binder = LocalPlayerServiceBinder.current
     val menuState = LocalMenuState.current
@@ -251,6 +264,7 @@ fun ArtistOverviewModern(
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
                                 .padding(horizontal = 30.dp)
+                                .conditional(!disableScrollingText) { basicMarquee(iterations = Int.MAX_VALUE)}
                                 //.padding(bottom = 5.dp)
                         )
 
@@ -380,20 +394,11 @@ fun ArtistOverviewModern(
                                     youtubeArtistPage.songs?.forEach {
                                         binder?.cache?.removeResource(it.asMediaItem.mediaId)
                                         query {
-                                            Database.insert(
-                                                Song(
-                                                    id = it.asMediaItem.mediaId,
-                                                    title = it.asMediaItem.mediaMetadata.title.toString(),
-                                                    artistsText = it.asMediaItem.mediaMetadata.artist.toString(),
-                                                    thumbnailUrl = it.thumbnail?.url,
-                                                    durationText = null
-                                                )
-                                            )
+                                            Database.resetFormatContentLength(it.asMediaItem.mediaId)
                                         }
                                         manageDownload(
                                             context = context,
-                                            songId = it.asMediaItem.mediaId,
-                                            songTitle = it.asMediaItem.mediaMetadata.title.toString(),
+                                            mediaItem = it.asMediaItem,
                                             downloadState = false
                                         )
                                     }
@@ -427,10 +432,12 @@ fun ArtistOverviewModern(
                                 if (youtubeArtistPage?.songs?.isNotEmpty() == true)
                                     youtubeArtistPage.songs?.forEach {
                                         binder?.cache?.removeResource(it.asMediaItem.mediaId)
+                                        query {
+                                            Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                                        }
                                         manageDownload(
                                             context = context,
-                                            songId = it.asMediaItem.mediaId,
-                                            songTitle = it.asMediaItem.mediaMetadata.title.toString(),
+                                            mediaItem = it.asMediaItem,
                                             downloadState = true
                                         )
                                     }
@@ -534,28 +541,18 @@ fun ArtistOverviewModern(
                             ) {
                                 listMediaItems.add(song.asMediaItem)
                                 downloadState = getDownloadState(song.asMediaItem.mediaId)
-                                val isDownloaded = downloadedStateMedia(song.asMediaItem.mediaId)
+                                val isDownloaded = isDownloadedSong(song.asMediaItem.mediaId)
                                 SongItem(
                                     song = song,
-                                    isDownloaded = isDownloaded,
                                     onDownloadClick = {
                                         binder?.cache?.removeResource(song.asMediaItem.mediaId)
                                         query {
-                                            Database.insert(
-                                                Song(
-                                                    id = song.asMediaItem.mediaId,
-                                                    title = song.asMediaItem.mediaMetadata.title.toString(),
-                                                    artistsText = song.asMediaItem.mediaMetadata.artist.toString(),
-                                                    thumbnailUrl = song.thumbnail?.url,
-                                                    durationText = null
-                                                )
-                                            )
+                                            Database.resetFormatContentLength(song.asMediaItem.mediaId)
                                         }
 
                                         manageDownload(
                                             context = context,
-                                            songId = song.asMediaItem.mediaId,
-                                            songTitle = song.asMediaItem.mediaMetadata.title.toString(),
+                                            mediaItem = song.asMediaItem,
                                             downloadState = isDownloaded
                                         )
                                     },
@@ -570,6 +567,7 @@ fun ArtistOverviewModern(
                                                         navController = navController,
                                                         onDismiss = menuState::hide,
                                                         mediaItem = song.asMediaItem,
+                                                        disableScrollingText = disableScrollingText
                                                     )
                                                 };
                                                 hapticFeedback.performHapticFeedback(
@@ -577,22 +575,52 @@ fun ArtistOverviewModern(
                                                 )
                                             },
                                             onClick = {
+                                                /*
                                                 binder?.stopRadio()
                                                 binder?.player?.forcePlayAtIndex(
                                                     listMediaItems.distinct(),
                                                     index
                                                 )
+                                                 */
+
                                                 /*
-                                            val mediaItem = song.asMediaItem
-                                            binder?.stopRadio()
-                                            binder?.player?.forcePlay(mediaItem)
-                                            binder?.setupRadio(
-                                                NavigationEndpoint.Endpoint.Watch(videoId = mediaItem.mediaId)
-                                            )
-                                             */
+                                                val mediaItem = song.asMediaItem
+                                                binder?.stopRadio()
+                                                binder?.player?.forcePlay(mediaItem)
+                                                binder?.setupRadio(
+                                                    NavigationEndpoint.Endpoint.Watch(videoId = mediaItem.mediaId),
+                                                    //filterArtist = mediaItem.mediaMetadata.artist.toString()
+                                                )
+                                                 */
+                                                CoroutineScope(Dispatchers.IO).launch {
+                                                    youtubeArtistPage
+                                                        .songsEndpoint
+                                                        ?.takeIf { it.browseId != null }
+                                                        ?.let { endpoint ->
+                                                            Innertube.itemsPage(
+                                                                body = BrowseBody(
+                                                                    browseId = endpoint.browseId!!,
+                                                                    params = endpoint.params,
+                                                                ),
+                                                                fromMusicResponsiveListItemRenderer = Innertube.SongItem::from,
+                                                            )
+                                                        }
+                                                        ?.getOrNull()
+                                                        ?.items
+                                                        ?.map { it.asMediaItem }
+                                                        ?.let {
+                                                            withContext(Dispatchers.Main) {
+                                                                binder?.player?.forcePlayFromBeginning(
+                                                                    it
+                                                                )
+                                                            }
+                                                        }
+                                                }
+
                                             }
                                         )
-                                        .padding(endPaddingValues)
+                                        .padding(endPaddingValues),
+                                    disableScrollingText = disableScrollingText
                                 )
                             }
                         }
@@ -631,7 +659,8 @@ fun ArtistOverviewModern(
                                     thumbnailSizeDp = albumThumbnailSizeDp,
                                     alternative = true,
                                     modifier = Modifier
-                                        .clickable(onClick = { onPlaylistClick(playlist.key) })
+                                        .clickable(onClick = { onPlaylistClick(playlist.key) }),
+                                    disableScrollingText = disableScrollingText
                                 )
                             }
                         }
@@ -693,7 +722,8 @@ fun ArtistOverviewModern(
                                     thumbnailSizeDp = albumThumbnailSizeDp,
                                     alternative = true,
                                     modifier = Modifier
-                                        .clickable(onClick = { onAlbumClick(album.key) })
+                                        .clickable(onClick = { onAlbumClick(album.key) }),
+                                    disableScrollingText = disableScrollingText
                                 )
                             }
                         }
@@ -748,7 +778,8 @@ fun ArtistOverviewModern(
                                     thumbnailSizeDp = albumThumbnailSizeDp,
                                     alternative = true,
                                     modifier = Modifier
-                                        .clickable(onClick = { onAlbumClick(album.key) })
+                                        .clickable(onClick = { onAlbumClick(album.key) }),
+                                    disableScrollingText = disableScrollingText
                                 )
                             }
 

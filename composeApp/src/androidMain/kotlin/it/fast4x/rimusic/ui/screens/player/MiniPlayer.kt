@@ -76,14 +76,18 @@ import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.DisposableListener
 import it.fast4x.rimusic.utils.backgroundProgressKey
 import it.fast4x.rimusic.cleanPrefix
+import it.fast4x.rimusic.service.modern.PlayerServiceModern
+import it.fast4x.rimusic.utils.conditional
 import it.fast4x.rimusic.utils.disableClosingPlayerSwipingDownKey
+import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.effectRotationKey
-import it.fast4x.rimusic.utils.forceSeekToNext
-import it.fast4x.rimusic.utils.forceSeekToPrevious
 import it.fast4x.rimusic.utils.getLikedIcon
 import it.fast4x.rimusic.utils.getUnlikedIcon
+import it.fast4x.rimusic.utils.intent
 import it.fast4x.rimusic.utils.mediaItemToggleLike
 import it.fast4x.rimusic.utils.miniPlayerTypeKey
+import it.fast4x.rimusic.utils.playNext
+import it.fast4x.rimusic.utils.playPrevious
 import it.fast4x.rimusic.utils.positionAndDurationState
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.semiBold
@@ -103,7 +107,7 @@ import kotlin.math.absoluteValue
 fun MiniPlayer(
     showPlayer: () -> Unit,
     hidePlayer: () -> Unit,
-    navController: NavController? = null
+    navController: NavController? = null,
 ) {
     val binder = LocalPlayerServiceBinder.current
     binder?.player ?: return
@@ -140,7 +144,6 @@ fun MiniPlayer(
 
             override fun onPlayerError(playbackException: PlaybackException) {
                 playerError = playbackException
-                //binder.stopRadio()
             }
         }
     }
@@ -197,7 +200,9 @@ fun MiniPlayer(
         targetValue = if (isRotated) 360F else 0f,
         animationSpec = tween(durationMillis = 200), label = ""
     )
-    val disableClosingPlayerSwipingDown by rememberPreference(disableClosingPlayerSwipingDownKey, true)
+    val disableClosingPlayerSwipingDown by rememberPreference(disableClosingPlayerSwipingDownKey, false)
+
+    val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
     SwipeToDismissBox(
         modifier = Modifier
@@ -273,8 +278,15 @@ fun MiniPlayer(
                                     binder.stopRadio()
                                     binder.player.clearMediaItems()
                                     hidePlayer()
+                                    runCatching {
+                                        context.stopService(context.intent<PlayerServiceModern>())
+                                    }
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                 } else
-                                    SmartMessage(context.resources.getString(R.string.player_swiping_down_is_disabled), context = context)
+                                    SmartMessage(
+                                        context.resources.getString(R.string.player_swiping_down_is_disabled),
+                                        context = context
+                                    )
                             }
                         }
                     )
@@ -341,7 +353,7 @@ fun MiniPlayer(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
-                            .basicMarquee(iterations = Int.MAX_VALUE)
+                            .conditional(!disableScrollingText) { basicMarquee(iterations = Int.MAX_VALUE) }
                     )
                 }
 
@@ -351,7 +363,7 @@ fun MiniPlayer(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
-                        .basicMarquee(iterations = Int.MAX_VALUE)
+                        .conditional(!disableScrollingText) { basicMarquee(iterations = Int.MAX_VALUE) }
                 )
             }
 
@@ -371,7 +383,7 @@ fun MiniPlayer(
                     icon = R.drawable.play_skip_back,
                     color = colorPalette().iconButtonPlayer,
                     onClick = {
-                        binder.player.forceSeekToPrevious()
+                        binder.player.playPrevious()
                         if (effectRotationEnabled) isRotated = !isRotated
                     },
                     modifier = Modifier
@@ -413,7 +425,7 @@ fun MiniPlayer(
                     icon = R.drawable.play_skip_forward,
                     color = colorPalette().iconButtonPlayer,
                     onClick = {
-                        binder.player.forceSeekToNext()
+                        binder.player.playNext()
                         if (effectRotationEnabled) isRotated = !isRotated
                     },
                     modifier = Modifier

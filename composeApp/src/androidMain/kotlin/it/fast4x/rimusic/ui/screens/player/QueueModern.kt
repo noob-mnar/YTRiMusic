@@ -92,6 +92,7 @@ import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.PopupType
+import it.fast4x.rimusic.enums.QueueLoopType
 import it.fast4x.rimusic.enums.QueueType
 import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.models.SongPlaylistMap
@@ -116,25 +117,27 @@ import it.fast4x.rimusic.ui.styling.onOverlay
 import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.DisposableListener
 import it.fast4x.rimusic.utils.addNext
+import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.discoverKey
-import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.getDownloadState
+import it.fast4x.rimusic.utils.getIconQueueLoopState
+import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isLandscape
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.medium
-import it.fast4x.rimusic.utils.queueLoopEnabledKey
+import it.fast4x.rimusic.utils.queueLoopTypeKey
 import it.fast4x.rimusic.utils.queueTypeKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.reorderInQueueEnabledKey
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
+import it.fast4x.rimusic.utils.setQueueLoopState
 import it.fast4x.rimusic.utils.shouldBePlaying
 import it.fast4x.rimusic.utils.showButtonPlayerArrowKey
 import it.fast4x.rimusic.utils.showButtonPlayerDiscoverKey
 import it.fast4x.rimusic.utils.shuffleQueue
 import it.fast4x.rimusic.utils.smoothScrollToTop
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
-import it.fast4x.rimusic.utils.trackLoopEnabledKey
 import it.fast4x.rimusic.utils.windows
 import kotlinx.coroutines.launch
 import me.knighthat.colorPalette
@@ -152,7 +155,7 @@ import java.util.Date
 @Composable
 fun QueueModern(
     navController: NavController,
-    onDismiss: () -> Unit
+    onDismiss: (QueueLoopType) -> Unit
 ) {
     //val uiType  by rememberPreference(UiTypeKey, UiType.RiMusic)
     val windowInsets = WindowInsets.systemBars
@@ -169,6 +172,8 @@ fun QueueModern(
     val showButtonPlayerArrow by rememberPreference(showButtonPlayerArrowKey, false)
     var queueType by rememberPreference(queueTypeKey, QueueType.Essential)
 
+    val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -179,8 +184,7 @@ fun QueueModern(
 
         val player = binder.player
 
-        var queueLoopEnabled by rememberPreference(queueLoopEnabledKey, defaultValue = false)
-        var trackLoopEnabled by rememberPreference(trackLoopEnabledKey, defaultValue = false)
+        var queueLoopType by rememberPreference(queueLoopTypeKey, defaultValue = QueueLoopType.Default)
 
         val menuState = LocalMenuState.current
 
@@ -206,13 +210,11 @@ fun QueueModern(
             object : Player.Listener {
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                     mediaItemIndex = player.currentMediaItemIndex
-                    //if (player.mediaItemCount == 0) -1 else player.currentMediaItemIndex
                 }
 
                 override fun onTimelineChanged(timeline: Timeline, reason: Int) {
                     windows = timeline.windows
                     mediaItemIndex = player.currentMediaItemIndex
-                    //if (player.mediaItemCount == 0) -1 else player.currentMediaItemIndex
                 }
 
                 override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
@@ -253,12 +255,6 @@ fun QueueModern(
             mutableStateOf(false)
         }
 
-        /*
-        var showSelectTypeClearQueue by remember {
-            mutableStateOf(false)
-        }
-
-         */
         var position by remember {
             mutableIntStateOf(0)
         }
@@ -367,11 +363,10 @@ fun QueueModern(
             )
         }
 
-        //val isSwipeToActionEnabled by rememberPreference(isSwipeToActionEnabledKey, true)
         val hapticFeedback = LocalHapticFeedback.current
         val showButtonPlayerDiscover by rememberPreference(showButtonPlayerDiscoverKey, false)
         var discoverIsEnabled by rememberPreference(discoverKey, false)
-        //if (discoverIsEnabled) ApplyDiscoverToQueue()
+
         var searching by rememberSaveable { mutableStateOf(false) }
         var filter: String? by rememberSaveable { mutableStateOf(null) }
         val thumbnailRoundness by rememberPreference(
@@ -485,17 +480,7 @@ fun QueueModern(
                                         }
                                 )
                             }
-                            /*
-                            else {
-                                HeaderIconButton(
-                                    onClick = { searching = true },
-                                    icon = R.drawable.search_circle,
-                                    color = colorPalette().text,
-                                    iconSize = 24.dp
-                                )
-                            }
 
-                             */
                         }
                         /*        */
 
@@ -532,7 +517,7 @@ fun QueueModern(
                         val isLocal by remember { derivedStateOf { window.mediaItem.isLocal } }
                         downloadState = getDownloadState(window.mediaItem.mediaId)
                         val isDownloaded =
-                            if (!isLocal) downloadedStateMedia(window.mediaItem.mediaId) else true
+                            if (!isLocal) isDownloadedSong(window.mediaItem.mediaId) else true
 
                         Box(
                             modifier = Modifier
@@ -582,14 +567,12 @@ fun QueueModern(
                             ) {
                                 SongItem(
                                     song = window.mediaItem,
-                                    isDownloaded = isDownloaded,
                                     onDownloadClick = {
                                         binder.cache.removeResource(window.mediaItem.mediaId)
                                         if (!isLocal)
                                             manageDownload(
                                                 context = context,
-                                                songId = window.mediaItem.mediaId,
-                                                songTitle = window.mediaItem.mediaMetadata.title.toString(),
+                                                mediaItem = window.mediaItem,
                                                 downloadState = isDownloaded
                                             )
                                     },
@@ -652,23 +635,6 @@ fun QueueModern(
                                             )
                                         else checkedState.value = false
 
-                                        /*
-                                        if (!isReorderDisabled) {
-                                            IconButton(
-                                                icon = R.drawable.reorder,
-                                                color = colorPalette().textDisabled,
-                                                indication = rippleIndication,
-                                                onClick = {},
-                                                modifier = Modifier
-                                                    .reorder(
-                                                        reorderingState = reorderingState,
-                                                        index = window.firstPeriodIndex
-                                                    )
-                                                    .size(18.dp)
-                                            )
-                                        }
-
-                                         */
                                     },
                                     modifier = Modifier
                                         .combinedClickable(
@@ -682,12 +648,11 @@ fun QueueModern(
                                                         onDownload = {
                                                             manageDownload(
                                                                 context = context,
-                                                                songId = window.mediaItem.mediaId,
-                                                                songTitle = window.mediaItem.mediaMetadata.title.toString(),
+                                                                mediaItem = window.mediaItem,
                                                                 downloadState = isDownloaded
                                                             )
-                                                        }
-
+                                                        },
+                                                        disableScrollingText = disableScrollingText
                                                     )
                                                 }
                                                 hapticFeedback.performHapticFeedback(
@@ -704,21 +669,15 @@ fun QueueModern(
                                                         }
                                                     } else {
                                                         player.seekToDefaultPosition(window.firstPeriodIndex)
+                                                        player.prepare()
                                                         player.playWhenReady = true
                                                     }
                                                 } else checkedState.value = !checkedState.value
                                             }
                                         )
-                                        /*
-                                        .draggedItem(
-                                            reorderingState = reorderingState,
-                                            index = window.firstPeriodIndex
-                                        )
-
-                                         */
                                         .animateItemPlacement(reorderingState)
-                                        .background(color = if (queueType == QueueType.Modern) Color.Transparent else colorPalette().background0)
-
+                                        .background(color = if (queueType == QueueType.Modern) Color.Transparent else colorPalette().background0),
+                                    disableScrollingText = disableScrollingText
                                 )
                             }
                         }
@@ -776,7 +735,7 @@ fun QueueModern(
             Box(
                 modifier = Modifier
                     //.clip(shape)
-                    .clickable(onClick = onDismiss)
+                    .clickable(onClick = { onDismiss(queueLoopType) })
                     .background(colorPalette().background1)
                     .fillMaxWidth()
                     //.padding(horizontal = 8.dp)
@@ -912,11 +871,10 @@ fun QueueModern(
                             .width(12.dp)
                     )
                     IconButton(
-                        icon = R.drawable.repeat,
-                        color = if (queueLoopEnabled) colorPalette().text else colorPalette().textDisabled,
+                        icon = getIconQueueLoopState(queueLoopType),
+                        color = colorPalette().text,
                         onClick = {
-                            queueLoopEnabled = !queueLoopEnabled
-                            if (queueLoopEnabled) trackLoopEnabled = false
+                            queueLoopType = setQueueLoopState(queueLoopType)
                         },
                         modifier = Modifier
                             .padding(horizontal = 4.dp)
@@ -1035,7 +993,8 @@ fun QueueModern(
                                     },
                                     onGoToPlaylist = {
                                         navController.navigate("${NavRoutes.localPlaylist.name}/$it")
-                                    }
+                                    },
+                                    disableScrollingText = disableScrollingText
                                 )
                             }
                         }
@@ -1050,7 +1009,7 @@ fun QueueModern(
                         IconButton(
                             icon = R.drawable.chevron_down,
                             color = colorPalette().text,
-                            onClick = onDismiss,
+                            onClick = { onDismiss(queueLoopType) },
                             modifier = Modifier
                                 .padding(horizontal = 4.dp)
                                 .size(24.dp)

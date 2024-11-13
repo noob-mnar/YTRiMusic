@@ -18,7 +18,7 @@ import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.MenuStyle
 import it.fast4x.rimusic.query
-import it.fast4x.rimusic.service.PlayerService
+import it.fast4x.rimusic.service.modern.PlayerServiceModern
 import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.utils.menuStyleKey
 import it.fast4x.rimusic.utils.rememberEqualizerLauncher
@@ -31,10 +31,11 @@ import it.fast4x.rimusic.utils.seamlessPlay
 @Composable
 fun PlayerMenu(
     navController: NavController,
-    binder: PlayerService.Binder,
+    binder: PlayerServiceModern.Binder,
     mediaItem: MediaItem,
     onDismiss: () -> Unit,
     onClosePlayer: () -> Unit,
+    disableScrollingText: Boolean
     ) {
 
     val menuStyle by rememberPreference(
@@ -106,7 +107,8 @@ fun PlayerMenu(
             },
              */
             onHideFromDatabase = { isHiding = true },
-            onClosePlayer = onClosePlayer
+            onClosePlayer = onClosePlayer,
+            disableScrollingText = disableScrollingText
         )
     } else {
         BaseMediaItemMenu(
@@ -129,7 +131,8 @@ fun PlayerMenu(
                     )
                 }
             },
-            onClosePlayer = onClosePlayer
+            onClosePlayer = onClosePlayer,
+            disableScrollingText = disableScrollingText
         )
     }
 
@@ -142,10 +145,11 @@ fun PlayerMenu(
 @Composable
 fun MiniPlayerMenu(
     navController: NavController,
-    binder: PlayerService.Binder,
+    binder: PlayerServiceModern.Binder,
     mediaItem: MediaItem,
     onDismiss: () -> Unit,
     onClosePlayer: () -> Unit,
+    disableScrollingText: Boolean
 ) {
 
     val menuStyle by rememberPreference(
@@ -168,7 +172,8 @@ fun MiniPlayerMenu(
                     )
                 }
             },
-            onDismiss = onDismiss
+            onDismiss = onDismiss,
+            disableScrollingText = disableScrollingText
         )
     } else {
         MiniMediaItemMenu(
@@ -185,7 +190,8 @@ fun MiniPlayerMenu(
                     )
                 }
             },
-            onDismiss = onDismiss
+            onDismiss = onDismiss,
+            disableScrollingText = disableScrollingText
         )
     }
 

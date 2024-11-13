@@ -6,15 +6,62 @@ import io.ktor.client.request.setBody
 import it.fast4x.innertube.Innertube
 import it.fast4x.innertube.models.Context
 import it.fast4x.innertube.models.PlayerResponse
+import it.fast4x.innertube.models.YouTubeClient
 import it.fast4x.innertube.models.bodies.PlayerBody
 import it.fast4x.innertube.utils.runCatchingNonCancellable
+import it.fast4x.invidious.Invidious
 import it.fast4x.piped.models.Session
 
+suspend fun Innertube.player(body: PlayerBody, withLogin: Boolean = false): Result<PlayerResponse> = runCatching {
+
+    val response = client.post(player) {
+        if (withLogin) {
+            ytClient(YouTubeClient.ANDROID_MUSIC, setLogin = true)
+            setBody(body)
+        } else {
+            setBody(body.copy(context = Context.DefaultIOS))
+        }
+        mask("playabilityStatus.status,playerConfig.audioConfig,streamingData.adaptiveFormats,videoDetails.videoId")
+    }.body<PlayerResponse>()
+
+    println("PlayerService DownloadHelper Innertube.player withLogin $withLogin response $response")
+
+    if (response.playabilityStatus?.status == "OK") {
+        return@runCatching response
+    }
+
+    val context = if (withLogin) Context.DefaultRestrictionBypass else Context.DefaultIOS
+    val safePlayerResponse = client.post(player) {
+        setBody(
+            body.copy(
+                context = context.copy(
+                    thirdParty = Context.ThirdParty(
+                        embedUrl = "https://www.youtube.com/watch?v=${body.videoId}"
+                    )
+                ),
+            )
+        )
+        mask("playabilityStatus.status,playerConfig.audioConfig,streamingData.adaptiveFormats,videoDetails.videoId")
+    }.body<PlayerResponse>()
+
+    println("PlayerService DownloadHelper Innertube.player withLogin $withLogin safePlayerResponse $safePlayerResponse")
+
+    if (safePlayerResponse.playabilityStatus?.status == "OK") {
+        return@runCatching safePlayerResponse
+    }
+
+    response
+
+}.onFailure {
+    println("YoutubeLogin PlayerService NEW Innertube.player error ${it.stackTraceToString()}")
+}
+/*
 suspend fun Innertube.player(
     body: PlayerBody,
     //pipedApiInstance: String = "pipedapi.adminforge.de",
     pipedSession: Session
     ) = runCatchingNonCancellable {
+
         val response = client.post(player) {
             setBody(body)
             mask("playabilityStatus.status,playerConfig.audioConfig,streamingData.adaptiveFormats,videoDetails.videoId")
@@ -44,6 +91,27 @@ suspend fun Innertube.player(
             if (safePlayerResponse.playabilityStatus?.status == "OK") {
                 safePlayerResponse
             } else {
+
+
+                /**** INVIDIOUS TEST AS BACKUP LINE ****/
+                println("PlayerService Innertube.player Invidious.api.videos ${body.videoId}")
+                val safeResponse = Invidious.api.videos(body.videoId)?.getOrNull()
+
+                if (safeResponse != null) {
+                    safePlayerResponse.copy(
+                        streamingData = safePlayerResponse.streamingData?.copy(
+                            adaptiveFormats = safePlayerResponse.streamingData.adaptiveFormats?.map { adaptiveFormat ->
+                                adaptiveFormat.copy(
+                                    url = safeResponse.find { it.bitrate == adaptiveFormat.bitrate }?.url
+                                )
+                            }
+
+                        )
+                    )
+                } else safePlayerResponse
+                /**** INVIDIOUS ****/
+
+
                 /*
                 @Serializable
                 data class AudioStream(
@@ -61,7 +129,7 @@ suspend fun Innertube.player(
                 }.body<PipedResponse>().audioStreams
                  */
 
-                safePlayerResponse // temporaly used
+                //safePlayerResponse // temporaly used
 
                 /*
                     // TODO() Piped api streams not working, improve with other service
@@ -93,3 +161,4 @@ suspend fun Innertube.player(
 
     }
 
+*/

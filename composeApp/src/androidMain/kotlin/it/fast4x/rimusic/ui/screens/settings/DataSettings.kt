@@ -25,6 +25,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
@@ -48,7 +49,7 @@ import it.fast4x.rimusic.internal
 import it.fast4x.rimusic.path
 import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.MyDownloadService
-import it.fast4x.rimusic.service.PlayerService
+import it.fast4x.rimusic.service.modern.PlayerServiceModern
 import it.fast4x.rimusic.ui.components.themed.ConfirmationDialog
 import it.fast4x.rimusic.ui.components.themed.DefaultDialog
 import it.fast4x.rimusic.ui.components.themed.HeaderIconButton
@@ -57,7 +58,9 @@ import it.fast4x.rimusic.ui.components.themed.InputNumericDialog
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.shimmer
+import it.fast4x.rimusic.utils.RestartPlayerService
 import it.fast4x.rimusic.utils.bold
+import it.fast4x.rimusic.utils.coilCustomDiskCacheKey
 import it.fast4x.rimusic.utils.coilDiskCacheMaxSizeKey
 import it.fast4x.rimusic.utils.exoPlayerCacheLocationKey
 import it.fast4x.rimusic.utils.exoPlayerCustomCacheKey
@@ -127,6 +130,11 @@ fun DataSettings() {
         exoPlayerCustomCacheKey,32
     )
 
+    var showCoilCustomDiskCacheDialog by remember { mutableStateOf(false) }
+    var coilCustomDiskCache by rememberPreference(
+        coilCustomDiskCacheKey,32
+    )
+
     //val release = Build.VERSION.RELEASE;
     val sdkVersion = Build.VERSION.SDK_INT;
     //if (sdkVersion.toShort() < 29) exoPlayerAlternateCacheLocation=""
@@ -164,7 +172,7 @@ fun DataSettings() {
                             inputStream.copyTo(outputStream)
                         }
                     }
-                context.stopService(context.intent<PlayerService>())
+                context.stopService(context.intent<PlayerServiceModern>())
                 context.stopService(context.intent<MyDownloadService>())
 
                 exitAfterRestore = true
@@ -298,6 +306,8 @@ fun DataSettings() {
         )
     }
 
+    var restartService by rememberSaveable { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .background(colorPalette().background0)
@@ -335,31 +345,23 @@ fun DataSettings() {
                 diskCache.size
             }
 
-            //SettingsGroupSpacer()
-
-            //SettingsEntryGroupText(title = stringResource(R.string.image_cache))
-/*
-            SettingsDescription(
-                text = "${
-                    Formatter.formatShortFileSize(
-                        context,
-                        diskCacheSize
-                    )
-                } ${stringResource(R.string.used)} (${diskCacheSize * 100 / coilDiskCacheMaxSize.bytes.coerceAtLeast(1)}%)"
-            )
-
- */
             SettingsGroupSpacer()
             SettingsEntryGroupText(title = stringResource(R.string.cache))
 
             EnumValueSelectorSettingsEntry(
                 title = stringResource(R.string.image_cache_max_size),
-                titleSecondary = "${
-                    Formatter.formatShortFileSize(
-                        context,
-                        diskCacheSize
-                    )
-                } ${stringResource(R.string.used)} (${diskCacheSize * 100 / coilDiskCacheMaxSize.bytes.coerceAtLeast(1)}%)",
+                titleSecondary = when (coilDiskCacheMaxSize) {
+                    CoilDiskCacheMaxSize.Custom -> buildString {
+                            append(Formatter.formatShortFileSize(context, diskCacheSize))
+                            append("/${Formatter.formatShortFileSize(context, coilCustomDiskCache.toLong() * 1000 * 1000)}")
+                            append(" ${stringResource(R.string.used)}")
+                    }
+                    else -> buildString {
+                        append(Formatter.formatShortFileSize(context, diskCacheSize))
+                        append(" ${stringResource(R.string.used)}")
+                        append(" (${diskCacheSize * 100 / coilDiskCacheMaxSize.bytes}%)")
+                    }
+                },
                 trailingContent = {
                     HeaderIconButton(
                         icon = R.drawable.trash,
@@ -369,34 +371,16 @@ fun DataSettings() {
                     )
                 },
                 selectedValue = coilDiskCacheMaxSize,
-                onValueSelected = { coilDiskCacheMaxSize = it},
-                valueText = {
-                    when (it) {
-                        CoilDiskCacheMaxSize.`32MB` -> "32MB"
-                        CoilDiskCacheMaxSize.`64MB` -> "64MB"
-                        CoilDiskCacheMaxSize.`128MB` -> "128MB"
-                        CoilDiskCacheMaxSize.`256MB`-> "256MB"
-                        CoilDiskCacheMaxSize.`512MB`-> "512MB"
-                        CoilDiskCacheMaxSize.`1GB`-> "1GB"
-                        CoilDiskCacheMaxSize.`2GB` -> "2GB"
-                        CoilDiskCacheMaxSize.`4GB` -> "4GB"
-                    }
-                }
-            )
+                onValueSelected = {
+                    coilDiskCacheMaxSize = it
+                    if (coilDiskCacheMaxSize == CoilDiskCacheMaxSize.Custom)
+                        showCoilCustomDiskCacheDialog = true
 
-            /*
-            EnumValueSelectorSettingsEntry(
-                title = stringResource(R.string.image_cache_max_size),
-                titleSecondary = "${
-                    Formatter.formatShortFileSize(
-                        context,
-                        diskCacheSize
-                    )
-                } ${stringResource(R.string.used)} (${diskCacheSize * 100 / coilDiskCacheMaxSize.bytes.coerceAtLeast(1)}%)",
-                selectedValue = coilDiskCacheMaxSize,
-                onValueSelected = { coilDiskCacheMaxSize = it },
+                    restartService = true
+                },
                 valueText = {
                     when (it) {
+                        CoilDiskCacheMaxSize.Custom -> stringResource(R.string.custom)
                         CoilDiskCacheMaxSize.`32MB` -> "32MB"
                         CoilDiskCacheMaxSize.`64MB` -> "64MB"
                         CoilDiskCacheMaxSize.`128MB` -> "128MB"
@@ -405,10 +389,29 @@ fun DataSettings() {
                         CoilDiskCacheMaxSize.`1GB`-> "1GB"
                         CoilDiskCacheMaxSize.`2GB` -> "2GB"
                         CoilDiskCacheMaxSize.`4GB` -> "4GB"
+                        CoilDiskCacheMaxSize.`8GB` -> "8GB"
                     }
                 }
             )
-            */
+            RestartPlayerService(restartService, onRestart = { restartService = false } )
+
+            if (showCoilCustomDiskCacheDialog) {
+                InputNumericDialog(
+                    title = stringResource(R.string.set_custom_cache),
+                    placeholder = stringResource(R.string.enter_value_in_mb),
+                    value = coilCustomDiskCache.toString(),
+                    valueMin = "32",
+                    valueMax = "10000",
+                    onDismiss = { showCoilCustomDiskCacheDialog = false },
+                    setValue = {
+                        //Log.d("customCache", it)
+                        coilCustomDiskCache = it.toInt()
+                        showCoilCustomDiskCacheDialog = false
+                        restartService = true
+                    }
+                )
+                RestartPlayerService(restartService, onRestart = { restartService = false } )
+            }
         }
 
         binder?.cache?.let { cache ->
@@ -418,103 +421,25 @@ fun DataSettings() {
                 }
             }
 
-            //SettingsGroupSpacer()
-
-            //SettingsEntryGroupText(title = stringResource(R.string.song_cache_by_player))
-            /*
-            if(exoPlayerDiskCacheMaxSize != ExoPlayerDiskCacheMaxSize.Disabled)
-            SettingsDescription(
-                text = buildString {
-                    append(Formatter.formatShortFileSize(context, diskCacheSize))
-                    append(" ${stringResource(R.string.used)}")
-                    when (val size = exoPlayerDiskCacheMaxSize) {
-                        ExoPlayerDiskCacheMaxSize.Unlimited -> {}
-                        ExoPlayerDiskCacheMaxSize.Custom -> { exoPlayerCustomCache }
-                        else -> append(" (${diskCacheSize * 100 / size.bytes}%)")
-                    }
-                }
-            )
-
-            if(exoPlayerDiskCacheMaxSize == ExoPlayerDiskCacheMaxSize.Custom)
-                SettingsDescription(
-                    text = stringResource(R.string.custom_cache_size) +" "+exoPlayerCustomCache+"MB"
-                )
-
-
-            EnumValueSelectorSettingsEntry(
-                title = stringResource(R.string.max_size),
-                selectedValue = exoPlayerDiskCacheMaxSize,
-                onValueSelected = {
-                    exoPlayerDiskCacheMaxSize = it
-                    if (exoPlayerDiskCacheMaxSize == ExoPlayerDiskCacheMaxSize.Custom)
-                    showExoPlayerCustomCacheDialog = true
-                },
-                valueText = {
-                    when (it) {
-                        ExoPlayerDiskCacheMaxSize.Disabled -> stringResource(R.string.turn_off)
-                        ExoPlayerDiskCacheMaxSize.Unlimited -> stringResource(R.string.unlimited)
-                        ExoPlayerDiskCacheMaxSize.Custom -> stringResource(R.string.custom)
-                        ExoPlayerDiskCacheMaxSize.`32MB` -> "32MB"
-                        ExoPlayerDiskCacheMaxSize.`512MB` -> "512MB"
-                        ExoPlayerDiskCacheMaxSize.`1GB` -> "1GB"
-                        ExoPlayerDiskCacheMaxSize.`2GB` -> "2GB"
-                        ExoPlayerDiskCacheMaxSize.`4GB` -> "4GB"
-                        ExoPlayerDiskCacheMaxSize.`8GB` -> "8GB"
-
-                    }
-                }
-            )
-             */
-
-            /*
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .padding(horizontal = 30.dp)
-                    .fillMaxWidth()
-            ){
-                Column (
-                    modifier = Modifier
-                        .fillMaxWidth(0.6f)
-                )
-                {
-                    BasicText(
-                        text = stringResource(R.string.song_cache_max_size),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        style = typography().xs.semiBold.secondary.copy(color = colorPalette().text),
-                    )
-                    BasicText(
-                        text = Formatter.formatShortFileSize(context, diskCacheSize),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        style = typography().xs.semiBold.secondary.copy(color = colorPalette().textDisabled),
-                    )
-                }
-
-
-                HeaderIconButton(
-                    icon = R.drawable.trash,
-                    enabled = true,
-                    color = colorPalette().text,
-                    onClick = { cleanCacheOfflineSongs = true }
-                )
-            }
-            */
-
 
             EnumValueSelectorSettingsEntry(
                 title = stringResource(R.string.song_cache_max_size),
                 titleSecondary = when (exoPlayerDiskCacheMaxSize) {
                     ExoPlayerDiskCacheMaxSize.Disabled -> ""
-                    ExoPlayerDiskCacheMaxSize.Custom -> stringResource(R.string.custom_cache_size) +" "+exoPlayerCustomCache+"MB"
+                    ExoPlayerDiskCacheMaxSize.Custom -> buildString {
+                        append(Formatter.formatShortFileSize(context, diskCacheSize))
+                        append("/${Formatter.formatShortFileSize(context,
+                            exoPlayerCustomCache.toLong() * 1000 * 1000
+                        )}")
+                        append(" ${stringResource(R.string.used)}")
+                    }
+                        // stringResource(R.string.custom_cache_size) +" "+exoPlayerCustomCache+"MB"
                     else -> buildString {
                         append(Formatter.formatShortFileSize(context, diskCacheSize))
                         append(" ${stringResource(R.string.used)}")
                         when (val size = exoPlayerDiskCacheMaxSize) {
                             ExoPlayerDiskCacheMaxSize.Unlimited -> {}
-                            ExoPlayerDiskCacheMaxSize.Custom -> { exoPlayerCustomCache }
+                            ExoPlayerDiskCacheMaxSize.Custom -> {} // only needed because of UNLIMITED
                             else -> append(" (${diskCacheSize * 100 / size.bytes}%)")
                         }
                     }
@@ -532,6 +457,8 @@ fun DataSettings() {
                     exoPlayerDiskCacheMaxSize = it
                     if (exoPlayerDiskCacheMaxSize == ExoPlayerDiskCacheMaxSize.Custom)
                         showExoPlayerCustomCacheDialog = true
+
+                    restartService = true
                 },
                 valueText = {
                     when (it) {
@@ -548,8 +475,9 @@ fun DataSettings() {
                     }
                 }
             )
+            RestartPlayerService(restartService, onRestart = { restartService = false } )
 
-            if (showExoPlayerCustomCacheDialog)
+            if (showExoPlayerCustomCacheDialog) {
                 InputNumericDialog(
                     title = stringResource(R.string.set_custom_cache),
                     placeholder = stringResource(R.string.enter_value_in_mb),
@@ -561,8 +489,11 @@ fun DataSettings() {
                         //Log.d("customCache", it)
                         exoPlayerCustomCache = it.toInt()
                         showExoPlayerCustomCacheDialog = false
+                        restartService = true
                     }
                 )
+                RestartPlayerService(restartService, onRestart = { restartService = false } )
+            }
 
 
         }
@@ -573,42 +504,7 @@ fun DataSettings() {
                     downloadCache.cacheSpace
                 }
             }
-            /*
-            SettingsGroupSpacer()
 
-            SettingsEntryGroupText(title = stringResource(R.string.song_cache_by_download))
-
-            if(exoPlayerDiskDownloadCacheMaxSize != ExoPlayerDiskDownloadCacheMaxSize.Disabled)
-            SettingsDescription(
-                text = buildString {
-                    append(Formatter.formatShortFileSize(context, diskDownloadCacheSize))
-                    append(" ${stringResource(R.string.used)}")
-                    when (val size = exoPlayerDiskDownloadCacheMaxSize) {
-                        ExoPlayerDiskDownloadCacheMaxSize.Unlimited -> {}
-                        else -> append(" (${diskDownloadCacheSize * 100 / size.bytes}%)")
-                    }
-                }
-            )
-
-            EnumValueSelectorSettingsEntry(
-                title = stringResource(R.string.max_size),
-                selectedValue = exoPlayerDiskDownloadCacheMaxSize,
-                onValueSelected = { exoPlayerDiskDownloadCacheMaxSize = it },
-                valueText = {
-                    when (it) {
-                        ExoPlayerDiskDownloadCacheMaxSize.Disabled -> stringResource(R.string.turn_off)
-                        ExoPlayerDiskDownloadCacheMaxSize.Unlimited -> stringResource(R.string.unlimited)
-                        ExoPlayerDiskDownloadCacheMaxSize.`32MB` -> "32MB"
-                        ExoPlayerDiskDownloadCacheMaxSize.`512MB` -> "512MB"
-                        ExoPlayerDiskDownloadCacheMaxSize.`1GB` -> "1GB"
-                        ExoPlayerDiskDownloadCacheMaxSize.`2GB` -> "2GB"
-                        ExoPlayerDiskDownloadCacheMaxSize.`4GB` -> "4GB"
-                        ExoPlayerDiskDownloadCacheMaxSize.`8GB` -> "8GB"
-
-                    }
-                }
-            )
-            */
             EnumValueSelectorSettingsEntry(
                 title = stringResource(R.string.song_download_max_size),
                 titleSecondary = when (exoPlayerDiskDownloadCacheMaxSize) {
@@ -631,7 +527,10 @@ fun DataSettings() {
                     )
                 },
                 selectedValue = exoPlayerDiskDownloadCacheMaxSize,
-                onValueSelected = { exoPlayerDiskDownloadCacheMaxSize = it },
+                onValueSelected = {
+                    exoPlayerDiskDownloadCacheMaxSize = it
+                    restartService = true
+                },
                 valueText = {
                     when (it) {
                         ExoPlayerDiskDownloadCacheMaxSize.Disabled -> stringResource(R.string.turn_off)
@@ -646,13 +545,17 @@ fun DataSettings() {
                     }
                 }
             )
+            RestartPlayerService(restartService, onRestart = { restartService = false } )
 
         }
 
         EnumValueSelectorSettingsEntry(
             title = stringResource(R.string.set_cache_location),
             selectedValue = exoPlayerCacheLocation,
-            onValueSelected = { exoPlayerCacheLocation = it },
+            onValueSelected = {
+                exoPlayerCacheLocation = it
+                restartService = true
+            },
             valueText = {
                 when (it) {
                     ExoPlayerCacheLocation.Private -> stringResource(R.string.cache_location_private)
@@ -662,7 +565,8 @@ fun DataSettings() {
         )
 
         SettingsDescription(stringResource(R.string.info_private_cache_location_can_t_cleaned))
-        ImportantSettingsDescription(stringResource(R.string.restarting_rimusic_is_required))
+        RestartPlayerService(restartService, onRestart = { restartService = false } )
+        //ImportantSettingsDescription(stringResource(R.string.restarting_rimusic_is_required))
 
         SettingsGroupSpacer()
 
@@ -727,8 +631,13 @@ fun DataSettings() {
             title = stringResource(R.string.pause_search_history),
             text = stringResource(R.string.neither_save_new_searched_query),
             isChecked = pauseSearchHistory,
-            onCheckedChange = { pauseSearchHistory = it }
+            onCheckedChange = {
+                pauseSearchHistory = it
+                restartService = true
+            }
         )
+        RestartPlayerService(restartService, onRestart = { restartService = false } )
+
         SettingsEntry(
             title = stringResource(R.string.clear_search_history),
             text = if (queriesCount > 0) {

@@ -1,6 +1,7 @@
 package it.fast4x.rimusic.utils
 
 
+import androidx.annotation.OptIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -11,182 +12,108 @@ import androidx.compose.runtime.setValue
 
 import androidx.compose.ui.platform.LocalContext
 
-import androidx.core.net.toUri
+import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.cache.SimpleCache
-import androidx.media3.exoplayer.offline.DownloadRequest
+import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadService
 
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalDownloader
 import it.fast4x.rimusic.LocalPlayerServiceBinder
-import it.fast4x.rimusic.cleanPrefix
-import it.fast4x.rimusic.models.Format
-import it.fast4x.rimusic.service.DownloadUtil
+import it.fast4x.rimusic.enums.DownloadedStateMedia
+import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.service.MyDownloadService
+import it.fast4x.rimusic.service.isLocal
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
+import me.knighthat.appContext
 
 @UnstableApi
 @Composable
-fun InitDownloader () {
+fun InitDownloader() {
     val context = LocalContext.current
-    DownloadUtil.getDownloadManager(context)
-    DownloadUtil.getDownloads()
-
-/*
-    //val idVideo="initVideoId"
-    val idVideo="8n4S1-ctsZw"
-    //val contentUri = "https://$idVideo".toUri()
-    val contentUri = "https://www.youtube.com/watch?v=8n4S1-ctsZw".toUri()
-
-    //val idVideo="8n4S1-ctsZw"
-    //val contentUri = "https://www.youtube.com/watch?v=$idVideo".toUri()
-
-    val downloadRequest = DownloadRequest
-        .Builder(
-            idVideo,
-            contentUri
-        )
-        .setCustomCacheKey(idVideo)
-        .setData(idVideo.toByteArray())
-        .build()
-
-
-    runCatching {
-            DownloadService.sendAddDownload(
-                context,
-                MyDownloadService::class.java,
-                downloadRequest,
-                false
-            )
-        }.onFailure {
-        Log.d("downloadInit","Downloader initialized $it" )
-    }
-*/
+    MyDownloadHelper.getDownloadManager(context)
+    MyDownloadHelper.getDownloads()
 }
 
 
 @UnstableApi
 @Composable
-fun downloadedStateMedia ( mediaId: String ): Boolean {
-    val context = LocalContext.current
-   // if (!checkInternetConnection()) return false
-    /*
-    if (!isNetworkAvailableComposable()) {
-        //context.toast("No connection")
-        return false
-    }
-     */
-
+fun downloadedStateMedia(mediaId: String): DownloadedStateMedia {
     val binder = LocalPlayerServiceBinder.current
-    //val downloader = LocalDownloader.current
-
-
-    val downloadCache: SimpleCache
-    try {
-        downloadCache = DownloadUtil.getDownloadSimpleCache(context) as SimpleCache
-    } catch (e: Exception) {
-        //context.toast(e.toString())
-        return false
-    }
-
 
     val cachedBytes by remember(mediaId) {
         mutableStateOf(binder?.cache?.getCachedBytes(mediaId, 0, -1))
     }
 
-    var format by remember {
-        mutableStateOf<Format?>(null)
-    }
-
-    var isDownloaded by remember {
-        mutableStateOf(false)
-    }
-
-    //val download by downloader.getDownload(mediaId).collectAsState(initial = null)
-
-
+    var isDownloaded by remember { mutableStateOf(false) }
     LaunchedEffect(mediaId) {
-        Database.format(mediaId).distinctUntilChanged().collectLatest { currentFormat ->
-            format = currentFormat
+        MyDownloadHelper.getDownload(mediaId).collect { download ->
+            isDownloaded = download?.state == Download.STATE_COMPLETED
+        }
+    }
+    var isCached by remember { mutableStateOf(false) }
+    LaunchedEffect(mediaId) {
+        Database.format(mediaId).distinctUntilChanged().collectLatest { format ->
+           isCached = format?.contentLength == cachedBytes
         }
     }
 
-    val download = format?.contentLength?.let {
-        try {
-            downloadCache.isCached(mediaId, 0, it)
-        } catch (e: Exception) {
-            //context.toast(e.toString())
-            false
-        }
+    return when {
+        isDownloaded && isCached -> DownloadedStateMedia.CACHED_AND_DOWNLOADED
+        isDownloaded && !isCached -> DownloadedStateMedia.DOWNLOADED
+        !isDownloaded && isCached -> DownloadedStateMedia.CACHED
+        else -> DownloadedStateMedia.NOT_CACHED_OR_DOWNLOADED
     }
-
-    //isDownloaded = (format?.contentLength == cachedBytes) || (download?.state == Download.STATE_COMPLETED)
-    isDownloaded = (format?.contentLength == cachedBytes) || download == true
-
-//    Log.d("mediaItem", "cachedBytes ${cachedBytes} contentLength ${format?.contentLength} downloadState ${isDownloaded}")
-
-    return isDownloaded
-
 }
 
 
 @UnstableApi
-fun manageDownload (
+fun manageDownload(
     context: android.content.Context,
-    songId: String,
-    songTitle: String,
+    mediaItem: MediaItem,
     downloadState: Boolean = false
 ) {
-//Log.d("mediaItem","managedownload checkinternet ${isNetworkAvailable(context)}")
 
-    //if (isNetworkAvailable(context)) {
-        //try {
-            if (downloadState)
-                DownloadService.sendRemoveDownload(
-                    context,
-                    MyDownloadService::class.java,
-                    songId,
-                    false
-                )
-            else {
-                if (isNetworkAvailable(context)) {
-                    val contentUri =
-                        "https://www.youtube.com/watch?v=${songId}".toUri()
-                    val downloadRequest = DownloadRequest
-                        .Builder(
-                            songId,
-                            contentUri
-                        )
-                        .setCustomCacheKey(songId)
-                        .setData(cleanPrefix(songTitle).toByteArray())
-                        .build()
+    if (mediaItem.isLocal) return
 
-                    DownloadService.sendAddDownload(
-                        context,
-                        MyDownloadService::class.java,
-                        downloadRequest,
-                        false
-                    )
-                }
-            }
-        //} catch (e: Exception) {
-        //    e.printStackTrace()
-        //}
-    //}
+    if (downloadState)
+        DownloadService.sendRemoveDownload(
+            context,
+            MyDownloadService::class.java,
+            mediaItem.mediaId,
+            false
+        )
+    else {
+        if (isNetworkAvailable(context)) {
+            MyDownloadHelper.scheduleDownload(context = context, mediaItem = mediaItem)
+        }
+    }
+
 }
-
 
 
 @UnstableApi
 @Composable
 fun getDownloadState(mediaId: String): Int {
     val downloader = LocalDownloader.current
-    //if (!checkInternetConnection()) return 3
     if (!isNetworkAvailableComposable()) return 3
 
     return downloader.getDownload(mediaId).collectAsState(initial = null).value?.state
         ?: 3
 }
 
+@OptIn(UnstableApi::class)
+@Composable
+fun isDownloadedSong(mediaId: String): Boolean {
+    return when (downloadedStateMedia(mediaId)) {
+        DownloadedStateMedia.CACHED -> false
+        DownloadedStateMedia.CACHED_AND_DOWNLOADED, DownloadedStateMedia.DOWNLOADED -> true
+        else -> false
+    }
+}

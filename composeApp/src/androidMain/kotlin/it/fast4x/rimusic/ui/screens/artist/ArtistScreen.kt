@@ -41,6 +41,7 @@ import it.fast4x.innertube.models.bodies.BrowseBody
 import it.fast4x.innertube.models.bodies.ContinuationBody
 import it.fast4x.innertube.requests.artistPage
 import it.fast4x.innertube.requests.itemsPage
+import it.fast4x.innertube.requests.playlistPage
 import it.fast4x.innertube.utils.from
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
@@ -71,18 +72,25 @@ import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.addNext
 import it.fast4x.rimusic.utils.asMediaItem
+import it.fast4x.rimusic.utils.completed
+import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.enqueue
+import it.fast4x.rimusic.utils.forcePlay
 import it.fast4x.rimusic.utils.forcePlayAtIndex
+import it.fast4x.rimusic.utils.forcePlayFromBeginning
 import it.fast4x.rimusic.utils.getDownloadState
+import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.parentalControlEnabledKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.knighthat.colorPalette
 
@@ -128,6 +136,8 @@ fun ArtistScreen(
     }
     val hapticFeedback = LocalHapticFeedback.current
     val parentalControlEnabled by rememberPreference(parentalControlEnabledKey, false)
+
+    val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
     LaunchedEffect(Unit) {
         Database
@@ -218,26 +228,46 @@ fun ArtistScreen(
                     } else {
                         val context = LocalContext.current
 
-                        Header(title = artist?.name ?: "Unknown") {
-
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .padding(top = 50.dp)
-                                    .padding(horizontal = 12.dp)
-                            ) {
-                                textButton?.invoke()
-
-                                Spacer(
+                        Header(title = artist?.name ?: "Unknown", actionsContent = {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
-                                        .weight(0.2f)
-                                )
+                                        .padding(top = 50.dp)
+                                        .padding(horizontal = 12.dp)
+                                ) {
+                                    textButton?.invoke()
 
-                                SecondaryTextButton(
-                                    text = if (artist?.bookmarkedAt == null) stringResource(R.string.follow) else stringResource(
-                                        R.string.following
-                                    ),
+                                    Spacer(
+                                        modifier = Modifier
+                                            .weight(0.2f)
+                                    )
+
+                                    SecondaryTextButton(
+                                        text = if (artist?.bookmarkedAt == null) stringResource(R.string.follow) else stringResource(
+                                            R.string.following
+                                        ),
+                                        onClick = {
+                                            val bookmarkedAt =
+                                                if (artist?.bookmarkedAt == null) System.currentTimeMillis() else null
+
+                                            query {
+                                                artist
+                                                    ?.copy(bookmarkedAt = bookmarkedAt)
+                                                    ?.let(Database::update)
+                                            }
+                                        },
+                                        alternative = artist?.bookmarkedAt == null
+                                    )
+
+                                    /*
+                                HeaderIconButton(
+                                    icon = if (artist?.bookmarkedAt == null) {
+                                        R.drawable.bookmark_outline
+                                    } else {
+                                        R.drawable.bookmark
+                                    },
+                                    color = colorPalette.accent,
                                     onClick = {
                                         val bookmarkedAt =
                                             if (artist?.bookmarkedAt == null) System.currentTimeMillis() else null
@@ -247,54 +277,34 @@ fun ArtistScreen(
                                                 ?.copy(bookmarkedAt = bookmarkedAt)
                                                 ?.let(Database::update)
                                         }
-                                    },
-                                    alternative = artist?.bookmarkedAt == null
-                                )
-
-                                /*
-                            HeaderIconButton(
-                                icon = if (artist?.bookmarkedAt == null) {
-                                    R.drawable.bookmark_outline
-                                } else {
-                                    R.drawable.bookmark
-                                },
-                                color = colorPalette.accent,
-                                onClick = {
-                                    val bookmarkedAt =
-                                        if (artist?.bookmarkedAt == null) System.currentTimeMillis() else null
-
-                                    query {
-                                        artist
-                                            ?.copy(bookmarkedAt = bookmarkedAt)
-                                            ?.let(Database::update)
                                     }
-                                }
-                            )
-                             */
+                                )
+                                 */
 
-                                HeaderIconButton(
-                                    icon = R.drawable.share_social,
-                                    color = colorPalette().text,
-                                    onClick = {
-                                        val sendIntent = Intent().apply {
-                                            action = Intent.ACTION_SEND
-                                            type = "text/plain"
-                                            putExtra(
-                                                Intent.EXTRA_TEXT,
-                                                "https://music.youtube.com/channel/$browseId"
+                                    HeaderIconButton(
+                                        icon = R.drawable.share_social,
+                                        color = colorPalette().text,
+                                        onClick = {
+                                            val sendIntent = Intent().apply {
+                                                action = Intent.ACTION_SEND
+                                                type = "text/plain"
+                                                putExtra(
+                                                    Intent.EXTRA_TEXT,
+                                                    "https://music.youtube.com/channel/$browseId"
+                                                )
+                                            }
+
+                                            context.startActivity(
+                                                Intent.createChooser(
+                                                    sendIntent,
+                                                    null
+                                                )
                                             )
                                         }
-
-                                        context.startActivity(
-                                            Intent.createChooser(
-                                                sendIntent,
-                                                null
-                                            )
-                                        )
-                                    }
-                                )
-                            }
-                        }
+                                    )
+                                }
+                            },
+                            disableScrollingText = disableScrollingText)
                     }
                 }
 
@@ -308,7 +318,8 @@ fun ArtistScreen(
                     } else {
                         val context = LocalContext.current
 
-                        Header(title = artist?.name ?: "Unknown") {
+                        Header(title = artist?.name ?: "Unknown",
+                            actionsContent = {
                             textButton?.invoke()
 
 
@@ -389,7 +400,8 @@ fun ArtistScreen(
                                     context.startActivity(Intent.createChooser(sendIntent, null))
                                 }
                             )
-                        }
+                        },
+                            disableScrollingText = disableScrollingText)
                     }
                 }
 
@@ -438,7 +450,8 @@ fun ArtistScreen(
                                 },
                                 onSettingsClick = {
                                     navController.navigate(NavRoutes.settings.name)
-                                }
+                                },
+                                disableScrollingText = disableScrollingText
                             )
                         }
 
@@ -452,31 +465,26 @@ fun ArtistScreen(
                                 tag = "artist/$browseId/songs",
                                 headerContent = headerContent,
                                 itemsPageProvider = artistPage?.let {
-                                    ({ continuation ->
-                                        continuation?.let {
-                                            Innertube.itemsPage(
-                                                body = ContinuationBody(continuation = continuation),
-                                                fromMusicResponsiveListItemRenderer = Innertube.SongItem::from,
-                                            )
-                                        } ?: artistPage
+                                    {
+                                        artistPage
                                             ?.songsEndpoint
                                             ?.takeIf { it.browseId != null }
                                             ?.let { endpoint ->
                                                 Innertube.itemsPage(
                                                     body = BrowseBody(
                                                         browseId = endpoint.browseId!!,
-                                                        params = endpoint.params,
+                                                        params = endpoint.params
                                                     ),
                                                     fromMusicResponsiveListItemRenderer = Innertube.SongItem::from,
-                                                )
+                                                )?.completed()
                                             }
-                                        ?: Result.success(
+                                        ?: Result.success( // is this section ever reached now?
                                             Innertube.ItemsPage(
                                                 items = artistPage?.songs,
                                                 continuation = null
                                             )
                                         )
-                                    })
+                                    }
                                 },
                                 itemContent = { song ->
                                     if (parentalControlEnabled && song.explicit) return@ItemsPage
@@ -489,28 +497,18 @@ fun ArtistScreen(
                                     ) {
                                         listMediaItems.add(song.asMediaItem)
                                         downloadState = getDownloadState(song.asMediaItem.mediaId)
-                                        val isDownloaded = downloadedStateMedia(song.asMediaItem.mediaId)
+                                        val isDownloaded = isDownloadedSong(song.asMediaItem.mediaId)
                                         SongItem(
                                             song = song,
-                                            isDownloaded = isDownloaded,
                                             onDownloadClick = {
                                                 binder?.cache?.removeResource(song.asMediaItem.mediaId)
                                                 query {
-                                                    Database.insert(
-                                                        Song(
-                                                            id = song.asMediaItem.mediaId,
-                                                            title = song.asMediaItem.mediaMetadata.title.toString(),
-                                                            artistsText = song.asMediaItem.mediaMetadata.artist.toString(),
-                                                            thumbnailUrl = song.thumbnail?.url,
-                                                            durationText = null
-                                                        )
-                                                    )
+                                                    Database.resetFormatContentLength(song.asMediaItem.mediaId)
                                                 }
 
                                                 manageDownload(
                                                     context = context,
-                                                    songId = song.asMediaItem.mediaId,
-                                                    songTitle = song.asMediaItem.mediaMetadata.title.toString(),
+                                                    mediaItem = song.asMediaItem,
                                                     downloadState = isDownloaded
                                                 )
                                             },
@@ -525,6 +523,7 @@ fun ArtistScreen(
                                                                 navController = navController,
                                                                 onDismiss = menuState::hide,
                                                                 mediaItem = song.asMediaItem,
+                                                                disableScrollingText = disableScrollingText
                                                             )
                                                         };
                                                         hapticFeedback.performHapticFeedback(
@@ -532,19 +531,49 @@ fun ArtistScreen(
                                                         )
                                                     },
                                                     onClick = {
+                                                        CoroutineScope(Dispatchers.IO).launch {
+                                                            artistPage
+                                                                ?.songsEndpoint
+                                                                ?.takeIf { it.browseId != null }
+                                                                ?.let { endpoint ->
+                                                                    Innertube.itemsPage(
+                                                                        body = BrowseBody(
+                                                                            browseId = endpoint.browseId!!,
+                                                                            params = endpoint.params,
+                                                                        ),
+                                                                        fromMusicResponsiveListItemRenderer = Innertube.SongItem::from,
+                                                                    )
+                                                                }
+                                                                ?.getOrNull()
+                                                                ?.items
+                                                                ?.map { it.asMediaItem }
+                                                                ?.let {
+                                                                    withContext(Dispatchers.Main) {
+                                                                        binder?.player?.forcePlayFromBeginning(
+                                                                            it
+                                                                        )
+                                                                    }
+                                                                }
+                                                        }
+                                                    /*
                                                         binder?.stopRadio()
                                                         binder?.player?.forcePlayAtIndex(
                                                             listMediaItems.distinct(),
                                                             listMediaItems.distinct()
                                                                 .indexOf(song.asMediaItem)
                                                         )
+
+                                                     */
+
                                                         /*
                                                     binder?.stopRadio()
                                                     binder?.player?.forcePlay(song.asMediaItem)
                                                     binder?.setupRadio(song.info?.endpoint)
-                                                     */
+                                                         */
+
                                                     }
-                                                )
+                                                ),
+                                            disableScrollingText = disableScrollingText
                                         )
                                     }
                                 },
@@ -599,7 +628,8 @@ fun ArtistScreen(
                                                 //albumRoute(album.key)
                                                 navController.navigate(route = "${NavRoutes.album.name}/${album.key}")
                                             }),
-                                        yearCentered = false
+                                        yearCentered = false,
+                                        disableScrollingText = disableScrollingText
                                     )
                                 },
                                 itemPlaceholderContent = {
@@ -653,7 +683,8 @@ fun ArtistScreen(
                                                 //albumRoute(album.key)
                                                 navController.navigate(route = "${NavRoutes.album.name}/${album.key}")
                                             }),
-                                        yearCentered = false
+                                        yearCentered = false,
+                                        disableScrollingText = disableScrollingText
                                     )
                                 },
                                 itemPlaceholderContent = {

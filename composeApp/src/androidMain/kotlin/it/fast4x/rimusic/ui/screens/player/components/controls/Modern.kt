@@ -58,7 +58,6 @@ import it.fast4x.rimusic.models.Info
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.ui.UiMedia
 import it.fast4x.rimusic.query
-import it.fast4x.rimusic.service.PlayerService
 import it.fast4x.rimusic.ui.components.themed.CustomElevatedButton
 import it.fast4x.rimusic.ui.components.themed.IconButton
 import it.fast4x.rimusic.ui.components.themed.SelectorArtistsDialog
@@ -67,14 +66,15 @@ import it.fast4x.rimusic.ui.screens.player.bounceClick
 import it.fast4x.rimusic.ui.styling.favoritesIcon
 import it.fast4x.rimusic.utils.bold
 import it.fast4x.rimusic.cleanPrefix
+import it.fast4x.rimusic.service.modern.PlayerServiceModern
 import it.fast4x.rimusic.utils.colorPaletteModeKey
 import it.fast4x.rimusic.utils.doubleShadowDrop
 import it.fast4x.rimusic.utils.dropShadow
 import it.fast4x.rimusic.utils.effectRotationKey
-import it.fast4x.rimusic.utils.getDislikedIcon
 import it.fast4x.rimusic.utils.getLikeState
-import it.fast4x.rimusic.utils.getLikedIcon
 import it.fast4x.rimusic.utils.getUnlikedIcon
+import it.fast4x.rimusic.utils.playNext
+import it.fast4x.rimusic.utils.playPrevious
 import it.fast4x.rimusic.utils.playerBackgroundColorsKey
 import it.fast4x.rimusic.utils.playerControlsTypeKey
 import it.fast4x.rimusic.utils.playerInfoShowIconsKey
@@ -90,7 +90,7 @@ import me.knighthat.typography
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 fun InfoAlbumAndArtistModern(
-    binder: PlayerService.Binder,
+    binder: PlayerServiceModern.Binder,
     navController: NavController,
     albumId: String?,
     media: UiMedia,
@@ -213,13 +213,11 @@ fun InfoAlbumAndArtistModern(
              IconButton(
                  color = colorPalette().favoritesIcon,
                  icon = getLikeState(mediaId),
-                 //if (likedAt == null) getUnlikedIcon() else getLikedIcon(),
                  onClick = {
                      val currentMediaItem = binder.player.currentMediaItem
                      query {
                          if (Database.like(
                                  mediaId,
-                                 //if (likedAt == null) System.currentTimeMillis() else null
                                  setLikeState(likedAt)
                              ) == 0
                          ) {
@@ -362,7 +360,7 @@ fun InfoAlbumAndArtistModern(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ControlsModern(
-    binder: PlayerService.Binder,
+    binder: PlayerServiceModern.Binder,
     position: Long,
     playbackSpeed: Float,
     shouldBePlaying: Boolean,
@@ -387,7 +385,7 @@ fun ControlsModern(
                   interactionSource = remember { MutableInteractionSource() },
                   onClick = {
                       //binder.player.forceSeekToPrevious()
-                      binder.player.seekToPrevious()
+                      binder.player.playPrevious()
                       if (effectRotationEnabled) isRotated = !isRotated
                   },
                   onLongClick = {
@@ -564,7 +562,7 @@ fun ControlsModern(
                 interactionSource = remember { MutableInteractionSource() },
                 onClick = {
                     //binder.player.forceSeekToNext()
-                    binder.player.seekToNext()
+                    binder.player.playNext()
                     if (effectRotationEnabled) isRotated = !isRotated
                 },
                 onLongClick = {
@@ -620,7 +618,7 @@ fun ControlsModern(
                           indication = null,
                           onClick = {
                               //binder.player.forceSeekToPrevious()
-                              binder.player.seekToPrevious()
+                              binder.player.playPrevious()
                               if (effectRotationEnabled) isRotated = !isRotated
                           },
                           onLongClick = {
@@ -700,7 +698,7 @@ fun ControlsModern(
                           indication = null,
                           onClick = {
                               //binder.player.forceSeekToNext()
-                              binder.player.seekToNext()
+                              binder.player.playNext()
                               if (effectRotationEnabled) isRotated = !isRotated
                           },
                           onLongClick = {

@@ -9,6 +9,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.edit
+import kotlinx.serialization.InternalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
 
 const val lastPlayerThumbnailSizeKey = "lastPlayerThumbnailSize"
 const val lastPlayerPlayButtonTypeKey = "lastPlayerPlayButtonType"
@@ -23,6 +26,7 @@ const val thumbnailTapEnabledKey = "thumbnailTapEnabled"
 const val wavedPlayerTimelineKey = "wavedPlayerTimeline"
 const val languageAppKey = "languageApp"
 const val otherLanguageAppKey = "otherLanguageApp"
+const val romanizationEnabeledKey = "romanizationEnabeled"
 const val indexNavigationTabKey = "indexNavigationTab"
 const val effectRotationKey = "effectRotation"
 const val playerThumbnailSizeKey = "playerThumbnailSize"
@@ -49,8 +53,7 @@ const val albumSortOrderKey = "albumSortOrder"
 const val albumSortByKey = "albumSortBy"
 const val artistSortOrderKey = "artistSortOrder"
 const val artistSortByKey = "artistSortBy"
-const val trackLoopEnabledKey = "trackLoopEnabled"
-const val queueLoopEnabledKey = "queueLoopEnabled"
+const val queueLoopTypeKey = "queueLoopType"
 const val reorderInQueueEnabledKey = "reorderInQueueEnabled"
 const val skipSilenceKey = "skipSilence"
 const val skipMediaOnErrorKey = "skipMediaOnError"
@@ -69,6 +72,7 @@ const val UiTypeKey = "UiType"
 const val disablePlayerHorizontalSwipeKey = "disablePlayerHorizontalSwipe"
 const val disableIconButtonOnTopKey = "disableIconButtonOnTop"
 const val exoPlayerCustomCacheKey = "exoPlayerCustomCache"
+const val coilCustomDiskCacheKey = "exoPlayerCustomCache"
 const val disableScrollingTextKey = "disableScrollingText"
 const val audioQualityFormatKey = "audioQualityFormat"
 const val showLikeButtonBackgroundPlayerKey = "showLikeButtonBackgroundPlayer"
@@ -226,6 +230,7 @@ const val thumbnailpauseKey = "thumbnailpause"
 const val showsongsKey = "showsongs"
 const val showalbumcoverKey = "showalbumcover"
 const val lyricsBackgroundKey = "lyricsBackground"
+const val lyricsAlignmentKey = "lyricsAlignment"
 const val hideprevnextKey = "hideprevnext"
 const val prevNextSongsKey = "prevNextSongs"
 const val tapqueueKey = "tapqueue"
@@ -238,6 +243,7 @@ const val playerTypeKey = "playerType"
 const val noblurKey = "noblur"
 const val fadingedgeKey = "fadingedge"
 const val thumbnailOffsetKey = "thumbnailOffset"
+const val thumbnailFadeKey = "thumbnailFade"
 const val carouselKey = "carousel"
 const val carouselSizeKey = "carouselSize"
 const val thumbnailSpacingKey = "thumbnailSpacing"
@@ -269,6 +275,55 @@ const val titleExpandedKey = "titleExpanded"
 const val timelineExpandedKey = "timelineExpanded"
 const val controlsExpandedKey = "controlsExpanded"
 const val miniQueueExpandedKey = "miniQueueExpanded"
+const val statsExpandedKey = "statsExpanded"
+const val actionExpandedKey = "actionExpanded"
+const val showVinylThumbnailAnimationKey = "showVinylThumbnailAnimation"
+
+const val restartActivityKey = "restartActivity"
+const val enableYouTubeLoginKey = "enableYoutubeLogin"
+
+const val autoLoadSongsInQueueKey = "autoLoadSongsInQueue"
+const val showSecondLineKey = "showSecondLine"
+
+
+@PublishedApi
+internal val defaultJson = Json {
+    isLenient = true
+    prettyPrint = false
+    ignoreUnknownKeys = true
+    encodeDefaults = true
+}
+
+@OptIn(InternalSerializationApi::class)
+inline fun <reified T : Json> SharedPreferences.Editor.putJson(
+    key: String,
+    defaultValue: T,
+    json: Json = defaultJson
+): SharedPreferences.Editor =
+    putString(
+        key,
+        try {
+            json.encodeToString(T::class.serializer(), defaultValue)
+        } catch (e: IllegalArgumentException) {
+            null
+        }
+
+    )
+
+@OptIn(InternalSerializationApi::class)
+inline fun <reified T : Json> SharedPreferences.getJson(
+    key: String,
+    defaultValue: T,
+    json: Json = defaultJson
+): T =
+    getString(key, null)?.let {
+        try {
+            json.decodeFromString(T::class.serializer(), it)
+        } catch (e: IllegalArgumentException) {
+            null
+        }
+    } ?: defaultValue
+
 
 inline fun <reified T : Enum<T>> SharedPreferences.getEnum(
     key: String,
@@ -290,6 +345,16 @@ inline fun <reified T : Enum<T>> SharedPreferences.Editor.putEnum(
 
 val Context.preferences: SharedPreferences
     get() = getSharedPreferences("preferences", Context.MODE_PRIVATE)
+
+@Composable
+inline fun <reified T : Json> rememberPreference(key: String, defaultValue: T, json: Json = defaultJson): MutableState<T> {
+    val context = LocalContext.current
+    return remember {
+        mutableStatePreferenceOf(context.preferences.getJson(key, defaultValue)) {
+            context.preferences.edit { putJson(key, it) }
+        }
+    }
+}
 
 @Composable
 fun rememberPreference(key: String, defaultValue: Boolean): MutableState<Boolean> {

@@ -81,11 +81,12 @@ import it.fast4x.rimusic.models.Artist
 import it.fast4x.rimusic.models.PlaylistPreview
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.query
-import it.fast4x.rimusic.service.DownloadUtil
+import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.PullToRefreshBox
 import it.fast4x.rimusic.ui.components.themed.HeaderWithIcon
+import it.fast4x.rimusic.ui.components.themed.Loader
 import it.fast4x.rimusic.ui.components.themed.Menu
 import it.fast4x.rimusic.ui.components.themed.MenuEntry
 import it.fast4x.rimusic.ui.components.themed.MultiFloatingActionsContainer
@@ -103,9 +104,10 @@ import it.fast4x.rimusic.utils.asSong
 import it.fast4x.rimusic.utils.bold
 import it.fast4x.rimusic.utils.center
 import it.fast4x.rimusic.utils.color
-import it.fast4x.rimusic.utils.downloadedStateMedia
+import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.forcePlay
 import it.fast4x.rimusic.utils.getDownloadState
+import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isLandscape
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.parentalControlEnabledKey
@@ -168,11 +170,8 @@ fun QuickPicksModern(
 
     var chartsPage by persist<Result<Innertube.ChartsPage>?>("home/chartsPage")
 
-    //var discoverPageAlbums by persist<Result<Innertube.DiscoverPageAlbums>>("home/discoveryAlbums")
-
     var preferitesArtists by persistList<Artist>("home/artists")
 
-    //val localMonthlyPlaylists = monthlyPLaylists()
     var localMonthlyPlaylists by persistList<PlaylistPreview>("home/monthlyPlaylists")
     LaunchedEffect(Unit) {
         Database.monthlyPlaylistsPreview("").collect{ localMonthlyPlaylists = it }
@@ -301,7 +300,7 @@ fun QuickPicksModern(
     //val showActionsBar by rememberPreference(showActionsBarKey, true)
 
     val downloadedSongs = remember {
-        DownloadUtil.downloads.value.filter {
+        MyDownloadHelper.downloads.value.filter {
             it.value.state == Download.STATE_COMPLETED
         }.keys.toList()
     }
@@ -314,6 +313,8 @@ fun QuickPicksModern(
     //val enableCreateMonthlyPlaylists by rememberPreference(enableCreateMonthlyPlaylistsKey, true)
     //if (enableCreateMonthlyPlaylists)
     //    CheckMonthlyPlaylist()
+
+    val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
     PullToRefreshBox(
         refreshing = refreshing,
@@ -441,30 +442,20 @@ fun QuickPicksModern(
                                 val isLocal by remember { derivedStateOf { song.asMediaItem.isLocal } }
                                 downloadState = getDownloadState(song.asMediaItem.mediaId)
                                 val isDownloaded =
-                                    if (!isLocal) downloadedStateMedia(song.asMediaItem.mediaId) else true
+                                    if (!isLocal) isDownloadedSong(song.asMediaItem.mediaId) else true
 
                                 SongItem(
                                     song = song,
-                                    isDownloaded = isDownloaded,
                                     onDownloadClick = {
                                         binder?.cache?.removeResource(song.asMediaItem.mediaId)
                                         query {
-                                            Database.insert(
-                                                Song(
-                                                    id = song.asMediaItem.mediaId,
-                                                    title = song.asMediaItem.mediaMetadata.title.toString(),
-                                                    artistsText = song.asMediaItem.mediaMetadata.artist.toString(),
-                                                    thumbnailUrl = song.thumbnailUrl,
-                                                    durationText = null
-                                                )
-                                            )
+                                            Database.resetFormatContentLength(song.asMediaItem.mediaId)
                                         }
 
                                         if (!isLocal)
                                             manageDownload(
                                                 context = context,
-                                                songId = song.id,
-                                                songTitle = song.title,
+                                                mediaItem = song.asMediaItem,
                                                 downloadState = isDownloaded
                                             )
 
@@ -498,24 +489,15 @@ fun QuickPicksModern(
                                                         onDownload = {
                                                             binder?.cache?.removeResource(song.asMediaItem.mediaId)
                                                             query {
-                                                                Database.insert(
-                                                                    Song(
-                                                                        id = song.asMediaItem.mediaId,
-                                                                        title = song.asMediaItem.mediaMetadata.title.toString(),
-                                                                        artistsText = song.asMediaItem.mediaMetadata.artist.toString(),
-                                                                        thumbnailUrl = song.thumbnailUrl,
-                                                                        durationText = null
-                                                                    )
-                                                                )
+                                                                Database.resetFormatContentLength(song.asMediaItem.mediaId)
                                                             }
                                                             manageDownload(
                                                                 context = context,
-                                                                songId = song.id,
-                                                                songTitle = song.title,
+                                                                mediaItem = song.asMediaItem,
                                                                 downloadState = isDownloaded
                                                             )
-                                                        }
-
+                                                        },
+                                                        disableScrollingText = disableScrollingText
                                                     )
                                                 };
                                                 hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -533,7 +515,8 @@ fun QuickPicksModern(
                                         fadeInSpec = null,
                                         fadeOutSpec = null
                                         )
-                                        .width(itemInHorizontalGridWidth)
+                                        .width(itemInHorizontalGridWidth),
+                                    disableScrollingText = disableScrollingText
                                 )
                             }
                         }
@@ -552,29 +535,19 @@ fun QuickPicksModern(
                                 val isLocal by remember { derivedStateOf { song.asMediaItem.isLocal } }
                                 downloadState = getDownloadState(song.asMediaItem.mediaId)
                                 val isDownloaded =
-                                    if (!isLocal) downloadedStateMedia(song.asMediaItem.mediaId) else true
+                                    if (!isLocal) isDownloadedSong(song.asMediaItem.mediaId) else true
 
                                 SongItem(
                                     song = song,
-                                    isDownloaded = isDownloaded,
                                     onDownloadClick = {
                                         binder?.cache?.removeResource(song.asMediaItem.mediaId)
                                         query {
-                                            Database.insert(
-                                                Song(
-                                                    id = song.asMediaItem.mediaId,
-                                                    title = song.asMediaItem.mediaMetadata.title.toString(),
-                                                    artistsText = song.asMediaItem.mediaMetadata.artist.toString(),
-                                                    thumbnailUrl = song.thumbnail?.url,
-                                                    durationText = null
-                                                )
-                                            )
+                                            Database.resetFormatContentLength(song.asMediaItem.mediaId)
                                         }
                                         if (!isLocal)
                                             manageDownload(
                                                 context = context,
-                                                songId = song.asMediaItem.mediaId,
-                                                songTitle = song.asMediaItem.mediaMetadata.title.toString(),
+                                                mediaItem = song.asMediaItem,
                                                 downloadState = isDownloaded
                                             )
 
@@ -593,24 +566,15 @@ fun QuickPicksModern(
                                                         onDownload = {
                                                             binder?.cache?.removeResource(song.asMediaItem.mediaId)
                                                             query {
-                                                                Database.insert(
-                                                                    Song(
-                                                                        id = song.asMediaItem.mediaId,
-                                                                        title = song.asMediaItem.mediaMetadata.title.toString(),
-                                                                        artistsText = song.asMediaItem.mediaMetadata.artist.toString(),
-                                                                        thumbnailUrl = song.thumbnail?.url,
-                                                                        durationText = null
-                                                                    )
-                                                                )
+                                                                Database.resetFormatContentLength(song.asMediaItem.mediaId)
                                                             }
                                                             manageDownload(
                                                                 context = context,
-                                                                songId = song.asMediaItem.mediaId,
-                                                                songTitle = song.asMediaItem.mediaMetadata.title.toString(),
+                                                                mediaItem = song.asMediaItem,
                                                                 downloadState = isDownloaded
                                                             )
                                                         },
-
+                                                        disableScrollingText = disableScrollingText
                                                         )
                                                 }
                                                 hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -625,28 +589,15 @@ fun QuickPicksModern(
                                             }
                                         )
                                         .animateItemPlacement()
-                                        .width(itemInHorizontalGridWidth)
+                                        .width(itemInHorizontalGridWidth),
+                                    disableScrollingText = disableScrollingText
                                 )
                             }
                         }
                     }
 
                     if (related == null) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                //.background(colorPalette().background0)
-                        ) {
-                            Image(
-                                painter = painterResource(R.drawable.loader),
-                                contentDescription = null,
-                                colorFilter = ColorFilter.tint(colorPalette().text),
-                                modifier = Modifier
-                                    .padding(all = 5.dp)
-                                    .align(Alignment.Center)
-                                    .size(32.dp)
-                            )
-                        }
+                        Loader()
                         /*
                         BasicText(
                             text = stringResource(R.string.sorry_tips_are_not_available),
@@ -690,7 +641,8 @@ fun QuickPicksModern(
                                             alternative = true,
                                             modifier = Modifier.clickable(onClick = {
                                                 onAlbumClick(it.key)
-                                            })
+                                            }),
+                                            disableScrollingText = disableScrollingText
                                         )
                                     }
                                 }
@@ -713,7 +665,8 @@ fun QuickPicksModern(
                                         alternative = true,
                                         modifier = Modifier.clickable(onClick = {
                                             onAlbumClick(it.key)
-                                        })
+                                        }),
+                                        disableScrollingText = disableScrollingText
                                     )
                                 }
                             }
@@ -739,7 +692,8 @@ fun QuickPicksModern(
                                         thumbnailSizeDp = albumThumbnailSizeDp,
                                         alternative = true,
                                         modifier = Modifier
-                                            .clickable(onClick = { onAlbumClick(album.key) })
+                                            .clickable(onClick = { onAlbumClick(album.key) }),
+                                        disableScrollingText = disableScrollingText
                                     )
                                 }
                             }
@@ -764,7 +718,8 @@ fun QuickPicksModern(
                                         thumbnailSizeDp = artistThumbnailSizeDp,
                                         alternative = true,
                                         modifier = Modifier
-                                            .clickable(onClick = { onArtistClick(artist.key) })
+                                            .clickable(onClick = { onArtistClick(artist.key) }),
+                                        disableScrollingText = disableScrollingText
                                     )
                                 }
                             }
@@ -792,7 +747,8 @@ fun QuickPicksModern(
                                         alternative = true,
                                         showSongsCount = false,
                                         modifier = Modifier
-                                            .clickable(onClick = { onPlaylistClick(playlist.key) })
+                                            .clickable(onClick = { onPlaylistClick(playlist.key) }),
+                                        disableScrollingText = disableScrollingText
                                     )
                                 }
                             }
@@ -864,7 +820,8 @@ fun QuickPicksModern(
                                             fadeOutSpec = null
                                         )
                                             .fillMaxSize()
-                                            .clickable(onClick = { navController.navigate(route = "${NavRoutes.localPlaylist.name}/${playlist.playlist.id}") })
+                                            .clickable(onClick = { navController.navigate(route = "${NavRoutes.localPlaylist.name}/${playlist.playlist.id}") }),
+                                        disableScrollingText = disableScrollingText
                                     )
                                 }
                             }
@@ -917,7 +874,8 @@ fun QuickPicksModern(
                                         alternative = true,
                                         showSongsCount = false,
                                         modifier = Modifier
-                                            .clickable(onClick = { onPlaylistClick(playlist.key) })
+                                            .clickable(onClick = { onPlaylistClick(playlist.key) }),
+                                        disableScrollingText = disableScrollingText
                                     )
                                 }
                             }
@@ -959,7 +917,6 @@ fun QuickPicksModern(
                                             )
                                             SongItem(
                                                 song = song,
-                                                isDownloaded = false,
                                                 onDownloadClick = {},
                                                 downloadState = Download.STATE_STOPPED,
                                                 thumbnailSizePx = songThumbnailSizePx,
@@ -971,7 +928,8 @@ fun QuickPicksModern(
                                                         binder?.player?.forcePlay(mediaItem)
                                                         binder?.player?.addMediaItems(songs.map { it.asMediaItem })
                                                     })
-                                                    .width(itemWidth)
+                                                    .width(itemWidth),
+                                                disableScrollingText = disableScrollingText
                                             )
                                         }
                                     }
@@ -1018,7 +976,8 @@ fun QuickPicksModern(
                                                 alternative = false,
                                                 modifier = Modifier
                                                     .width(200.dp)
-                                                    .clickable(onClick = { onArtistClick(artist.key) })
+                                                    .clickable(onClick = { onArtistClick(artist.key) }),
+                                                disableScrollingText = disableScrollingText
                                             )
                                         }
                                     }

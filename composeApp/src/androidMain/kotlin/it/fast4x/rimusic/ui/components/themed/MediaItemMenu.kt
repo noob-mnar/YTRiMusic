@@ -90,6 +90,7 @@ import it.fast4x.rimusic.utils.addNext
 import it.fast4x.rimusic.utils.addToPipedPlaylist
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.cleanPrefix
+import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.forcePlay
@@ -97,6 +98,7 @@ import it.fast4x.rimusic.utils.formatAsDuration
 import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.getLikeState
 import it.fast4x.rimusic.utils.getPipedSession
+import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isPipedEnabledKey
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.medium
@@ -129,7 +131,8 @@ fun InHistoryMediaItemMenu(
     song: Song,
     onHideFromDatabase: (() -> Unit)? = {},
     onDeleteFromDatabase: (() -> Unit)? = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    disableScrollingText: Boolean
 ) {
     //val binder = LocalPlayerServiceBinder.current
 
@@ -165,7 +168,8 @@ fun InHistoryMediaItemMenu(
                 Database.like(song.id, System.currentTimeMillis())
             }
         },
-        modifier = modifier
+        modifier = modifier,
+        disableScrollingText = disableScrollingText
     )
 }
 
@@ -180,7 +184,8 @@ fun InPlaylistMediaItemMenu(
     playlistId: Long,
     positionInPlaylist: Int,
     song: Song,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    disableScrollingText: Boolean
 ) {
     val isPipedEnabled by rememberPreference(isPipedEnabledKey, false)
     val coroutineScope = rememberCoroutineScope()
@@ -213,7 +218,8 @@ fun InPlaylistMediaItemMenu(
                 Database.like(song.id, System.currentTimeMillis())
             }
         },
-        modifier = modifier
+        modifier = modifier,
+        disableScrollingText = disableScrollingText
     )
 }
 
@@ -229,6 +235,7 @@ fun NonQueuedMediaItemMenuLibrary(
     onRemoveFromPlaylist: (() -> Unit)? = null,
     onRemoveFromQuickPicks: (() -> Unit)? = null,
     onDownload: (() -> Unit)? = null,
+    disableScrollingText: Boolean
 ) {
     val binder = LocalPlayerServiceBinder.current
     val context = LocalContext.current
@@ -289,7 +296,8 @@ fun NonQueuedMediaItemMenuLibrary(
                     )
                 }
             },
-            modifier = modifier
+            modifier = modifier,
+            disableScrollingText = disableScrollingText
         )
     } else {
 
@@ -321,7 +329,8 @@ fun NonQueuedMediaItemMenuLibrary(
                     )
                 }
             },
-            modifier = modifier
+            modifier = modifier,
+            disableScrollingText = disableScrollingText
         )
     }
 }
@@ -340,7 +349,8 @@ fun NonQueuedMediaItemMenu(
     onDeleteFromDatabase: (() -> Unit)? = null,
     onRemoveFromQuickPicks: (() -> Unit)? = null,
     onDownload: (() -> Unit)? = null,
-    onAddToPreferites: (() -> Unit)? = null
+    onAddToPreferites: (() -> Unit)? = null,
+    disableScrollingText: Boolean
 ) {
     val binder = LocalPlayerServiceBinder.current
     val context = LocalContext.current
@@ -375,7 +385,8 @@ fun NonQueuedMediaItemMenu(
             onDeleteFromDatabase = onDeleteFromDatabase,
             onRemoveFromQuickPicks = onRemoveFromQuickPicks,
             onAddToPreferites = onAddToPreferites,
-            modifier = modifier
+            modifier = modifier,
+            disableScrollingText = disableScrollingText
         )
     } else {
 
@@ -401,7 +412,8 @@ fun NonQueuedMediaItemMenu(
             onDeleteFromDatabase = onDeleteFromDatabase,
             onRemoveFromQuickPicks = onRemoveFromQuickPicks,
             onAddToPreferites = onAddToPreferites,
-            modifier = modifier
+            modifier = modifier,
+            disableScrollingText = disableScrollingText
         )
     }
 }
@@ -416,7 +428,8 @@ fun QueuedMediaItemMenu(
     onDownload: (() -> Unit)?,
     mediaItem: MediaItem,
     indexInQueue: Int?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    disableScrollingText: Boolean
 ) {
     val binder = LocalPlayerServiceBinder.current
     val context = LocalContext.current
@@ -458,6 +471,7 @@ fun QueuedMediaItemMenu(
                     )
                 }
             },
+            disableScrollingText = disableScrollingText
         )
     } else {
         BaseMediaItemMenu(
@@ -491,6 +505,7 @@ fun QueuedMediaItemMenu(
                     )
                 }
             },
+            disableScrollingText = disableScrollingText
         )
     }
 }
@@ -517,7 +532,8 @@ fun BaseMediaItemMenu(
     onRemoveFromQuickPicks: (() -> Unit)? = null,
     onClosePlayer: (() -> Unit)? = null,
     onGoToPlaylist: ((Long) -> Unit)? = null,
-    onAddToPreferites: (() -> Unit)?
+    onAddToPreferites: (() -> Unit)?,
+    disableScrollingText: Boolean
 ) {
     val context = LocalContext.current
 
@@ -579,7 +595,7 @@ fun BaseMediaItemMenu(
             if (onClosePlayer != null) {
                 onClosePlayer()
             }
-        }, //artistRoute::global,
+        },
         onShare = {
             val sendIntent = Intent().apply {
                 action = Intent.ACTION_SEND
@@ -596,7 +612,8 @@ fun BaseMediaItemMenu(
         onGoToPlaylist = {
             navController.navigate(route = "${NavRoutes.localPlaylist.name}/$it")
         },
-        modifier = modifier
+        modifier = modifier,
+        disableScrollingText = disableScrollingText
     )
 }
 
@@ -611,6 +628,7 @@ fun MiniMediaItemMenu(
     onGoToPlaylist: ((Long) -> Unit)? = null,
     onAddToPreferites: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    disableScrollingText: Boolean
 ) {
     val context = LocalContext.current
 
@@ -650,7 +668,8 @@ fun MiniMediaItemMenu(
             context.startActivity(Intent.createChooser(sendIntent, null))
         },
         onAddToPreferites = onAddToPreferites,
-        modifier = modifier
+        modifier = modifier,
+        disableScrollingText = disableScrollingText
     )
 }
 
@@ -662,6 +681,7 @@ fun FolderItemMenu(
     thumbnailSizeDp: Dp,
     onDismiss: () -> Unit,
     onEnqueue: () -> Unit,
+    disableScrollingText: Boolean
 ) {
     val density = LocalDensity.current
 
@@ -691,7 +711,7 @@ fun FolderItemMenu(
             modifier = Modifier
                 .padding(end = 12.dp)
         ) {
-            FolderItem(folder, thumbnailSizeDp)
+            FolderItem(folder, thumbnailSizeDp, disableScrollingText = disableScrollingText)
 
         }
 
@@ -737,7 +757,8 @@ fun MediaItemMenu(
     onGoToArtist: ((String) -> Unit)? = null,
     onRemoveFromQuickPicks: (() -> Unit)? = null,
     onShare: () -> Unit,
-    onGoToPlaylist: ((Long) -> Unit)? = null
+    onGoToPlaylist: ((Long) -> Unit)? = null,
+    disableScrollingText: Boolean
 ) {
     val density = LocalDensity.current
 
@@ -791,7 +812,7 @@ fun MediaItemMenu(
     }
 
     downloadState = getDownloadState(mediaItem.mediaId)
-    val isDownloaded = if (!isLocal) downloadedStateMedia(mediaItem.mediaId) else true
+    val isDownloaded = if (!isLocal) isDownloadedSong(mediaItem.mediaId) else true
 
     var artistsList by persistList<Artist?>("home/artists")
     var artistIds = remember { mutableListOf("") }
@@ -1077,40 +1098,26 @@ fun MediaItemMenu(
                         .padding(end = 12.dp)
                 ) {
                     SongItem(
+                        mediaItem = mediaItem,
                         thumbnailUrl = mediaItem.mediaMetadata.artworkUri.thumbnail(thumbnailSizePx)
                             ?.toString(),
-                        isDownloaded = isDownloaded,
                         onDownloadClick = {
                             binder?.cache?.removeResource(mediaItem.mediaId)
                             query {
-                                Database.insert(
-                                    Song(
-                                        id = mediaItem.mediaId,
-                                        title = mediaItem.mediaMetadata.title.toString(),
-                                        artistsText = mediaItem.mediaMetadata.artist.toString(),
-                                        thumbnailUrl = mediaItem.mediaMetadata.artworkUri.thumbnail(
-                                            thumbnailSizePx
-                                        ).toString(),
-                                        durationText = null
-                                    )
-                                )
+                                Database.resetFormatContentLength(mediaItem.mediaId)
                             }
                             if (!isLocal)
                                 manageDownload(
                                     context = context,
-                                    songId = mediaItem.mediaId,
-                                    songTitle = mediaItem.mediaMetadata.title.toString(),
+                                    mediaItem = mediaItem,
                                     downloadState = isDownloaded
                                 )
                         },
                         downloadState = downloadState,
-                        title = mediaItem.mediaMetadata.title.toString(),
-                        authors = mediaItem.mediaMetadata.artist.toString(),
-                        duration = null,
                         thumbnailSizeDp = thumbnailSizeDp,
                         modifier = Modifier
                             .weight(1f),
-                        mediaId = mediaItem.mediaId
+                        disableScrollingText = disableScrollingText
                     )
 
 

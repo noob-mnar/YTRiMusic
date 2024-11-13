@@ -54,9 +54,11 @@ import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.favoritesOverlay
 import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.asMediaItem
+import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.forcePlay
 import it.fast4x.rimusic.utils.getDownloadState
+import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.parentalControlEnabledKey
 import it.fast4x.rimusic.utils.rememberPreference
@@ -91,6 +93,7 @@ fun HistoryList(
     val thisMonday = today.with(DayOfWeek.MONDAY)
     val lastMonday = thisMonday.minusDays(7)
     val parentalControlEnabled by rememberPreference(parentalControlEnabledKey, false)
+    val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
     val events = Database.events()
         .map { events ->
@@ -215,30 +218,20 @@ fun HistoryList(
                             val isLocal by remember { derivedStateOf { event.song.asMediaItem.isLocal } }
                             downloadState = getDownloadState(event.song.asMediaItem.mediaId)
                             val isDownloaded =
-                                if (!isLocal) downloadedStateMedia(event.song.asMediaItem.mediaId) else true
+                                if (!isLocal) isDownloadedSong(event.song.asMediaItem.mediaId) else true
                             val checkedState = rememberSaveable { mutableStateOf(false) }
                             SongItem(
                                 song = event.song,
-                                isDownloaded = isDownloaded,
                                 onDownloadClick = {
                                     binder?.cache?.removeResource(event.song.asMediaItem.mediaId)
                                     query {
-                                        Database.insert(
-                                            Song(
-                                                id = event.song.asMediaItem.mediaId,
-                                                title = event.song.asMediaItem.mediaMetadata.title.toString(),
-                                                artistsText = event.song.asMediaItem.mediaMetadata.artist.toString(),
-                                                thumbnailUrl = event.song.thumbnailUrl,
-                                                durationText = null
-                                            )
-                                        )
+                                        Database.resetFormatContentLength(event.song.asMediaItem.mediaId)
                                     }
 
                                     if (!isLocal)
                                         manageDownload(
                                             context = context,
-                                            songId = event.song.asMediaItem.mediaId,
-                                            songTitle = event.song.asMediaItem.mediaMetadata.title.toString(),
+                                            mediaItem = event.song.asMediaItem,
                                             downloadState = isDownloaded
                                         )
                                 },
@@ -274,7 +267,8 @@ fun HistoryList(
                                                 NonQueuedMediaItemMenuLibrary(
                                                     navController = navController,
                                                     mediaItem = event.song.asMediaItem,
-                                                    onDismiss = menuState::hide
+                                                    onDismiss = menuState::hide,
+                                                    disableScrollingText = disableScrollingText
                                                 )
                                             }
                                         },
@@ -283,7 +277,8 @@ fun HistoryList(
                                         }
                                     )
                                     .background(color = colorPalette().background0)
-                                    .animateItemPlacement()
+                                    .animateItemPlacement(),
+                                disableScrollingText = disableScrollingText
                             )
                         /*
                         },

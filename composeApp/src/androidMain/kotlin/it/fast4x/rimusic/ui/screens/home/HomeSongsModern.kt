@@ -19,6 +19,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -83,7 +84,7 @@ import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongEntity
 import it.fast4x.rimusic.models.SongPlaylistMap
 import it.fast4x.rimusic.query
-import it.fast4x.rimusic.service.DownloadUtil
+import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.service.LOCAL_KEY_PREFIX
 import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.transaction
@@ -116,6 +117,7 @@ import it.fast4x.rimusic.utils.builtInPlaylistKey
 import it.fast4x.rimusic.utils.center
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.defaultFolderKey
+import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.durationTextToMillis
 import it.fast4x.rimusic.utils.enqueue
@@ -125,6 +127,7 @@ import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.hasPermission
 import it.fast4x.rimusic.utils.includeLocalSongsKey
 import it.fast4x.rimusic.utils.isCompositionLaunched
+import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.maxSongsInQueueKey
 import it.fast4x.rimusic.utils.onDeviceFolderSortByKey
@@ -189,17 +192,10 @@ fun HomeSongsModern(
     val thumbnailSizePx = thumbnailSizeDp.px
 
     val parentalControlEnabled by rememberPreference(parentalControlEnabledKey, false)
+    val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
     var items by persistList<SongEntity>("home/songs")
     var listMediaItems = remember { mutableListOf<MediaItem>() }
-
-    //var songsWithAlbum by persistList<SongWithAlbum>("home/songsWithAlbum")
-
-    /*
-    var filterDownloaded by remember {
-        mutableStateOf(false)
-    }
-     */
 
     var builtInPlaylist by rememberPreference(
         builtInPlaylistKey,
@@ -223,6 +219,7 @@ fun HomeSongsModern(
     )
     var topPlaylistPeriod by rememberPreference(topPlaylistPeriodKey, TopPlaylistPeriod.PastWeek)
 
+
     var scrollToNowPlaying by remember {
         mutableStateOf(false)
     }
@@ -230,6 +227,7 @@ fun HomeSongsModern(
     var nowPlayingItem by remember {
         mutableStateOf(-1)
     }
+
 
     /************ OnDeviceDev */
     val permission = if (Build.VERSION.SDK_INT >= 33) Manifest.permission.READ_MEDIA_AUDIO
@@ -320,7 +318,7 @@ fun HomeSongsModern(
             override val sortByState = deviceFolderSortState
         }
     }
-    val shuffle = remember {
+    val shuffle = remember(binder) {
         object: SongsShuffle {
             override val binder = binder
             override val context = context
@@ -352,7 +350,7 @@ fun HomeSongsModern(
         object: ImportSongsFromCSV {
             override val context = context
 
-            override fun onShortClick() = importLauncher.launch(arrayOf("text/csv"))
+            override fun onShortClick() = importLauncher.launch(arrayOf("text/csv", "text/comma-separated-values"))
         }
     }
     // START - Export songs
@@ -379,7 +377,7 @@ fun HomeSongsModern(
             }
         }
     }
-    val downloadAllDialog = remember {
+    val downloadAllDialog = remember(binder) {
         object: DownloadAllDialog {
             override val context = context
             override val binder = binder
@@ -395,7 +393,7 @@ fun HomeSongsModern(
                     listOf()
         }
     }
-    val deleteDownloadsDialog = remember {
+    val deleteDownloadsDialog = remember(binder) {
         object: DeleteDownloadsDialog {
             override val context = context
             override val binder = binder
@@ -436,6 +434,7 @@ fun HomeSongsModern(
                         binder?.downloadCache?.removeResource(it.song.id)
                         Database.delete(it.song)
                         Database.deleteSongFromPlaylists(it.song.id)
+                        Database.deleteFormat(it.song.id)
                     }
                     SmartMessage(context.resources.getString(R.string.deleted), context = context)
                 }
@@ -467,6 +466,8 @@ fun HomeSongsModern(
                         menuState.hide()
                         binder?.cache?.removeResource(it.song.id)
                         binder?.downloadCache?.removeResource(it.song.id)
+                        Database.resetFormatContentLength(it.song.id)
+                        Database.deleteFormat(it.song.id)
                         Database.incrementTotalPlayTimeMs(
                             it.song.id,
                             -it.song.totalPlayTimeMs
@@ -533,7 +534,7 @@ fun HomeSongsModern(
         }
         BuiltInPlaylist.Downloaded, BuiltInPlaylist.Favorites, BuiltInPlaylist.Offline, BuiltInPlaylist.Top -> {
 
-            LaunchedEffect(Unit, builtInPlaylist, sortBy, sortOrder, searchInput, topPlaylistPeriod) {
+            LaunchedEffect(Unit, builtInPlaylist, sortBy, sortOrder, searchInput, topPlaylistPeriod, binder) {
 
                 var songFlow: Flow<List<SongEntity>> = flowOf()
                 var dispatcher = Dispatchers.Default
@@ -557,7 +558,7 @@ fun HomeSongsModern(
                     }
                     BuiltInPlaylist.Downloaded -> {
 
-                        val downloads = DownloadUtil.downloads.value
+                        val downloads = MyDownloadHelper.downloads.value
 
                         songFlow = Database.listAllSongsAsFlow()
                         dispatcher = Dispatchers.IO
@@ -782,32 +783,34 @@ fun HomeSongsModern(
                     }
                 )
 
+
                 LaunchedEffect(scrollToNowPlaying) {
                     if (scrollToNowPlaying)
                         lazyListState.scrollToItem(nowPlayingItem, 1)
                     scrollToNowPlaying = false
                 }
 
-                if (builtInPlaylist == BuiltInPlaylist.Favorites)
-                    downloadAllDialog.ToolBarButton()
 
-                if (builtInPlaylist == BuiltInPlaylist.Favorites || builtInPlaylist == BuiltInPlaylist.Downloaded)
-                    deleteDownloadsDialog.Render()
 
-                TabToolBar.Toggleable(
-                    onIconId = R.drawable.eye,
-                    offIconId = R.drawable.eye_off,
-                    toggleCondition = showHiddenSongs != 0,
-                    onShortClick = {
-                        showHiddenSongs = if (showHiddenSongs == 0) -1 else 0
-                    },
-                    onLongClick = {
-                        SmartMessage(
-                            context.resources.getString(R.string.info_show_hide_hidden_songs),
-                            context = context
-                        )
-                    }
-                )
+                downloadAllDialog.ToolBarButton()
+
+                deleteDownloadsDialog.ToolBarButton()
+
+                if (builtInPlaylist == BuiltInPlaylist.All)
+                    TabToolBar.Toggleable(
+                        onIconId = R.drawable.eye,
+                        offIconId = R.drawable.eye_off,
+                        toggleCondition = showHiddenSongs != 0,
+                        onShortClick = {
+                            showHiddenSongs = if (showHiddenSongs == 0) -1 else 0
+                        },
+                        onLongClick = {
+                            SmartMessage(
+                                context.resources.getString(R.string.info_show_hide_hidden_songs),
+                                context = context
+                            )
+                        }
+                    )
 
                 shuffle.ToolBarButton()
 
@@ -819,8 +822,7 @@ fun HomeSongsModern(
                         // TODO: Add string to language pack
                         onLongClick = { SmartMessage( "Random sorting", context = context) }
                     )
-                else
-                    import.ToolBarButton()
+
 
                 TabToolBar.Icon( R.drawable.ellipsis_horizontal ) {
                     menuState.display {
@@ -914,36 +916,40 @@ fun HomeSongsModern(
                                     )
                                 }
                             },
-                            onExport = { exportToggleState.value = true }
+                            onExport = { exportToggleState.value = true },
+                            onImportFavorites = { import.onShortClick() },
+                            disableScrollingText = disableScrollingText
                         )
                     }
                 }
             }
+
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(horizontal = 12.dp)
+                    //.padding(vertical = 4.dp)
+                    .padding(bottom = 8.dp)
+                    .fillMaxWidth()
+            ) {
+                ButtonsRow(
+                    chips = buttonsList,
+                    currentValue = builtInPlaylist,
+                    onValueUpdate = { builtInPlaylist = it },
+                    modifier = Modifier.padding(end = 12.dp)
+                )
+            }
+
 
             // Sticky search bar
             search.SearchBar( this )
 
             LazyColumn(
                 state = lazyListState,
+                contentPadding = PaddingValues( bottom = Dimensions.bottomSpacer )
             ) {
-                item {
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .padding(horizontal = 12.dp)
-                            .padding(vertical = 4.dp)
-                            .fillMaxWidth()
-                    ) {
-                        ButtonsRow(
-                            chips = buttonsList,
-                            currentValue = builtInPlaylist,
-                            onValueUpdate = { builtInPlaylist = it },
-                            modifier = Modifier.padding(end = 12.dp)
-                        )
-                    }
-                }
-
                 if (builtInPlaylist == BuiltInPlaylist.OnDevice) {
                     if (!hasPermission) {
                         item(
@@ -1015,6 +1021,7 @@ fun HomeSongsModern(
                                                     currentFolderPath = currentFolderPath.removeSuffix("/").substringBeforeLast("/") + "/"
                                                 }
                                             ),
+                                        disableScrollingText = disableScrollingText
                                     )
                                 }
                             }
@@ -1039,7 +1046,8 @@ fun HomeSongsModern(
                                                                     .map { it.toSong().asMediaItem }
                                                                 binder?.player?.enqueue(allSongs, context)
                                                             },
-                                                            thumbnailSizeDp = thumbnailSizeDp
+                                                            thumbnailSizeDp = thumbnailSizeDp,
+                                                            disableScrollingText = disableScrollingText
                                                         )
                                                     };
                                                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -1054,6 +1062,7 @@ fun HomeSongsModern(
                                                             isSearchBarFocused = false
                                                 }
                                             ),
+                                        disableScrollingText = disableScrollingText
                                     )
                                 }
                             } else {
@@ -1081,7 +1090,6 @@ fun HomeSongsModern(
                             ) {
                                 SongItem(
                                     song = song.song,
-                                    isDownloaded = true,
                                     onDownloadClick = {
                                         // not necessary
                                     },
@@ -1118,7 +1126,8 @@ fun HomeSongsModern(
                                                     InHistoryMediaItemMenu(
                                                         navController = navController,
                                                         song = song.song,
-                                                        onDismiss = menuState::hide
+                                                        onDismiss = menuState::hide,
+                                                        disableScrollingText = disableScrollingText
                                                     )
                                                 }
                                                 hapticFeedback.performHapticFeedback(
@@ -1144,7 +1153,8 @@ fun HomeSongsModern(
                                         .animateItem(
                                             fadeInSpec = null,
                                             fadeOutSpec = null
-                                        )
+                                        ),
+                                    disableScrollingText = disableScrollingText
                                 )
                             }
                         }
@@ -1157,7 +1167,6 @@ fun HomeSongsModern(
                             items.filter { !it.song.title.startsWith(EXPLICIT_PREFIX) }.distinctBy { it.song.id }
                         else items.distinctBy { it.song.id },
                         key = { _, song -> song.song.id },
-                        //contentType = { _, song -> song },
                     ) { index, song ->
 
                         SwipeablePlaylistItem(
@@ -1169,29 +1178,19 @@ fun HomeSongsModern(
                             val isLocal by remember { derivedStateOf { song.song.asMediaItem.isLocal } }
                             downloadState.intValue = getDownloadState(song.song.asMediaItem.mediaId)
                             val isDownloaded =
-                                if (!isLocal) downloadedStateMedia(song.song.asMediaItem.mediaId) else true
+                                if (!isLocal) isDownloadedSong(song.song.asMediaItem.mediaId) else true
                             val checkedState = rememberSaveable { mutableStateOf(false) }
                             SongItem(
                                 song = song.song,
-                                isDownloaded = isDownloaded,
                                 onDownloadClick = {
                                     binder?.cache?.removeResource(song.song.asMediaItem.mediaId)
                                     query {
-                                        Database.insert(
-                                            Song(
-                                                id = song.song.asMediaItem.mediaId,
-                                                title = song.song.asMediaItem.mediaMetadata.title.toString(),
-                                                artistsText = song.song.asMediaItem.mediaMetadata.artist.toString(),
-                                                thumbnailUrl = song.song.thumbnailUrl,
-                                                durationText = null
-                                            )
-                                        )
+                                        Database.resetFormatContentLength(song.song.asMediaItem.mediaId)
                                     }
                                     if (!isLocal)
                                         manageDownload(
                                             context = context,
-                                            songId = song.song.id,
-                                            songTitle = song.song.title,
+                                            mediaItem = song.song.asMediaItem,
                                             downloadState = isDownloaded
                                         )
                                 },
@@ -1278,7 +1277,8 @@ fun HomeSongsModern(
                                                     onDeleteFromDatabase = {
                                                         deleteSongDialog.song = Optional.of( song )
                                                         deleteSongToggleState.value = true
-                                                    }
+                                                    },
+                                                    disableScrollingText = disableScrollingText
                                                 )
                                             }
                                             hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -1352,15 +1352,13 @@ fun HomeSongsModern(
                                             )
                                         }
                                     )
-                                    .animateItemPlacement()
+                                    .animateItemPlacement(),
+                                disableScrollingText = disableScrollingText
                             )
                         }
                     }
                 }
 
-                item(key = "bottom") {
-                    Spacer(modifier = Modifier.height(Dimensions.bottomSpacer))
-                }
             }
         }
 

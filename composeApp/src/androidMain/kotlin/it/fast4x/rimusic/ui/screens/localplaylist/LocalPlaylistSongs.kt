@@ -114,9 +114,12 @@ import it.fast4x.rimusic.utils.addToPipedPlaylist
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.autosyncKey
 import it.fast4x.rimusic.utils.center
+import it.fast4x.rimusic.utils.checkFileExists
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.completed
+import it.fast4x.rimusic.utils.deleteFileIfExists
 import it.fast4x.rimusic.utils.deletePipedPlaylist
+import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.durationTextToMillis
 import it.fast4x.rimusic.utils.enqueue
@@ -127,6 +130,7 @@ import it.fast4x.rimusic.utils.formatAsTime
 import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.getPipedSession
 import it.fast4x.rimusic.utils.getTitleMonthlyPlaylist
+import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isLandscape
 import it.fast4x.rimusic.utils.isPipedEnabledKey
 import it.fast4x.rimusic.utils.isRecommendationEnabledKey
@@ -138,6 +142,8 @@ import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.removeFromPipedPlaylist
 import it.fast4x.rimusic.utils.renamePipedPlaylist
 import it.fast4x.rimusic.utils.reorderInQueueEnabledKey
+import it.fast4x.rimusic.utils.resetFormatContentLength
+import it.fast4x.rimusic.utils.saveImageToInternalStorage
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.showFloatingIconKey
 import it.fast4x.rimusic.utils.songSortOrderKey
@@ -192,6 +198,7 @@ fun LocalPlaylistSongs(
     // Non-vital
     val parentalControlEnabled by rememberPreference(parentalControlEnabledKey, false)
     val isPipedEnabled by rememberPreference(isPipedEnabledKey, false)
+    val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
     val pipedSession = getPipedSession()
     var isRecommendationEnabled by rememberPreference(isRecommendationEnabledKey, false)
     var downloadState = remember { mutableIntStateOf( Download.STATE_STOPPED ) }
@@ -199,6 +206,7 @@ fun LocalPlaylistSongs(
     // Playlist non-vital
     val playlistName = remember { mutableStateOf( "" ) }
     var listMediaItems = remember { mutableListOf<MediaItem>() }
+    val thumbnailUrl = remember { mutableStateOf("") }
 
     LaunchedEffect( playlistPreview?.playlist?.name ) {
         playlistName.value =
@@ -211,6 +219,12 @@ fun LocalPlaylistSongs(
                         name.substringAfter( PINNED_PREFIX )
                             .substringAfter( PIPED_PREFIX )
                 } ?: "Unknown"
+
+        val thumbnailName = "thumbnail/playlist_${playlistId}"
+        val presentThumbnailUrl: String? = checkFileExists(context, thumbnailName)
+        if (presentThumbnailUrl != null) {
+            thumbnailUrl.value = presentThumbnailUrl
+        }
     }
 
     // Search states
@@ -412,6 +426,37 @@ fun LocalPlaylistSongs(
                     playlistSongs.map( SongEntity::asMediaItem )
                 else
                     emptyList()
+        }
+    }
+    val editThumbnailLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        // Callback is invoked after the user selects a media item or closes the
+        // photo picker.
+        if (uri != null) {
+            val thumbnailName = "playlist_${playlistPreview?.playlist?.id}"
+            val permaUri = saveImageToInternalStorage(context, uri, "thumbnail", thumbnailName)
+            thumbnailUrl.value = permaUri.toString()
+        } else {
+            SmartMessage(context.resources.getString(R.string.thumbnail_not_selected), context = context)
+        }
+    }
+    fun openEditThumbnailPicker() {
+        editThumbnailLauncher.launch("image/*")
+    }
+
+    fun resetThumbnail() {
+        if(thumbnailUrl.value == ""){
+            SmartMessage(context.resources.getString(R.string.no_thumbnail_present), context = context)
+            return
+        }
+        val thumbnailName = "thumbnail/playlist_${playlistPreview?.playlist?.id}"
+        val retVal = deleteFileIfExists(context, thumbnailName)
+        if(retVal == true){
+            SmartMessage(context.resources.getString(R.string.removed_thumbnail), context = context)
+            thumbnailUrl.value = ""
+        } else {
+            SmartMessage(context.resources.getString(R.string.failed_to_remove_thumbnail), context = context)
         }
     }
 
@@ -651,7 +696,9 @@ fun LocalPlaylistSongs(
                                 alternative = true,
                                 showName = false,
                                 modifier = Modifier
-                                    .padding(top = 14.dp)
+                                    .padding(top = 14.dp),
+                                disableScrollingText = disableScrollingText,
+                                thumbnailUrl = if (thumbnailUrl.value == "") null else thumbnailUrl.value
                             )
                         }
 
@@ -969,6 +1016,12 @@ fun LocalPlaylistSongs(
 
                                              */
                                             },
+                                            onEditThumbnail = {
+                                                openEditThumbnailPicker()
+                                            },
+                                            onResetThumbnail = {
+                                                resetThumbnail()
+                                            },
                                             showonListenToYT = !playlistPreview.playlist.browseId.isNullOrBlank(),
                                             onListenToYT = {
                                                 binder?.player?.pause()
@@ -985,7 +1038,8 @@ fun LocalPlaylistSongs(
                                             },
                                             onGoToPlaylist = {
                                                 navController.navigate("${NavRoutes.localPlaylist.name}/$it")
-                                            }
+                                            },
+                                            disableScrollingText = disableScrollingText
                                         )
                                     }
 
@@ -1069,15 +1123,12 @@ fun LocalPlaylistSongs(
                         val songRecommended =
                             relatedSongsRecommendationResult?.getOrNull()?.songs?.shuffled()
                                 ?.lastOrNull()
-                        val duration = songRecommended?.durationText
                         songRecommended?.asMediaItem?.let {
                             SongItem(
                                 song = it,
-                                duration = duration,
                                 isRecommended = true,
                                 thumbnailSizeDp = thumbnailSizeDp,
                                 thumbnailSizePx = thumbnailSizePx,
-                                isDownloaded = false,
                                 onDownloadClick = {},
                                 downloadState = Download.STATE_STOPPED,
                                 trailingContent = {},
@@ -1086,8 +1137,8 @@ fun LocalPlaylistSongs(
                                     .clickable {
                                         binder?.stopRadio()
                                         binder?.player?.forcePlay(it)
-                                    }
-
+                                    },
+                                disableScrollingText = disableScrollingText
                             )
                         }
                     }
@@ -1106,7 +1157,7 @@ fun LocalPlaylistSongs(
                         val isLocal by remember { derivedStateOf { song.asMediaItem.isLocal } }
                         downloadState.intValue = getDownloadState(song.asMediaItem.mediaId)
                         val isDownloaded =
-                            if (!isLocal) downloadedStateMedia(song.asMediaItem.mediaId) else true
+                            if (!isLocal) isDownloadedSong(song.asMediaItem.mediaId) else true
                         val checkedState = rememberSaveable { mutableStateOf(false) }
                         val positionInPlaylist: Int = index
 
@@ -1175,26 +1226,18 @@ fun LocalPlaylistSongs(
                         ) {
                             SongItem(
                                 song = song.song,
-                                isDownloaded = isDownloaded,
                                 onDownloadClick = {
                                     binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                    query {
-                                        Database.insert(
-                                            Song(
-                                                id = song.asMediaItem.mediaId,
-                                                title = song.asMediaItem.mediaMetadata.title.toString(),
-                                                artistsText = song.asMediaItem.mediaMetadata.artist.toString(),
-                                                thumbnailUrl = song.song.thumbnailUrl,
-                                                durationText = null
-                                            )
-                                        )
-                                    }
+
+                                    //query {
+                                    //    Database.resetFormatContentLength(song.asMediaItem.mediaId)
+                                    //}
+                                    resetFormatContentLength(song.asMediaItem.mediaId)
 
                                     if (!isLocal) {
                                         manageDownload(
                                             context = context,
-                                            songId = song.asMediaItem.mediaId,
-                                            songTitle = song.asMediaItem.mediaMetadata.title.toString(),
+                                            mediaItem = song.asMediaItem,
                                             downloadState = isDownloaded
                                         )
                                     }
@@ -1283,7 +1326,8 @@ fun LocalPlaylistSongs(
                                                     playlistId = playlistId,
                                                     positionInPlaylist = index,
                                                     song = song.song,
-                                                    onDismiss = menuState::hide
+                                                    onDismiss = menuState::hide,
+                                                    disableScrollingText = disableScrollingText
                                                 )
                                             }
                                             hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -1318,7 +1362,8 @@ fun LocalPlaylistSongs(
 
  */
                                     .background(color = colorPalette().background0)
-                                    .zIndex(2f)
+                                    .zIndex(2f),
+                                disableScrollingText = disableScrollingText
                             )
                         }
                     }

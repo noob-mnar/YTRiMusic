@@ -21,6 +21,12 @@ const val pipedApiBaseUrlKey = "pipedApiBaseUrl"
 const val pipedApiTokenKey = "pipedApiToken"
 const val discordPersonalAccessTokenKey = "DiscordPersonalAccessToken"
 
+const val ytVisitorDataKey = "ytVisitorData"
+const val ytCookieKey = "ytCookie"
+const val ytAccountNameKey = "ytAccountName"
+const val ytAccountEmailKey = "ytAccountEmail"
+const val ytAccountChannelHandleKey = "ytAccountChannelHandle"
+
 inline fun <reified T : Enum<T>> EncryptedSharedPreferences.getEnum(
     key: String,
     defaultValue: T
@@ -54,7 +60,11 @@ val Context.encryptedPreferences: SharedPreferences
              * (maybe this bug is only present on devices with high API levels anyway).
              */
             if (isAtLeastAndroid7) {
-                deleteSharedPreferences("secure_preferences")
+                runCatching {
+                    deleteSharedPreferences("secure_preferences")
+                }.onFailure {
+                    Timber.e(it, "Error while deleting encrypted preferences")
+                }
             }
             return getEncryptedSharedPreferencesResult().getOrThrow()
         }

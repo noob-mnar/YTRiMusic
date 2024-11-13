@@ -90,6 +90,7 @@ import it.fast4x.rimusic.utils.addNext
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.center
 import it.fast4x.rimusic.utils.color
+import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.durationTextToMillis
 import it.fast4x.rimusic.utils.enqueue
@@ -97,6 +98,7 @@ import it.fast4x.rimusic.utils.forcePlayAtIndex
 import it.fast4x.rimusic.utils.forcePlayFromBeginning
 import it.fast4x.rimusic.utils.formatAsTime
 import it.fast4x.rimusic.utils.getDownloadState
+import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isLandscape
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.medium
@@ -130,6 +132,7 @@ fun AlbumSongs(
     var album by persist<Album?>("album/$browseId")
 
     val parentalControlEnabled by rememberPreference(parentalControlEnabledKey, false)
+    val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
     LaunchedEffect(Unit) {
         Database.albumSongs(browseId).collect {
@@ -328,10 +331,12 @@ fun AlbumSongs(
                 if (songs.isNotEmpty() == true)
                     songs.forEach {
                         binder?.cache?.removeResource(it.asMediaItem.mediaId)
+                        query {
+                            Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                        }
                         manageDownload(
                             context = context,
-                            songId = it.asMediaItem.mediaId,
-                            songTitle = it.asMediaItem.mediaMetadata.title.toString(),
+                            mediaItem = it.asMediaItem,
                             downloadState = true
                         )
                     }
@@ -350,20 +355,11 @@ fun AlbumSongs(
                     songs.forEach {
                         binder?.cache?.removeResource(it.asMediaItem.mediaId)
                         query {
-                            Database.insert(
-                                Song(
-                                    id = it.asMediaItem.mediaId,
-                                    title = it.asMediaItem.mediaMetadata.title.toString(),
-                                    artistsText = it.asMediaItem.mediaMetadata.artist.toString(),
-                                    thumbnailUrl = it.thumbnailUrl,
-                                    durationText = null
-                                )
-                            )
+                            Database.resetFormatContentLength(it.asMediaItem.mediaId)
                         }
                         manageDownload(
                             context = context,
-                            songId = it.asMediaItem.mediaId,
-                            songTitle = it.asMediaItem.mediaMetadata.title.toString(),
+                            mediaItem = it.asMediaItem,
                             downloadState = false
                         )
                     }
@@ -637,6 +633,7 @@ fun AlbumSongs(
                                                             selectItems = false
                                                         }
                                                     },
+                                                    disableScrollingText = disableScrollingText
                                                 )
                                             }
                                         }
@@ -681,13 +678,13 @@ fun AlbumSongs(
                         }
                     }
                         itemsIndexed(
-                            items = songs,
+                            items = songs.distinctBy { it.id },
                             key = { _, song -> song.id }
                         ) { index, song ->
                             val isLocal by remember { derivedStateOf { song.asMediaItem.isLocal } }
                             downloadState = getDownloadState(song.asMediaItem.mediaId)
                             val isDownloaded =
-                                if (!isLocal) downloadedStateMedia(song.asMediaItem.mediaId) else true
+                                if (!isLocal) isDownloadedSong(song.asMediaItem.mediaId) else true
                             val checkedState = rememberSaveable { mutableStateOf(false) }
                             SwipeablePlaylistItem(
                                 mediaItem = song.asMediaItem,
@@ -696,32 +693,22 @@ fun AlbumSongs(
                                 }
                             ) {
                                 SongItem(
-                                    title = song.title,
-                                    isDownloaded = isDownloaded,
+                                    mediaItem = song.asMediaItem,
                                     downloadState = downloadState,
                                     onDownloadClick = {
                                         binder?.cache?.removeResource(song.asMediaItem.mediaId)
                                         query {
-                                            Database.insert(
-                                                Song(
-                                                    id = song.asMediaItem.mediaId,
-                                                    title = song.asMediaItem.mediaMetadata.title.toString(),
-                                                    artistsText = song.asMediaItem.mediaMetadata.artist.toString(),
-                                                    thumbnailUrl = song.thumbnailUrl,
-                                                    durationText = null
-                                                )
-                                            )
+                                            Database.resetFormatContentLength(song.asMediaItem.mediaId)
                                         }
                                         if (!isLocal)
                                             manageDownload(
                                                 context = context,
-                                                songId = song.asMediaItem.mediaId,
-                                                songTitle = song.asMediaItem.mediaMetadata.title.toString(),
+                                                mediaItem = song.asMediaItem,
                                                 downloadState = isDownloaded
                                             )
                                     },
-                                    authors = song.artistsText,
-                                    duration = song.durationText,
+                                    //authors = song.artistsText,
+                                    //duration = song.durationText,
                                     thumbnailSizeDp = thumbnailSizeDp,
                                     thumbnailContent = {
                                         /*
@@ -756,6 +743,7 @@ fun AlbumSongs(
                                                         navController = navController,
                                                         onDismiss = menuState::hide,
                                                         mediaItem = song.asMediaItem,
+                                                        disableScrollingText = disableScrollingText
                                                     )
                                                 }
                                             },
@@ -787,7 +775,8 @@ fun AlbumSongs(
                                             )
                                         else checkedState.value = false
                                     },
-                                    mediaId = song.asMediaItem.mediaId
+                                    //mediaId = song.asMediaItem.mediaId,
+                                    disableScrollingText = disableScrollingText
                                 )
                             }
                         }

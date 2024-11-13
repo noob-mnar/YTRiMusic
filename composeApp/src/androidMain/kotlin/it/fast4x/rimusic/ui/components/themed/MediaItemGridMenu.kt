@@ -75,11 +75,12 @@ import it.fast4x.rimusic.ui.styling.favoritesIcon
 import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.utils.addNext
-import it.fast4x.rimusic.utils.downloadedStateMedia
+import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.forcePlay
 import it.fast4x.rimusic.utils.formatAsDuration
 import it.fast4x.rimusic.utils.getDownloadState
+import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.mediaItemToggleLike
 import it.fast4x.rimusic.utils.playlistSortByKey
@@ -105,6 +106,7 @@ fun NonQueuedMediaItemGridMenu(
     onHideFromDatabase: (() -> Unit)? = null,
     onRemoveFromQuickPicks: (() -> Unit)? = null,
     onDownload: (() -> Unit)? = null,
+    disableScrollingText: Boolean
 ) {
     val binder = LocalPlayerServiceBinder.current
     val context = LocalContext.current
@@ -129,7 +131,8 @@ fun NonQueuedMediaItemGridMenu(
         onRemoveFromPlaylist = onRemoveFromPlaylist,
         onHideFromDatabase = onHideFromDatabase,
         onRemoveFromQuickPicks = onRemoveFromQuickPicks,
-        modifier = modifier
+        modifier = modifier,
+        disableScrollingText = disableScrollingText
     )
 }
 
@@ -153,6 +156,7 @@ fun BaseMediaItemGridMenu(
     onClosePlayer: (() -> Unit)? = null,
     onGoToPlaylist: ((Long) -> Unit)? = null,
     onAddToPreferites: (() -> Unit)? = null,
+    disableScrollingText: Boolean
 ) {
     //val context = LocalContext.current
 
@@ -194,7 +198,7 @@ fun BaseMediaItemGridMenu(
             if (onClosePlayer != null) {
                 onClosePlayer()
             }
-        }, //artistRoute::global,
+        },
         /*
         onShare = {
             val sendIntent = Intent().apply {
@@ -213,7 +217,8 @@ fun BaseMediaItemGridMenu(
         onGoToPlaylist = {
             navController.navigate(route = "${NavRoutes.localPlaylist.name}/$it")
         },
-        modifier = modifier
+        modifier = modifier,
+        disableScrollingText = disableScrollingText
     )
 }
 
@@ -224,8 +229,8 @@ fun MiniMediaItemGridMenu(
     mediaItem: MediaItem,
     onGoToPlaylist: ((Long) -> Unit)? = null,
     onAddToPreferites: (() -> Unit)? = null,
-
     modifier: Modifier = Modifier,
+    disableScrollingText: Boolean
 ) {
 
     MediaItemGridMenu(
@@ -252,7 +257,8 @@ fun MiniMediaItemGridMenu(
             }
         },
         onAddToPreferites = onAddToPreferites,
-        modifier = modifier
+        modifier = modifier,
+        disableScrollingText = disableScrollingText
     )
 }
 
@@ -279,7 +285,8 @@ fun MediaItemGridMenu (
     onGoToAlbum: ((String) -> Unit)? = null,
     onGoToArtist: ((String) -> Unit)? = null,
     onRemoveFromQuickPicks: (() -> Unit)? = null,
-    onGoToPlaylist: ((Long) -> Unit)?
+    onGoToPlaylist: ((Long) -> Unit)?,
+    disableScrollingText: Boolean
 ) {
     val binder = LocalPlayerServiceBinder.current
     val uriHandler = LocalUriHandler.current
@@ -302,7 +309,7 @@ fun MediaItemGridMenu (
     }
 
     downloadState = getDownloadState(mediaItem.mediaId)
-    val isDownloaded = if (!isLocal) downloadedStateMedia(mediaItem.mediaId) else true
+    val isDownloaded = if (!isLocal) isDownloadedSong(mediaItem.mediaId) else true
     val thumbnailSizeDp = Dimensions.thumbnails.song + 20.dp
     val thumbnailSizePx = thumbnailSizeDp.px
     val thumbnailArtistSizeDp = Dimensions.thumbnails.song + 10.dp
@@ -392,40 +399,26 @@ fun MediaItemGridMenu (
                 .padding(end = 12.dp)
         ) {
             SongItem(
+                mediaItem = mediaItem,
                 thumbnailUrl = mediaItem.mediaMetadata.artworkUri.thumbnail(thumbnailSizePx)
                     ?.toString(),
-                isDownloaded = isDownloaded,
                 onDownloadClick = {
                     binder?.cache?.removeResource(mediaItem.mediaId)
                     query {
-                        Database.insert(
-                            Song(
-                                id = mediaItem.mediaId,
-                                title = mediaItem.mediaMetadata.title.toString(),
-                                artistsText = mediaItem.mediaMetadata.artist.toString(),
-                                thumbnailUrl = mediaItem.mediaMetadata.artworkUri.thumbnail(
-                                    thumbnailSizePx
-                                ).toString(),
-                                durationText = null
-                            )
-                        )
+                        Database.resetFormatContentLength(mediaItem.mediaId)
                     }
                     if (!isLocal)
                         manageDownload(
                             context = context,
-                            songId = mediaItem.mediaId,
-                            songTitle = mediaItem.mediaMetadata.title.toString(),
+                            mediaItem = mediaItem,
                             downloadState = isDownloaded
                         )
                 },
                 downloadState = downloadState,
-                title = mediaItem.mediaMetadata.title.toString(),
-                authors = mediaItem.mediaMetadata.artist.toString(),
-                duration = null,
                 thumbnailSizeDp = thumbnailSizeDp,
                 modifier = Modifier
                     .weight(1f),
-                mediaId = mediaItem.mediaId
+                disableScrollingText = disableScrollingText
             )
 
 

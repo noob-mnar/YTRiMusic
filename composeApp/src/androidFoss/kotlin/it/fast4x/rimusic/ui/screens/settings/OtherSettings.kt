@@ -42,9 +42,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.password
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.media3.common.util.UnstableApi
 import androidx.navigation.compose.rememberNavController
 import io.ktor.http.Url
 import it.fast4x.compose.persist.persistList
+import it.fast4x.innertube.utils.parseCookieString
 import it.fast4x.piped.models.Instance
 import it.fast4x.piped.Piped
 
@@ -55,7 +57,8 @@ import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.enums.ValidationType
 import it.fast4x.rimusic.extensions.discord.DiscordLoginAndGetToken
-import it.fast4x.rimusic.service.PlayerMediaBrowserService
+import it.fast4x.rimusic.extensions.youtubelogin.YouTubeLogin
+import it.fast4x.rimusic.service.modern.PlayerServiceModern
 import it.fast4x.rimusic.ui.components.CustomModalBottomSheet
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.themed.DefaultDialog
@@ -71,6 +74,7 @@ import it.fast4x.rimusic.utils.TextCopyToClipboard
 import it.fast4x.rimusic.utils.checkUpdateStateKey
 import it.fast4x.rimusic.utils.defaultFolderKey
 import it.fast4x.rimusic.utils.discordPersonalAccessTokenKey
+import it.fast4x.rimusic.utils.enableYouTubeLoginKey
 import it.fast4x.rimusic.utils.extraspaceKey
 import it.fast4x.rimusic.utils.isAtLeastAndroid10
 import it.fast4x.rimusic.utils.isAtLeastAndroid12
@@ -97,13 +101,22 @@ import it.fast4x.rimusic.utils.proxyModeKey
 import it.fast4x.rimusic.utils.proxyPortKey
 import it.fast4x.rimusic.utils.rememberEncryptedPreference
 import it.fast4x.rimusic.utils.rememberPreference
+import it.fast4x.rimusic.utils.restartActivityKey
 import it.fast4x.rimusic.utils.showFoldersOnDeviceKey
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
+import it.fast4x.rimusic.utils.ytAccountChannelHandleKey
+import it.fast4x.rimusic.utils.ytAccountEmailKey
+import it.fast4x.rimusic.utils.ytAccountNameKey
+import it.fast4x.rimusic.utils.ytCookieKey
+import it.fast4x.rimusic.utils.ytVisitorDataKey
 import kotlinx.coroutines.launch
+import me.knighthat.colorPalette
+import me.knighthat.thumbnailShape
 import timber.log.Timber
 import java.io.File
 import java.net.Proxy
 
+@androidx.annotation.OptIn(UnstableApi::class)
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("BatteryLife")
 @ExperimentalAnimationApi
@@ -117,7 +130,7 @@ fun OtherSettings() {
     )
 
     var isAndroidAutoEnabled by remember {
-        val component = ComponentName(context, PlayerMediaBrowserService::class.java)
+        val component = ComponentName(context, PlayerServiceModern::class.java)
         val disabledFlag = PackageManager.COMPONENT_ENABLED_STATE_DISABLED
         val enabledFlag = PackageManager.COMPONENT_ENABLED_STATE_ENABLED
 
@@ -136,7 +149,7 @@ fun OtherSettings() {
         )
     }
 
-    var isInvincibilityEnabled by rememberPreference(isInvincibilityEnabledKey, false)
+    //var isInvincibilityEnabled by rememberPreference(isInvincibilityEnabledKey, false)
 
     var isIgnoringBatteryOptimizations by remember {
         mutableStateOf(context.isIgnoringBatteryOptimizations)
@@ -158,7 +171,10 @@ fun OtherSettings() {
 
     var checkUpdateState by rememberPreference(checkUpdateStateKey, CheckUpdateState.Disabled)
 
-    val navigationBarPosition by rememberPreference(navigationBarPositionKey, NavigationBarPosition.Bottom)
+    val navigationBarPosition by rememberPreference(
+        navigationBarPositionKey,
+        NavigationBarPosition.Bottom
+    )
 
     var showFolders by rememberPreference(showFoldersOnDeviceKey, true)
 
@@ -174,7 +190,9 @@ fun OtherSettings() {
     var parentalControlEnabled by rememberPreference(parentalControlEnabledKey, false)
     var logDebugEnabled by rememberPreference(logDebugEnabledKey, false)
 
+    var restartActivity by rememberPreference(restartActivityKey, false)
 
+    var extraspace by rememberPreference(extraspaceKey, false)
 
     Column(
         modifier = Modifier
@@ -189,14 +207,14 @@ fun OtherSettings() {
                 else Dimensions.contentWidthRightBar
             )
             .verticalScroll(rememberScrollState())
-            /*
-            .padding(
-                LocalPlayerAwareWindowInsets.current
-                    .only(WindowInsetsSides.Vertical + WindowInsetsSides.End)
-                    .asPaddingValues()
-            )
+        /*
+        .padding(
+            LocalPlayerAwareWindowInsets.current
+                .only(WindowInsetsSides.Vertical + WindowInsetsSides.End)
+                .asPaddingValues()
+        )
 
-             */
+         */
     ) {
         HeaderWithIcon(
             title = stringResource(R.string.tab_miscellaneous),
@@ -215,7 +233,11 @@ fun OtherSettings() {
                 onDismiss = { checkUpdateNow = false },
                 updateAvailable = {
                     if (!it)
-                        SmartMessage(context.resources.getString(R.string.info_no_update_available), type = PopupType.Info, context = context)
+                        SmartMessage(
+                            context.resources.getString(R.string.info_no_update_available),
+                            type = PopupType.Info,
+                            context = context
+                        )
                 }
             )
 
@@ -224,7 +246,7 @@ fun OtherSettings() {
             selectedValue = checkUpdateState,
             onValueSelected = { checkUpdateState = it },
             valueText = {
-                when(it) {
+                when (it) {
                     CheckUpdateState.Disabled -> stringResource(R.string.vt_disabled)
                     CheckUpdateState.Enabled -> stringResource(R.string.enabled)
                     CheckUpdateState.Ask -> stringResource(R.string.ask)
@@ -251,12 +273,116 @@ fun OtherSettings() {
             }
         }
 
-        var extraspace by rememberPreference(extraspaceKey, false)
+
+        // rememberEncryptedPreference only works correct with API 24 and up
+
+        /****** YOUTUBE LOGIN ******/
+
+        var isYouTubeLoginEnabled by rememberPreference(enableYouTubeLoginKey, false)
+        var loginYouTube by remember { mutableStateOf(false) }
+        var visitorData by rememberEncryptedPreference(key = ytVisitorDataKey, defaultValue = "")
+        var cookie by rememberEncryptedPreference(key = ytCookieKey, defaultValue = "")
+        var accountName by rememberEncryptedPreference(key = ytAccountNameKey, defaultValue = "")
+        var accountEmail by rememberEncryptedPreference(key = ytAccountEmailKey, defaultValue = "")
+        var accountChannelHandle by rememberEncryptedPreference(
+            key = ytAccountChannelHandleKey,
+            defaultValue = ""
+        )
+        val isLoggedIn = remember(cookie) {
+            "SAPISID" in parseCookieString(cookie)
+        }
+
+        SettingsGroupSpacer()
+        SettingsEntryGroupText(title = "YOUTUBE MUSIC")
+
+        SwitchSettingEntry(
+            title = "Enable YouTube Music Login",
+            text = "",
+            isChecked = isYouTubeLoginEnabled,
+            onCheckedChange = { isYouTubeLoginEnabled = it }
+        )
+
+        AnimatedVisibility(visible = isYouTubeLoginEnabled) {
+            Column(
+                modifier = Modifier.padding(start = 25.dp)
+            ) {
+                if (isAtLeastAndroid7) {
+                    Column {
+                        ButtonBarSettingEntry(
+                            isEnabled = true,
+                            title = if (isLoggedIn) "Disconnect" else "Connect",
+                            text = if (isLoggedIn) "$accountName ${accountChannelHandle}" else "",
+                            icon = R.drawable.logo_youtube,
+                            iconColor = colorPalette().text,
+                            onClick = {
+                                if (isLoggedIn) {
+                                    cookie = ""
+                                    accountName = ""
+                                    accountChannelHandle = ""
+                                    accountEmail = ""
+                                    visitorData = ""
+                                    loginYouTube = false
+                                } else
+                                    loginYouTube = true
+                            }
+                        )
+                        /*
+                        ImportantSettingsDescription(
+                            text = "You need to log in to listen the songs online"
+                        )
+                         */
+                        SettingsDescription(text = stringResource(R.string.restarting_rimusic_is_required))
+
+                        CustomModalBottomSheet(
+                            showSheet = loginYouTube,
+                            onDismissRequest = {
+                                SmartMessage(
+                                    "Restart RiMusic, please",
+                                    type = PopupType.Info,
+                                    context = context
+                                )
+                                loginYouTube = false
+                                restartActivity = !restartActivity
+                            },
+                            containerColor = colorPalette().background0,
+                            contentColor = colorPalette().background0,
+                            modifier = Modifier.fillMaxWidth(),
+                            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                            dragHandle = {
+                                Surface(
+                                    modifier = Modifier.padding(vertical = 0.dp),
+                                    color = colorPalette().background0,
+                                    shape = thumbnailShape()
+                                ) {}
+                            },
+                            shape = thumbnailRoundness.shape()
+                        ) {
+                            YouTubeLogin(
+                                onLogin = { success ->
+                                    if (success) {
+                                        loginYouTube = false
+                                        SmartMessage(
+                                            "Login successful, restart RiMusic",
+                                            type = PopupType.Info,
+                                            context = context
+                                        )
+                                        restartActivity = !restartActivity
+                                    }
+                                }
+                            )
+                        }
+                    }
+
+                }
+            }
+        }
+
+        /****** YOUTUBE LOGIN ******/
 
         /****** PIPED ******/
 
         // rememberEncryptedPreference only works correct with API 24 and up
-        if(isAtLeastAndroid7){
+        if (isAtLeastAndroid7) {
             var isPipedEnabled by rememberPreference(isPipedEnabledKey, false)
             var isPipedCustomEnabled by rememberPreference(isPipedCustomEnabledKey, false)
             var pipedUsername by rememberEncryptedPreference(pipedUsernameKey, "")
@@ -271,7 +397,11 @@ fun OtherSettings() {
             var noInstances by rememberSaveable { mutableStateOf(false) }
             var executeLogin by rememberSaveable { mutableStateOf(false) }
             var showInstances by rememberSaveable { mutableStateOf(false) }
-            var session by rememberSaveable { mutableStateOf<Result<it.fast4x.piped.models.Session>?>(null) }
+            var session by rememberSaveable {
+                mutableStateOf<Result<it.fast4x.piped.models.Session>?>(
+                    null
+                )
+            }
 
             val menuState = LocalMenuState.current
             val coroutineScope = rememberCoroutineScope()
@@ -311,7 +441,11 @@ fun OtherSettings() {
                         )?.onFailure {
                             Timber.e("Failed piped login ${it.stackTraceToString()}")
                             isLoading = false
-                            SmartMessage("Piped login failed", type = PopupType.Error, context = context)
+                            SmartMessage(
+                                "Piped login failed",
+                                type = PopupType.Error,
+                                context = context
+                            )
                             loadInstances = false
                             session = null
                             executeLogin = false
@@ -319,7 +453,11 @@ fun OtherSettings() {
                         if (session?.isSuccess == false)
                             return@launch
 
-                        SmartMessage("Piped login successful", type = PopupType.Success, context = context)
+                        SmartMessage(
+                            "Piped login successful",
+                            type = PopupType.Success,
+                            context = context
+                        )
                         Timber.i("Piped login successful")
 
                         session.let {
@@ -451,7 +589,9 @@ fun OtherSettings() {
                         title = if (pipedApiToken.isNotEmpty()) stringResource(R.string.piped_disconnect) else stringResource(
                             R.string.piped_connect
                         ),
-                        text = if (pipedApiToken.isNotEmpty()) stringResource(R.string.piped_connected_to_s).format(pipedInstanceName) else "",
+                        text = if (pipedApiToken.isNotEmpty()) stringResource(R.string.piped_connected_to_s).format(
+                            pipedInstanceName
+                        ) else "",
                         icon = R.drawable.piped_logo,
                         iconColor = colorPalette.red,
                         onClick = {
@@ -471,10 +611,13 @@ fun OtherSettings() {
         /****** DISCORD ******/
 
         // rememberEncryptedPreference only works correct with API 24 and up
-        if(isAtLeastAndroid7){
+        if (isAtLeastAndroid7) {
             var isDiscordPresenceEnabled by rememberPreference(isDiscordPresenceEnabledKey, false)
             var loginDiscord by remember { mutableStateOf(false) }
-            var discordPersonalAccessToken by rememberEncryptedPreference(key = discordPersonalAccessTokenKey, defaultValue = "")
+            var discordPersonalAccessToken by rememberEncryptedPreference(
+                key = discordPersonalAccessTokenKey,
+                defaultValue = ""
+            )
             SettingsGroupSpacer()
             SettingsEntryGroupText(title = stringResource(R.string.social_discord))
             SwitchSettingEntry(
@@ -645,18 +788,24 @@ fun OtherSettings() {
                             Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
                         )
                     } catch (e: ActivityNotFoundException) {
-                        SmartMessage("$msgNoBatteryOptim RiMusic", type = PopupType.Info, context = context)
+                        SmartMessage(
+                            "$msgNoBatteryOptim RiMusic",
+                            type = PopupType.Info,
+                            context = context
+                        )
                     }
                 }
             }
         )
 
+        /*
         SwitchSettingEntry(
             title = stringResource(R.string.invincible_service),
             text = stringResource(R.string.turning_off_battery_optimizations_is_not_enough),
             isChecked = isInvincibilityEnabled,
             onCheckedChange = { isInvincibilityEnabled = it }
         )
+         */
 
         SettingsGroupSpacer()
 
@@ -726,11 +875,11 @@ fun OtherSettings() {
             onCheckedChange = {
                 logDebugEnabled = it
                 if (!it) {
-                    val file = File(context.filesDir.resolve("logs"),"RiMusic_log.txt")
+                    val file = File(context.filesDir.resolve("logs"), "RiMusic_log.txt")
                     if (file.exists())
                         file.delete()
 
-                    val filec = File(context.filesDir.resolve("logs"),"RiMusic_crash_log.txt")
+                    val filec = File(context.filesDir.resolve("logs"), "RiMusic_crash_log.txt")
                     if (filec.exists())
                         filec.delete()
 
@@ -749,7 +898,7 @@ fun OtherSettings() {
             text = "",
             icon = R.drawable.copy,
             onClick = {
-                val file = File(context.filesDir.resolve("logs"),"RiMusic_log.txt")
+                val file = File(context.filesDir.resolve("logs"), "RiMusic_log.txt")
                 if (file.exists()) {
                     text = file.readText()
                     copyToClipboard = true
@@ -763,7 +912,7 @@ fun OtherSettings() {
             text = "",
             icon = R.drawable.copy,
             onClick = {
-                val file = File(context.filesDir.resolve("logs"),"RiMusic_crash_log.txt")
+                val file = File(context.filesDir.resolve("logs"), "RiMusic_crash_log.txt")
                 if (file.exists()) {
                     text = file.readText()
                     copyToClipboard = true

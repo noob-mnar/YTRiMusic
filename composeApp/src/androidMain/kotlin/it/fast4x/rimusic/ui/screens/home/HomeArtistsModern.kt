@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -57,6 +58,7 @@ import it.fast4x.rimusic.ui.items.ArtistItem
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.utils.artistSortByKey
 import it.fast4x.rimusic.utils.artistSortOrderKey
+import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.showFloatingIconKey
 import kotlinx.coroutines.flow.Flow
@@ -97,6 +99,9 @@ fun HomeArtistsModern(
     // Sort states
     val sortBy = rememberPreference(artistSortByKey, ArtistSortBy.DateAdded)
     val sortOrder = rememberPreference(artistSortOrderKey, SortOrder.Descending)
+
+    val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
+
     // Size state
     val sizeState = Preference.remember( HOME_ARTIST_ITEM_SIZE )
     // Randomizer states
@@ -137,7 +142,7 @@ fun HomeArtistsModern(
             override fun onClick(item: Artist) = onArtistClick(item)
         }
     }
-    val shuffle = remember {
+    val shuffle = remember(binder) {
         object: SongsShuffle{
             override val binder = binder
             override val context = context
@@ -206,10 +211,9 @@ fun HomeArtistsModern(
             LazyVerticalGrid(
                 state = lazyGridState,
                 columns = GridCells.Adaptive( itemSize.sizeState.value.dp ),
-                //contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
-                modifier = Modifier
-                    .background(colorPalette().background0)
-                    .fillMaxSize()
+                modifier = Modifier.background( colorPalette().background0 )
+                                   .fillMaxSize(),
+                contentPadding = PaddingValues( bottom = Dimensions.bottomSpacer )
             ) {
                 items(items = items, key = Artist::id) { artist ->
                     ArtistItem(
@@ -226,15 +230,9 @@ fun HomeArtistsModern(
                                                        isSearchBarFocused = false
 
                                                onArtistClick( artist )
-                                           })
+                                           }),
+                        disableScrollingText = disableScrollingText
                     )
-                }
-                item(
-                    key = "footer",
-                    contentType = 0,
-                    span = { GridItemSpan(maxLineSpan) }
-                ) {
-                    Spacer(modifier = Modifier.height(Dimensions.bottomSpacer))
                 }
             }
         }

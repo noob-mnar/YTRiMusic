@@ -17,6 +17,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.lifecycle.Lifecycle
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
 import it.fast4x.compose.persist.PersistMapCleanup
@@ -48,6 +49,10 @@ import it.fast4x.rimusic.utils.preferences
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.showSearchTabKey
 import it.fast4x.rimusic.utils.showStatsInNavbarKey
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import me.knighthat.Skeleton
 import kotlin.system.exitProcess
 
@@ -75,8 +80,8 @@ fun HomeScreen(
     val saveableStateHolder = rememberSaveableStateHolder()
 
     val preferences = LocalContext.current.preferences
-    val showSearchTab by rememberPreference(showSearchTabKey, false)
-    val showStatsInNavbar by rememberPreference(showStatsInNavbarKey, false)
+    //val showSearchTab by rememberPreference(showSearchTabKey, false)
+    //val showStatsInNavbar by rememberPreference(showStatsInNavbarKey, false)
     val enableQuickPicksPage by rememberPreference(enableQuickPicksPageKey, true)
 
     PersistMapCleanup("home/")
@@ -138,28 +143,22 @@ fun HomeScreen(
                     when (currentTabIndex) {
                         0 -> QuickPicksModern(
                             onAlbumClick = {
-                                //albumRoute(it)
                                 navController.navigate(route = "${NavRoutes.album.name}/$it")
                             },
                             onArtistClick = {
-                                //artistRoute(it)
                                 navController.navigate(route = "${NavRoutes.artist.name}/$it")
                             },
                             onPlaylistClick = {
-                                //playlistRoute(it)
                                 navController.navigate(route = "${NavRoutes.playlist.name}/$it")
                             },
                             onSearchClick = {
-                                //searchRoute("")
                                 navController.navigate(NavRoutes.search.name)
                             },
                             onMoodClick = { mood ->
-                                //moodRoute(mood.toUiMood())
                                 navController.currentBackStackEntry?.savedStateHandle?.set("mood", mood.toUiMood())
                                 navController.navigate(NavRoutes.mood.name)
                             },
                             onSettingsClick = {
-                                //settingsRoute()
                                 navController.navigate(NavRoutes.settings.name)
                             },
                             navController = navController
@@ -180,7 +179,6 @@ fun HomeScreen(
 
                         2 -> HomeArtistsModern(
                             onArtistClick = {
-                                //artistRoute(it.id)
                                 navController.navigate(route = "${NavRoutes.artist.name}/${it.id}")
                             },
                             onSearchClick = {
@@ -253,6 +251,14 @@ fun HomeScreen(
     val context = LocalContext.current
     var confirmCount by remember { mutableIntStateOf( 0 ) }
     BackHandler {
+        // Prevent this from being applied when user is not on HomeScreen
+        if( NavRoutes.home.isNotHere( navController ) )  {
+            if ( navController.currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED )
+                navController.popBackStack()
+
+            return@BackHandler
+        }
+
         if( confirmCount == 0 ) {
             SmartMessage(
                 // TODO: add this string to xml
@@ -260,6 +266,12 @@ fun HomeScreen(
                 context = context
             )
             confirmCount++
+
+            // Reset confirmCount after 5s
+            CoroutineScope( Dispatchers.Default ).launch {
+                delay( 5000L )
+                confirmCount = 0
+            }
         } else {
             val activity = context as? Activity
             activity?.finishAffinity()

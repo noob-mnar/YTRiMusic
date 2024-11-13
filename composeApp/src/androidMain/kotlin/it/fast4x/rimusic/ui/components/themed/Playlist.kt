@@ -26,7 +26,9 @@ fun Playlist(
     thumbnailSizeDp: Dp,
     modifier: Modifier = Modifier,
     alternative: Boolean = false,
-    showName: Boolean = true
+    showName: Boolean = true,
+    disableScrollingText: Boolean,
+    thumbnailUrl: String? = null,
 ) {
     var songs by persistList<Song>("playlist${playlist.playlist.id}/songsThumbnails")
     LaunchedEffect(playlist.playlist.id) {
@@ -40,7 +42,15 @@ fun Playlist(
 
     PlaylistItem(
         thumbnailContent = {
-            if (thumbnails.toSet().size == 1) {
+            if (thumbnailUrl != null) {
+                AsyncImage(
+                    model = thumbnailUrl.thumbnail(thumbnailSizePx),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                )
+            } else if (thumbnails.toSet().size == 1) {
                 AsyncImage(
                     model = thumbnails.first().thumbnail(thumbnailSizePx),
                     contentDescription = null,
@@ -76,6 +86,7 @@ fun Playlist(
         thumbnailSizeDp = thumbnailSizeDp,
         modifier = modifier,
         alternative = alternative,
-        showName = showName
+        showName = showName,
+        disableScrollingText = disableScrollingText
     )
 }

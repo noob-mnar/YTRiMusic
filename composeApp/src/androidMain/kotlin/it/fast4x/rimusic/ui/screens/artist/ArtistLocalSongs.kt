@@ -49,11 +49,13 @@ import it.fast4x.rimusic.ui.items.SongItemPlaceholder
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.asMediaItem
+import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.forcePlayAtIndex
 import it.fast4x.rimusic.utils.forcePlayFromBeginning
 import it.fast4x.rimusic.utils.getDownloadState
+import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.showFloatingIconKey
@@ -83,6 +85,8 @@ fun ArtistLocalSongs(
     }
 
     val context = LocalContext.current
+
+    val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
     LaunchedEffect(Unit) {
         Database.artistSongs(browseId).collect { songs = it }
@@ -175,20 +179,11 @@ fun ArtistLocalSongs(
                                             songs?.forEach {
                                                 binder?.cache?.removeResource(it.asMediaItem.mediaId)
                                                 query {
-                                                    Database.insert(
-                                                        Song(
-                                                            id = it.asMediaItem.mediaId,
-                                                            title = it.asMediaItem.mediaMetadata.title.toString(),
-                                                            artistsText = it.asMediaItem.mediaMetadata.artist.toString(),
-                                                            thumbnailUrl = it.thumbnailUrl,
-                                                            durationText = null
-                                                        )
-                                                    )
+                                                    Database.resetFormatContentLength(it.asMediaItem.mediaId)
                                                 }
                                                 manageDownload(
                                                     context = context,
-                                                    songId = it.asMediaItem.mediaId,
-                                                    songTitle = it.asMediaItem.mediaMetadata.title.toString(),
+                                                    mediaItem = it.asMediaItem,
                                                     downloadState = false
                                                 )
                                             }
@@ -221,10 +216,12 @@ fun ArtistLocalSongs(
                                         if (songs?.isNotEmpty() == true)
                                             songs?.forEach {
                                                 binder?.cache?.removeResource(it.asMediaItem.mediaId)
+                                                query {
+                                                    Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                                                }
                                                 manageDownload(
                                                     context = context,
-                                                    songId = it.asMediaItem.mediaId,
-                                                    songTitle = it.asMediaItem.mediaMetadata.title.toString(),
+                                                    mediaItem = it.asMediaItem,
                                                     downloadState = true
                                                 )
                                             }
@@ -282,28 +279,18 @@ fun ArtistLocalSongs(
                     ) { index, song ->
 
                         downloadState = getDownloadState(song.asMediaItem.mediaId)
-                        val isDownloaded = downloadedStateMedia(song.asMediaItem.mediaId)
+                        val isDownloaded = isDownloadedSong(song.asMediaItem.mediaId)
                         SongItem(
                             song = song,
-                            isDownloaded = isDownloaded,
                             onDownloadClick = {
                                 binder?.cache?.removeResource(song.asMediaItem.mediaId)
                                 query {
-                                    Database.insert(
-                                        Song(
-                                            id = song.asMediaItem.mediaId,
-                                            title = song.asMediaItem.mediaMetadata.title.toString(),
-                                            artistsText = song.asMediaItem.mediaMetadata.artist.toString(),
-                                            thumbnailUrl = song.thumbnailUrl,
-                                            durationText = null
-                                        )
-                                    )
+                                    Database.resetFormatContentLength(song.asMediaItem.mediaId)
                                 }
 
                                 manageDownload(
                                     context = context,
-                                    songId = song.id,
-                                    songTitle = song.title,
+                                    mediaItem = song.asMediaItem,
                                     downloadState = isDownloaded
                                 )
                             },
@@ -318,6 +305,7 @@ fun ArtistLocalSongs(
                                                 navController = navController,
                                                 onDismiss = menuState::hide,
                                                 mediaItem = song.asMediaItem,
+                                                disableScrollingText = disableScrollingText
                                             )
                                         }
                                     },
@@ -328,7 +316,8 @@ fun ArtistLocalSongs(
                                             index
                                         )
                                     }
-                                )
+                                ),
+                            disableScrollingText = disableScrollingText
                         )
                     }
                 } ?: item(key = "loading") {

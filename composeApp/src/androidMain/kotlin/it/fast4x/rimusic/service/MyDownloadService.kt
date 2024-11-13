@@ -2,6 +2,8 @@ package it.fast4x.rimusic.service
 
 import android.app.Notification
 import android.content.Context
+import androidx.core.app.NotificationCompat
+import androidx.media3.common.util.NotificationUtil
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
 import androidx.media3.exoplayer.offline.Download
@@ -10,8 +12,7 @@ import androidx.media3.exoplayer.offline.DownloadNotificationHelper
 import androidx.media3.exoplayer.offline.DownloadService
 import androidx.media3.exoplayer.scheduler.PlatformScheduler
 import it.fast4x.rimusic.R
-import it.fast4x.rimusic.service.DownloadUtil.DOWNLOAD_NOTIFICATION_CHANNEL_ID
-import kotlinx.coroutines.flow.update
+import it.fast4x.rimusic.service.MyDownloadHelper.DOWNLOAD_NOTIFICATION_CHANNEL_ID
 
 private const val JOB_ID = 8888
 private const val FOREGROUND_NOTIFICATION_ID = 8989
@@ -28,9 +29,9 @@ class MyDownloadService : DownloadService(
 
         // This will only happen once, because getDownloadManager is guaranteed to be called only once
         // in the life cycle of the process.
-        val downloadManager: DownloadManager = DownloadUtil.getDownloadManager(this)
+        val downloadManager: DownloadManager = MyDownloadHelper.getDownloadManager(this)
         val downloadNotificationHelper: DownloadNotificationHelper =
-            DownloadUtil.getDownloadNotificationHelper(this)
+            MyDownloadHelper.getDownloadNotificationHelper(this)
         downloadManager.addListener(
             TerminalStateNotificationHelper(
                 this,
@@ -48,17 +49,49 @@ class MyDownloadService : DownloadService(
     override fun getForegroundNotification(
         downloads: MutableList<Download>,
         notMetRequirements: Int
+    ) = NotificationCompat
+        .Builder(
+            /* context = */ this,
+            /* notification = */ MyDownloadHelper
+                .getDownloadNotificationHelper(this)
+                .buildProgressNotification(
+                /* context            = */ this,
+                /* smallIcon          = */ R.drawable.download_progress,
+                /* contentIntent      = */ null,
+                /* message            = */ "${downloads.size} in progress",
+                /* downloads          = */ downloads,
+                /* notMetRequirements = */ notMetRequirements
+            )
+        )
+        .setChannelId(DOWNLOAD_NOTIFICATION_CHANNEL_ID)
+        /*
+        // Add action in notification
+        .addAction(
+            NotificationCompat.Action.Builder(
+                /* icon = */ R.drawable.close,
+                /* title = */ getString(R.string.cancel),
+                /* intent = */ null //TODO notificationActionReceiver.cancel.pendingIntent
+            ).build()
+        )
+        */
+        .build()
+
+    /*
+    override fun getForegroundNotification(
+        downloads: MutableList<Download>,
+        notMetRequirements: Int
     ): Notification {
-        return DownloadUtil.getDownloadNotificationHelper(this)
+        return MyDownloadHelper.getDownloadNotificationHelper(this)
             .buildProgressNotification(
                 this,
                 R.drawable.download,
                 null,
-                null,
+                "My Music",
                 downloads,
                 notMetRequirements
             )
     }
+     */
 
     /**
      * Creates and displays notifications for downloads when they complete or fail.
@@ -75,20 +108,21 @@ class MyDownloadService : DownloadService(
         private val context: Context = context.applicationContext
         private var nextNotificationId: Int = firstNotificationId
 
-
+        /*
         override fun onDownloadChanged(
             downloadManager: DownloadManager,
             download: Download,
             finalException: Exception?) {
-            DownloadUtil.downloads.update { map ->
+            MyDownloadHelper.downloads.update { map ->
                 map.toMutableMap().apply {
                     set(download.request.id, download)
                 }
             }
-            DownloadUtil.getDownloads()
+            MyDownloadHelper.getDownloads()
         }
+        */
 
-/*
+
         override fun onDownloadChanged(
             downloadManager: DownloadManager,
             download: Download,
@@ -98,7 +132,7 @@ class MyDownloadService : DownloadService(
                 Download.STATE_COMPLETED -> {
                     notificationHelper.buildDownloadCompletedNotification(
                         context,
-                        R.drawable.downloaded,  /* contentIntent = */
+                        R.drawable.downloaded,
                         null,
                         Util.fromUtf8Bytes(download.request.data)
                     )
@@ -106,7 +140,7 @@ class MyDownloadService : DownloadService(
                 Download.STATE_FAILED -> {
                     notificationHelper.buildDownloadFailedNotification(
                         context,
-                        R.drawable.downloaded,  /* contentIntent = */
+                        R.drawable.alert_circle_not_filled,
                         null,
                         Util.fromUtf8Bytes(download.request.data)
                     )
@@ -115,9 +149,8 @@ class MyDownloadService : DownloadService(
             }
             NotificationUtil.setNotification(context, nextNotificationId++, notification)
 
-
         }
-        */
+
 
     }
 
