@@ -350,10 +350,17 @@ fun Lyrics(
                             destLanguage,
                             Language.AUTO
                         )
-                        val outputText = if(romanizationEnabeled){
+                        val outputText = if(romanizationEnabeled) {
                             if (showSecondLine && isSync && textToTranslate != "" && translation.sourceLanguage != translation.targetLanguage) {
                                 (translation.sourcePronunciation ?: translation.sourceText) + "\\n[${translation.translatedText}]"
-                            } else translation.translatedPronunciation ?: translation.translatedText
+                            }
+                            else if(destinationLanguage == Language.AUTO && isSync && textToTranslate != ""){
+                                translation.sourcePronunciation ?: translation.sourceText
+                            }
+                            else if(translation.sourceLanguage != translation.targetLanguage && textToTranslate != ""){
+                                translation.translatedPronunciation ?: translation.translatedText
+                            }
+                            else translation.sourcePronunciation ?: translation.sourceText
                         } else {
                             if (showSecondLine && isSync && textToTranslate != "" && translation.sourceLanguage != translation.targetLanguage) {
                                 textToTranslate + "\\n[${translation.translatedText}]"
