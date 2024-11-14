@@ -354,7 +354,7 @@ fun Lyrics(
                             if (showSecondLine && isSync && textToTranslate != "" && translation.sourceLanguage != translation.targetLanguage) {
                                 (translation.sourcePronunciation ?: translation.sourceText) + "\\n[${translation.translatedText}]"
                             } else translation.translatedPronunciation ?: translation.translatedText
-                        }else{
+                        } else {
                             if (showSecondLine && isSync && textToTranslate != "" && translation.sourceLanguage != translation.targetLanguage) {
                                 textToTranslate + "\\n[${translation.translatedText}]"
                             } else translation.translatedText
