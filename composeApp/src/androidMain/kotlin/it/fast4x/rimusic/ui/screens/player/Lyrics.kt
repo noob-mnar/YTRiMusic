@@ -337,7 +337,6 @@ fun Lyrics(
                 val result = withContext(Dispatchers.IO) {
                     try {
                         var translation: Translation?
-                        var translation2: Translation?
                         if(destinationLanguage == Language.AUTO){
                             translation = translator.translate(
                                 textToTranslate,
@@ -351,15 +350,14 @@ fun Lyrics(
                             destLanguage,
                             Language.AUTO
                         )
-                        translation2 = translator.translate(
-                            textToTranslate,
-                            translation.sourceLanguage,
-                            translation.sourceLanguage
-                        )
                         val outputText = if(romanizationEnabeled){
-                            if (showSecondLine && isSync && textToTranslate != "" && translation.sourceLanguage != translation.targetLanguage) { (translation2.translatedPronunciation ?: translation2.sourceText) + "\\n[${translation.translatedText}]" } else translation.translatedPronunciation ?: translation.translatedText
+                            if (showSecondLine && isSync && textToTranslate != "" && translation.sourceLanguage != translation.targetLanguage) {
+                                (translation.sourcePronunciation ?: translation.sourceText) + "\\n[${translation.translatedText}]"
+                            } else translation.translatedPronunciation ?: translation.translatedText
                         }else{
-                            if (showSecondLine && isSync && textToTranslate != "" && translation.sourceLanguage != translation.targetLanguage) { textToTranslate + "\\n[${translation.translatedText}]" } else translation.translatedText
+                            if (showSecondLine && isSync && textToTranslate != "" && translation.sourceLanguage != translation.targetLanguage) {
+                                textToTranslate + "\\n[${translation.translatedText}]"
+                            } else translation.translatedText
                         }
                         outputText.replace("\\r","\r").replace("\\n","\n")
                     } catch (e: Exception) {
