@@ -153,7 +153,6 @@ import it.fast4x.rimusic.enums.LyricsBackground
 import it.fast4x.rimusic.utils.lyricsAlignmentKey
 import it.fast4x.rimusic.utils.romanizationEnabeledKey
 import it.fast4x.rimusic.utils.showSecondLineKey
-import me.bush.translator.Translation
 
 
 @UnstableApi
@@ -331,41 +330,63 @@ fun Lyrics(
         var lyricsHighlight by rememberPreference(lyricsHighlightKey, LyricsHighlight.None)
         var lyricsAlignment by rememberPreference(lyricsAlignmentKey, LyricsAlignment.Center)
 
+        /**
+         * This also implements a fix for CHINESE_TRADITIONAL as it is as of 2024/11/15
+         * incorrectly detected by the translator
+         */
         fun translateLyricsWithRomanization(output: MutableState<String>, textToTranslate: String, isSync: Boolean, destinationLanguage: Language = Language.AUTO) = @Composable{
             LaunchedEffect(showSecondLine, romanizationEnabeled, textToTranslate, destinationLanguage){
                 var destLanguage = destinationLanguage
                 val result = withContext(Dispatchers.IO) {
                     try {
-                        var translation: Translation?
+
+                        /** used to find the source language of the text and detect CHINESE_TRADITIONAL*/
+                        val helperTranslation = translator.translate(
+                            textToTranslate,
+                            Language.CHINESE_TRADITIONAL,
+                            Language.AUTO
+                        )
                         if(destinationLanguage == Language.AUTO){
-                            translation = translator.translate(
-                                textToTranslate,
-                                Language.ENGLISH,
-                                Language.AUTO
-                            )
-                            destLanguage = translation.sourceLanguage
+                            destLanguage = if(helperTranslation.translatedText == textToTranslate){
+                                // helperTranslation goes to CHINESE_TRADITIONAL so it has to be that
+                                Language.CHINESE_TRADITIONAL
+                            } else {
+                                helperTranslation.sourceLanguage
+                            }
                         }
-                        translation = translator.translate(
+                        /** used for the actual translation */
+                        val mainTranslation = translator.translate(
                             textToTranslate,
                             destLanguage,
                             Language.AUTO
                         )
-                        val outputText = if(romanizationEnabeled) {
-                            if (showSecondLine && isSync && textToTranslate != "" && translation.sourceLanguage != translation.targetLanguage) {
-                                (translation.sourcePronunciation ?: translation.sourceText) + "\\n[${translation.translatedText}]"
+                        val outputText = if (textToTranslate == "") {
+                            ""
+                        } else if (helperTranslation.translatedText == textToTranslate){
+                            // traditional Chinese detected
+                            if(romanizationEnabeled){
+                                if (showSecondLine && isSync && helperTranslation.translatedText != mainTranslation.translatedText) {
+                                    mainTranslation.sourcePronunciation + "\\n[${mainTranslation.translatedText}]"
+                                }
+                                else mainTranslation.translatedPronunciation ?: mainTranslation.translatedText
+                            } else {
+                                if (showSecondLine && isSync &&
+                                    helperTranslation.translatedText != mainTranslation.translatedText) {
+                                    textToTranslate + "\\n[${mainTranslation.translatedText}]"
+                                } else mainTranslation.translatedText
                             }
-                            else if(destinationLanguage == Language.AUTO && isSync && textToTranslate != ""){
-                                translation.sourcePronunciation ?: translation.sourceText
-                            }
-                            else if(translation.sourceLanguage != translation.targetLanguage && textToTranslate != ""){
-                                translation.translatedPronunciation ?: translation.translatedText
-                            }
-                            else translation.sourcePronunciation ?: translation.sourceText
-                        } else {
-                            if (showSecondLine && isSync && textToTranslate != "" && translation.sourceLanguage != translation.targetLanguage) {
-                                textToTranslate + "\\n[${translation.translatedText}]"
-                            } else translation.translatedText
                         }
+                        // other language detected
+                        else if(romanizationEnabeled){
+                            if (showSecondLine && isSync && mainTranslation.sourceLanguage != mainTranslation.targetLanguage) {
+                                (mainTranslation.sourcePronunciation ?: mainTranslation.sourceText) + "\\n[${mainTranslation.translatedText}]"
+                            } else mainTranslation.translatedPronunciation ?: mainTranslation.translatedText
+                        } else {
+                            if (showSecondLine && isSync && mainTranslation.sourceLanguage != mainTranslation.targetLanguage) {
+                                textToTranslate + "\\n[${mainTranslation.translatedText}]"
+                            } else mainTranslation.translatedText
+                        }
+                        // fix problems in the text created by the translation
                         outputText.replace("\\r","\r").replace("\\n","\n")
                     } catch (e: Exception) {
                         if(isSync){
