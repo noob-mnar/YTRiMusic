@@ -151,7 +151,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import it.fast4x.rimusic.enums.LyricsBackground
 import it.fast4x.rimusic.utils.lyricsAlignmentKey
-import it.fast4x.rimusic.utils.romanizationEnabeledKey
+import it.fast4x.rimusic.utils.romanizationEnabledKey
 import it.fast4x.rimusic.utils.showSecondLineKey
 
 
@@ -234,7 +234,7 @@ fun Lyrics(
             mutableStateOf(false)
         }
 
-        var romanizationEnabled by rememberPreference(romanizationEnabeledKey, false)
+        var romanizationEnabled by rememberPreference(romanizationEnabledKey, false)
         var showSecondLine by rememberPreference(showSecondLineKey, false)
 
         var otherLanguageApp by rememberPreference(otherLanguageAppKey, Languages.English)
