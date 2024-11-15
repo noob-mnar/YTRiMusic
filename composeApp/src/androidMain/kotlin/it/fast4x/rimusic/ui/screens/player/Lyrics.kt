@@ -234,7 +234,7 @@ fun Lyrics(
             mutableStateOf(false)
         }
 
-        var romanizationEnabeled by rememberPreference(romanizationEnabeledKey, false)
+        var romanizationEnabled by rememberPreference(romanizationEnabeledKey, false)
         var showSecondLine by rememberPreference(showSecondLineKey, false)
 
         var otherLanguageApp by rememberPreference(otherLanguageAppKey, Languages.English)
@@ -335,7 +335,7 @@ fun Lyrics(
          * incorrectly detected by the translator
          */
         fun translateLyricsWithRomanization(output: MutableState<String>, textToTranslate: String, isSync: Boolean, destinationLanguage: Language = Language.AUTO) = @Composable{
-            LaunchedEffect(showSecondLine, romanizationEnabeled, textToTranslate, destinationLanguage){
+            LaunchedEffect(showSecondLine, romanizationEnabled, textToTranslate, destinationLanguage){
                 var destLanguage = destinationLanguage
                 val result = withContext(Dispatchers.IO) {
                     try {
@@ -364,7 +364,7 @@ fun Lyrics(
                             ""
                         } else if (helperTranslation.translatedText == textToTranslate){
                             // traditional Chinese detected
-                            if(romanizationEnabeled){
+                            if(romanizationEnabled){
                                 if (showSecondLine && isSync && helperTranslation.translatedText != mainTranslation.translatedText) {
                                     mainTranslation.sourcePronunciation + "\\n[${mainTranslation.translatedText}]"
                                 }
@@ -377,7 +377,7 @@ fun Lyrics(
                             }
                         }
                         // other language detected
-                        else if(romanizationEnabeled){
+                        else if(romanizationEnabled){
                             if (showSecondLine && isSync && mainTranslation.sourceLanguage != mainTranslation.targetLanguage) {
                                 (mainTranslation.sourcePronunciation ?: mainTranslation.sourceText) + "\\n[${mainTranslation.translatedText}]"
                             } else mainTranslation.translatedPronunciation ?: mainTranslation.translatedText
@@ -775,7 +775,7 @@ fun Lyrics(
                                 translateLyricsWithRomanization(mutState, trimmedSentence, true, languageDestination)()
                                 translatedText = mutState.value
                             } else {
-                                if (romanizationEnabeled) {
+                                if (romanizationEnabled) {
                                     val mutState = remember { mutableStateOf("") }
                                     translateLyricsWithRomanization(mutState, trimmedSentence, true)()
                                     translatedText = mutState.value
@@ -1385,7 +1385,7 @@ fun Lyrics(
                         translateLyricsWithRomanization(mutState, text, false, languageDestination)()
                         translatedText = mutState.value
                     } else {
-                        if(romanizationEnabeled) {
+                        if(romanizationEnabled) {
                             val mutState = remember { mutableStateOf("") }
                             translateLyricsWithRomanization(mutState, text, false)()
                             translatedText = mutState.value
@@ -2119,12 +2119,12 @@ fun Lyrics(
                                         )
 
                                         MenuEntry(
-                                            icon = if (romanizationEnabeled) R.drawable.checkmark else R.drawable.close,
+                                            icon = if (romanizationEnabled) R.drawable.checkmark else R.drawable.close,
                                             text = stringResource(R.string.toggle_romanization),
                                             enabled = true,
                                             onClick = {
                                                 menuState.hide()
-                                                romanizationEnabeled = !romanizationEnabeled
+                                                romanizationEnabled = !romanizationEnabled
                                             }
                                         )
                                         MenuEntry(
