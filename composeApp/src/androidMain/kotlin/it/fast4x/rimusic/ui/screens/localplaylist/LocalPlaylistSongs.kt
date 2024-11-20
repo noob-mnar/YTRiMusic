@@ -249,12 +249,12 @@ fun LocalPlaylistSongs(
             override val context = context
             override val toggleState =  renamingDescriptionToggleState
             override val iconId = -1
-            override val titleId = R.string.edit_description
+            override val titleId = R.string.edit_playlist_description
             override val messageId = -1
 
             override fun onSet(newValue: String) {
                 query {
-                    playlistPreview?.playlist?.copy(description = newValue)?.let(Database::update)
+//                    playlistPreview?.playlist?.copy(description = newValue)?.let(Database::update)
                 }
 
                 onDismiss()

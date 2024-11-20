@@ -139,9 +139,6 @@ interface Database {
     @Query("UPDATE Playlist SET name = :playlistName WHERE id = :playlistId")
     fun updatePlaylistName(playlistName: String, playlistId: Long): Int
 
-    @Query("UPDATE Playlist SET description = :playlistDescription WHERE id = :playlistId")
-    fun updatePlaylistDescription(playlistDescription: String, playlistId: Long)
-
     @Transaction
     @Query("UPDATE Song SET title = :title WHERE id = :id")
     fun updateSongTitle(id: String, title: String): Int
@@ -1505,7 +1502,7 @@ interface Database {
     views = [
         SortedSongPlaylistMap::class
     ],
-    version = 24,
+    version = 23,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -1543,7 +1540,6 @@ abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
                 From10To11Migration(),
                 From14To15Migration(),
                 From22To23Migration(),
-                From23To24Migration(),
             )
             .build()
 
@@ -1697,33 +1693,6 @@ abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
             db.execSQL("INSERT INTO Song_new(id, title, artistsText, durationText, thumbnailUrl, likedAt, totalPlayTimeMs) SELECT id, title, artistsText, durationText, thumbnailUrl, likedAt, totalPlayTimeMs FROM Song;")
             db.execSQL("DROP TABLE Song;")
             db.execSQL("ALTER TABLE Song_new RENAME TO Song;")
-        }
-    }
-
-    class From23To24Migration : Migration(23, 24) {
-        override fun migrate(db: SupportSQLiteDatabase) {
-            // Create a temporary table with the new schema
-            db.execSQL("""
-            CREATE TABLE IF NOT EXISTS Playlist_temp (
-                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                name TEXT NOT NULL,
-                description TEXT,
-                browseId TEXT
-            )
-        """)
-
-            // Copy the existing data to the temporary table
-            // Since the old table doesn't have description, we'll set it as NULL
-            db.execSQL("""
-            INSERT INTO Playlist_temp (id, name, browseId)
-            SELECT id, name, browseId FROM Playlist
-        """)
-
-            // Drop the old table
-            db.execSQL("DROP TABLE Playlist")
-
-            // Rename the temporary table to the original name
-            db.execSQL("ALTER TABLE Playlist_temp RENAME TO Playlist")
         }
     }
 }
