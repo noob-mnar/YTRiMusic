@@ -242,6 +242,27 @@ fun LocalPlaylistSongs(
     val downloadAllToggleState = rememberSaveable { mutableStateOf( false ) }
     val deleteDownloadsToggleState = rememberSaveable { mutableStateOf( false ) }
 
+    val renamingDescriptionToggleState = rememberSaveable { mutableStateOf(false) }
+
+    val editDes = remember {
+        object : InputDialog {
+            override val context = context
+            override val toggleState =  renamingDescriptionToggleState
+            override val iconId = -1
+            override val titleId = R.string.edit_description
+            override val messageId = -1
+
+            override fun onSet(newValue: String) {
+                query {
+                    playlistPreview?.playlist?.copy(description = newValue)?.let(Database::update)
+                }
+
+                onDismiss()
+            }
+        }
+    }
+    editDes.Render()
+
     val search = remember {
         object: Search{
             override val visibleState = visibleState
@@ -728,6 +749,16 @@ fun LocalPlaylistSongs(
                                     icon = painterResource(R.drawable.smart_shuffle)
                                 )
                             }
+                            Spacer(modifier = Modifier.height(5.dp))
+                            IconButton(
+                                icon = R.drawable.pencil,
+                                color = colorPalette().text,
+                                onClick = {
+                                    editDes.toggleState.value = true;
+                                }
+                            )
+                            // TODO Display Playlist Description Text
+
                             Spacer(modifier = Modifier.height(30.dp))
                         }
 
