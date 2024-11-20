@@ -792,5 +792,5 @@
     <string name="repeat">Repeat</string>
     <string name="original_lyrics">Original Lyrics</string>
     <string name="translated_lyrics">Translated Lyrics</string>
-    <string name="edit_description">Edit Playlist Description</string>
+    <string name="edit_playlist_description">Edit Playlist Description</string>
 </resources>
