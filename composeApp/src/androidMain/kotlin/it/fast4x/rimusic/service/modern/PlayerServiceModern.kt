@@ -14,10 +14,8 @@ import android.graphics.Color
 import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
-import android.media.MediaDescription
 import android.media.audiofx.AudioEffect
 import android.media.audiofx.LoudnessEnhancer
-import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.OptIn
@@ -66,11 +64,8 @@ import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaController
 import androidx.media3.session.MediaLibraryService
-import androidx.media3.session.MediaNotification
 import androidx.media3.session.MediaSession
-import androidx.media3.session.MediaStyleNotificationHelper
 import androidx.media3.session.SessionToken
-import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.MoreExecutors
 import it.fast4x.innertube.Innertube
 import it.fast4x.innertube.models.NavigationEndpoint
@@ -125,7 +120,6 @@ import it.fast4x.rimusic.utils.getEnum
 import it.fast4x.rimusic.utils.intent
 import it.fast4x.rimusic.utils.isAtLeastAndroid10
 import it.fast4x.rimusic.utils.isAtLeastAndroid6
-import it.fast4x.rimusic.utils.isAtLeastAndroid8
 import it.fast4x.rimusic.utils.isAtLeastAndroid81
 import it.fast4x.rimusic.utils.isDiscordPresenceEnabledKey
 import it.fast4x.rimusic.utils.isPauseOnVolumeZeroEnabledKey

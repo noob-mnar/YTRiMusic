@@ -3,7 +3,6 @@ package it.fast4x.rimusic.service.modern
 import android.content.Context
 import android.net.Uri
 import androidx.annotation.OptIn
-import androidx.media3.common.PlaybackException
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSpec
 import it.fast4x.innertube.Innertube

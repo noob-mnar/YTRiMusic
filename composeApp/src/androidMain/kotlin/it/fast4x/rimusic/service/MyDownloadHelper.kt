@@ -1,19 +1,15 @@
 package it.fast4x.rimusic.service
 
 
+//import androidx.media3.datasource.HttpDataSource
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
-import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.DatabaseProvider
 import androidx.media3.database.StandaloneDatabaseProvider
-import androidx.media3.datasource.DataSource
-//import androidx.media3.datasource.HttpDataSource
-import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.datasource.cache.Cache
-import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.NoOpCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.exoplayer.offline.Download
@@ -41,16 +37,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import okhttp3.OkHttpClient
 import timber.log.Timber
 import java.io.File
-import java.net.ConnectException
-import java.net.InetSocketAddress
-import java.net.Proxy
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
-import java.time.Duration
 import java.util.concurrent.Executors
 
 @UnstableApi

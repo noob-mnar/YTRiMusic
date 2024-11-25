@@ -86,14 +86,18 @@ import it.fast4x.lrclib.models.Track
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.ColorPaletteMode
 import it.fast4x.rimusic.enums.Languages
+import it.fast4x.rimusic.enums.LyricsAlignment
+import it.fast4x.rimusic.enums.LyricsBackground
 import it.fast4x.rimusic.enums.LyricsColor
 import it.fast4x.rimusic.enums.LyricsFontSize
 import it.fast4x.rimusic.enums.LyricsHighlight
 import it.fast4x.rimusic.enums.LyricsOutline
 import it.fast4x.rimusic.enums.PlayerBackgroundColors
 import it.fast4x.rimusic.enums.PopupType
+import it.fast4x.rimusic.enums.Romanization
 import it.fast4x.rimusic.models.Lyrics
 import it.fast4x.rimusic.query
 import it.fast4x.rimusic.transaction
@@ -111,10 +115,7 @@ import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.PureBlackColorPalette
 import it.fast4x.rimusic.ui.styling.onOverlayShimmer
 import it.fast4x.rimusic.utils.SynchronizedLyrics
-import it.fast4x.rimusic.utils.textCopyToClipboard
 import it.fast4x.rimusic.utils.center
-import it.fast4x.rimusic.cleanPrefix
-import it.fast4x.rimusic.enums.LyricsAlignment
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.colorPaletteModeKey
 import it.fast4x.rimusic.utils.expandedplayerKey
@@ -122,6 +123,7 @@ import it.fast4x.rimusic.utils.getHttpClient
 import it.fast4x.rimusic.utils.isShowingSynchronizedLyricsKey
 import it.fast4x.rimusic.utils.languageDestination
 import it.fast4x.rimusic.utils.languageDestinationName
+import it.fast4x.rimusic.utils.lyricsAlignmentKey
 import it.fast4x.rimusic.utils.lyricsBackgroundKey
 import it.fast4x.rimusic.utils.lyricsColorKey
 import it.fast4x.rimusic.utils.lyricsFontSizeKey
@@ -132,9 +134,11 @@ import it.fast4x.rimusic.utils.otherLanguageAppKey
 import it.fast4x.rimusic.utils.playerBackgroundColorsKey
 import it.fast4x.rimusic.utils.playerEnableLyricsPopupMessageKey
 import it.fast4x.rimusic.utils.rememberPreference
+import it.fast4x.rimusic.utils.romanizationKey
 import it.fast4x.rimusic.utils.showBackgroundLyricsKey
+import it.fast4x.rimusic.utils.showSecondLineKey
 import it.fast4x.rimusic.utils.showlyricsthumbnailKey
-import it.fast4x.rimusic.utils.showthumbnailKey
+import it.fast4x.rimusic.utils.textCopyToClipboard
 import it.fast4x.rimusic.utils.verticalFadingEdge
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -149,11 +153,6 @@ import me.knighthat.typography
 import timber.log.Timber
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
-import it.fast4x.rimusic.enums.LyricsBackground
-import it.fast4x.rimusic.enums.Romanization
-import it.fast4x.rimusic.utils.lyricsAlignmentKey
-import it.fast4x.rimusic.utils.romanizationKey
-import it.fast4x.rimusic.utils.showSecondLineKey
 
 
 @UnstableApi
