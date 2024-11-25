@@ -54,7 +54,6 @@ import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.enums.ValidationType
 import it.fast4x.rimusic.extensions.discord.DiscordLoginAndGetToken
 import it.fast4x.rimusic.extensions.youtubelogin.YouTubeLogin
-import it.fast4x.rimusic.service.PlayerMediaBrowserService
 import it.fast4x.rimusic.service.modern.PlayerServiceModern
 import it.fast4x.rimusic.ui.components.CustomModalBottomSheet
 import it.fast4x.rimusic.ui.components.LocalMenuState
@@ -64,12 +63,6 @@ import it.fast4x.rimusic.ui.components.themed.Menu
 import it.fast4x.rimusic.ui.components.themed.MenuEntry
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.styling.Dimensions
-import it.fast4x.rimusic.utils.textCopyToClipboard
-import it.fast4x.rimusic.utils.ytAccountChannelHandleKey
-import it.fast4x.rimusic.utils.ytAccountEmailKey
-import it.fast4x.rimusic.utils.ytAccountNameKey
-import it.fast4x.rimusic.utils.ytCookieKey
-import it.fast4x.rimusic.utils.ytVisitorDataKey
 import it.fast4x.rimusic.utils.defaultFolderKey
 import it.fast4x.rimusic.utils.discordPersonalAccessTokenKey
 import it.fast4x.rimusic.utils.enableYouTubeLoginKey
@@ -81,7 +74,6 @@ import it.fast4x.rimusic.utils.isAtLeastAndroid7
 import it.fast4x.rimusic.utils.isAtLeastAndroid81
 import it.fast4x.rimusic.utils.isDiscordPresenceEnabledKey
 import it.fast4x.rimusic.utils.isIgnoringBatteryOptimizations
-import it.fast4x.rimusic.utils.isInvincibilityEnabledKey
 import it.fast4x.rimusic.utils.isKeepScreenOnEnabledKey
 import it.fast4x.rimusic.utils.isPipedCustomEnabledKey
 import it.fast4x.rimusic.utils.isPipedEnabledKey
@@ -100,7 +92,13 @@ import it.fast4x.rimusic.utils.rememberEncryptedPreference
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.restartActivityKey
 import it.fast4x.rimusic.utils.showFoldersOnDeviceKey
+import it.fast4x.rimusic.utils.textCopyToClipboard
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
+import it.fast4x.rimusic.utils.ytAccountChannelHandleKey
+import it.fast4x.rimusic.utils.ytAccountEmailKey
+import it.fast4x.rimusic.utils.ytAccountNameKey
+import it.fast4x.rimusic.utils.ytCookieKey
+import it.fast4x.rimusic.utils.ytVisitorDataKey
 import kotlinx.coroutines.launch
 import me.knighthat.colorPalette
 import me.knighthat.thumbnailShape

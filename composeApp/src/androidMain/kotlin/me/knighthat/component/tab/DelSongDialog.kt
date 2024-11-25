@@ -17,9 +17,6 @@ import it.fast4x.rimusic.ui.components.MenuState
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import me.knighthat.appContext
 import me.knighthat.component.DeleteDialog
-import me.knighthat.component.tab.toolbar.ConfirmDialog
-import me.knighthat.component.tab.toolbar.Descriptive
-import me.knighthat.component.tab.toolbar.MenuIcon
 import java.util.Optional
 
 @UnstableApi
