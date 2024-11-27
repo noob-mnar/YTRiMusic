@@ -259,24 +259,8 @@ fun StatisticsPage(
                     span = { GridItemSpan(maxLineSpan) }
                 ) {
                     HeaderWithIcon(
-                        title = when (statisticsType) {
-                            StatisticsType.Today -> stringResource(R.string.today)
-                            StatisticsType.OneWeek -> stringResource(R.string._1_week)
-                            StatisticsType.OneMonth -> stringResource(R.string._1_month)
-                            StatisticsType.ThreeMonths -> stringResource(R.string._3_month)
-                            StatisticsType.SixMonths -> stringResource(R.string._6_month)
-                            StatisticsType.OneYear -> stringResource(R.string._1_year)
-                            StatisticsType.All -> stringResource(R.string.all)
-                        },
-                        iconId = when (statisticsType) {
-                            StatisticsType.Today -> R.drawable.stat_today
-                            StatisticsType.OneWeek -> R.drawable.stat_week
-                            StatisticsType.OneMonth -> R.drawable.stat_month
-                            StatisticsType.ThreeMonths -> R.drawable.stat_3months
-                            StatisticsType.SixMonths -> R.drawable.stat_6months
-                            StatisticsType.OneYear -> R.drawable.stat_year
-                            StatisticsType.All -> R.drawable.calendar_clear
-                        },
+                        title = statisticsType.text,
+                        icon = statisticsType.icon,
                         enabled = true,
                         showIcon = true,
                         modifier = Modifier,

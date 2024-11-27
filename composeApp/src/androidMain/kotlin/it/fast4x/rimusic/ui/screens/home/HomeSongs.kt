@@ -239,15 +239,7 @@ fun HomeSongs(
 
     // Update playlistNameState's value based on current builtInPlaylist
     LaunchedEffect( builtInPlaylist ) {
-        playlistNameState.value =
-            when (builtInPlaylist) {
-                BuiltInPlaylist.All -> context.resources.getString(R.string.songs)
-                BuiltInPlaylist.OnDevice -> context.resources.getString(R.string.on_device)
-                BuiltInPlaylist.Favorites -> context.resources.getString(R.string.favorites)
-                BuiltInPlaylist.Downloaded -> context.resources.getString(R.string.downloaded)
-                BuiltInPlaylist.Offline -> context.resources.getString(R.string.cached)
-                BuiltInPlaylist.Top -> context.resources.getString(R.string.playlist_top)
-            }
+        playlistNameState.value = context.resources.getString( builtInPlaylist.textId )
     }
 
     val search = Search.init()

@@ -7,8 +7,9 @@ import androidx.compose.ui.res.painterResource
 
 interface Drawable {
 
-    @get:DrawableRes
     val iconId: Int
+        @DrawableRes
+        get() = throw UnsupportedOperationException( "Please use [${this::class.simpleName}#icon] directly!" )
 
     val icon: Painter
         @Composable

@@ -130,7 +130,6 @@ import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.reorderInQueueEnabledKey
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
-import it.fast4x.rimusic.utils.setQueueLoopState
 import it.fast4x.rimusic.utils.shouldBePlaying
 import it.fast4x.rimusic.utils.showButtonPlayerArrowKey
 import it.fast4x.rimusic.utils.showButtonPlayerDiscoverKey
@@ -874,7 +873,7 @@ fun QueueModern(
                         icon = getIconQueueLoopState(queueLoopType),
                         color = colorPalette().text,
                         onClick = {
-                            queueLoopType = setQueueLoopState(queueLoopType)
+                            queueLoopType = queueLoopType.next()
                         },
                         modifier = Modifier
                             .padding(horizontal = 4.dp)

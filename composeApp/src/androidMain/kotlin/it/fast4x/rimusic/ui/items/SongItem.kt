@@ -640,10 +640,7 @@ fun SongItem(
                     IconButton(
                         onClick = onDownloadClick,
                         icon = downloadedStateMedia.icon,
-                        color = when(downloadedStateMedia) {
-                            DownloadedStateMedia.NOT_CACHED_OR_DOWNLOADED -> colorPalette().textDisabled
-                            else -> colorPalette().text
-                        },
+                        color = downloadedStateMedia.color,
                         modifier = Modifier
                             .size(20.dp)
                     )

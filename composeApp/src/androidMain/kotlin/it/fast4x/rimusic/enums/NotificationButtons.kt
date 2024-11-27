@@ -1,6 +1,7 @@
 package it.fast4x.rimusic.enums
 
 import androidx.annotation.OptIn
+import androidx.annotation.StringRes
 import androidx.media3.common.Player.REPEAT_MODE_ALL
 import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.REPEAT_MODE_ONE
@@ -14,30 +15,18 @@ import it.fast4x.rimusic.service.modern.MediaSessionConstants.CommandToggleRepea
 import it.fast4x.rimusic.service.modern.MediaSessionConstants.CommandToggleShuffle
 import me.knighthat.appContext
 
-enum class NotificationButtons {
-    Download,
-    Favorites,
-    Repeat,
-    Shuffle,
-    Radio;
-
-    val sessionCommand: SessionCommand
-    get() = when (this) {
-        Download -> CommandToggleDownload
-        Favorites -> CommandToggleLike
-        Repeat -> CommandToggleRepeatMode
-        Shuffle -> CommandToggleShuffle
-        Radio -> CommandStartRadio
-    }
+enum class NotificationButtons(
+    val sessionCommand: SessionCommand,
+    @field:StringRes val textId: Int
+) {
+    Download( CommandToggleDownload, R.string.download ),
+    Favorites( CommandToggleLike, R.string.favorites ),
+    Repeat( CommandToggleRepeatMode, R.string.repeat ),
+    Shuffle( CommandToggleShuffle, R.string.shuffle ),
+    Radio( CommandStartRadio, R.string.start_radio );
 
     val displayName: String
-    get() = when (this) {
-        Download -> appContext().resources.getString(R.string.download)
-        Favorites -> appContext().resources.getString(R.string.favorites)
-        Repeat -> appContext().resources.getString(R.string.repeat)
-        Shuffle -> appContext().resources.getString(R.string.shuffle)
-        Radio -> appContext().resources.getString(R.string.start_radio)
-    }
+    get() = appContext().resources.getString( this.textId )
 
     val icon: Int
         get() = when (this) {

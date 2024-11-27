@@ -453,14 +453,7 @@ fun BuiltInPlaylistSongs(
                 isExporting = false
             },
             title = stringResource(R.string.enter_the_playlist_name),
-            value = when (builtInPlaylist) {
-                BuiltInPlaylist.All -> context.resources.getString(R.string.songs)
-                BuiltInPlaylist.OnDevice -> context.resources.getString(R.string.on_device)
-                BuiltInPlaylist.Favorites -> context.resources.getString(R.string.favorites)
-                BuiltInPlaylist.Downloaded -> context.resources.getString(R.string.downloaded)
-                BuiltInPlaylist.Offline -> context.resources.getString(R.string.cached)
-                BuiltInPlaylist.Top -> context.resources.getString(R.string.playlist_top)
-            },
+            value = builtInPlaylist.text,
             placeholder = stringResource(R.string.enter_the_playlist_name),
             setValue = { text ->
                 plistName = text
@@ -507,13 +500,9 @@ fun BuiltInPlaylistSongs(
             ) {
 
                 HeaderWithIcon(
-                    title = when (builtInPlaylist) {
-                        BuiltInPlaylist.All -> stringResource(R.string.songs)
-                        BuiltInPlaylist.OnDevice -> context.resources.getString(R.string.on_device)
-                        BuiltInPlaylist.Favorites -> stringResource(R.string.favorites)
-                        BuiltInPlaylist.Downloaded -> stringResource(R.string.downloaded)
-                        BuiltInPlaylist.Offline -> stringResource(R.string.cached)
-                        BuiltInPlaylist.Top -> stringResource(R.string.my_playlist_top).format(maxTopPlaylistItems.toInt())
+                    title = when( builtInPlaylist ) {
+                        BuiltInPlaylist.Top -> stringResource( R.string.my_playlist_top ).format( maxTopPlaylistItems.toInt() )
+                        else -> builtInPlaylist.text
                     },
                     iconId = R.drawable.search,
                     enabled = true,
@@ -536,23 +525,9 @@ fun BuiltInPlaylistSongs(
 
                     if (songs.isEmpty())
                     PlaylistItem(
-                        icon = when (builtInPlaylist) {
-                            BuiltInPlaylist.All -> R.drawable.musical_notes
-                            BuiltInPlaylist.OnDevice -> R.drawable.musical_notes
-                            BuiltInPlaylist.Favorites -> R.drawable.heart
-                            BuiltInPlaylist.Downloaded -> R.drawable.downloaded
-                            BuiltInPlaylist.Offline -> R.drawable.sync
-                            BuiltInPlaylist.Top -> R.drawable.trending
-                        },
+                        icon = builtInPlaylist.iconId,
                         colorTint = colorPalette().favoritesIcon,
-                        name = when (builtInPlaylist) {
-                            BuiltInPlaylist.All -> context.resources.getString(R.string.songs)
-                            BuiltInPlaylist.OnDevice -> context.resources.getString(R.string.on_device)
-                            BuiltInPlaylist.Favorites -> stringResource(R.string.favorites)
-                            BuiltInPlaylist.Downloaded -> stringResource(R.string.downloaded)
-                            BuiltInPlaylist.Offline -> stringResource(R.string.cached)
-                            BuiltInPlaylist.Top -> stringResource(R.string.playlist_top)
-                        },
+                        name = builtInPlaylist.text,
                         songCount = null,
                         thumbnailSizeDp = playlistThumbnailSizeDp,
                         alternative = false,

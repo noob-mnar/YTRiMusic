@@ -556,12 +556,7 @@ fun AppearanceSettings(
                 onValueSelected = {
                     playerType = it
                 },
-                valueText = {
-                    when (it) {
-                        PlayerType.Modern -> stringResource(R.string.pcontrols_modern)
-                        PlayerType.Essential -> stringResource(R.string.pcontrols_essential)
-                    }
-                },
+                valueText = { it.text },
             )
 
         if (search.input.isBlank() || stringResource(R.string.queuetype).contains(
@@ -575,12 +570,7 @@ fun AppearanceSettings(
                 onValueSelected = {
                     queueType = it
                 },
-                valueText = {
-                    when (it) {
-                        QueueType.Modern -> stringResource(R.string.pcontrols_modern)
-                        QueueType.Essential -> stringResource(R.string.pcontrols_essential)
-                    }
-                },
+                valueText = { it.text },
             )
 
         if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor) {
@@ -650,15 +640,7 @@ fun AppearanceSettings(
                             title = stringResource(R.string.carouselsize),
                             selectedValue = carouselSize,
                             onValueSelected = { carouselSize = it },
-                            valueText = {
-                                when (it) {
-                                    CarouselSize.Small -> stringResource(R.string.small)
-                                    CarouselSize.Medium -> stringResource(R.string.medium)
-                                    CarouselSize.Big -> stringResource(R.string.big)
-                                    CarouselSize.Biggest -> stringResource(R.string.biggest)
-                                    CarouselSize.Expanded -> stringResource(R.string.expanded)
-                                }
-                            },
+                            valueText = { it.text },
                             modifier = Modifier.padding(start = if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor) 25.dp else 0.dp)
                         )
                 }
@@ -714,15 +696,7 @@ fun AppearanceSettings(
                         title = stringResource(R.string.player_thumbnail_size),
                         selectedValue = playerThumbnailSize,
                         onValueSelected = { playerThumbnailSize = it },
-                        valueText = {
-                            when (it) {
-                                PlayerThumbnailSize.Small -> stringResource(R.string.small)
-                                PlayerThumbnailSize.Medium -> stringResource(R.string.medium)
-                                PlayerThumbnailSize.Big -> stringResource(R.string.big)
-                                PlayerThumbnailSize.Biggest -> stringResource(R.string.biggest)
-                                PlayerThumbnailSize.Expanded -> stringResource(R.string.expanded)
-                            }
-                        },
+                        valueText = { it.text },
                         modifier = Modifier.padding(start = if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor) 25.dp else 0.dp)
                     )
                 if (search.input.isBlank() || stringResource(R.string.thumbnailtype).contains(
@@ -736,12 +710,7 @@ fun AppearanceSettings(
                         onValueSelected = {
                             thumbnailType = it
                         },
-                        valueText = {
-                            when (it) {
-                                ThumbnailType.Modern -> stringResource(R.string.pcontrols_modern)
-                                ThumbnailType.Essential -> stringResource(R.string.pcontrols_essential)
-                            }
-                        },
+                        valueText = { it.text },
                         modifier = Modifier.padding(start = if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor) 25.dp else 0.dp)
                     )
 
@@ -769,14 +738,7 @@ fun AppearanceSettings(
                                     .size(36.dp)
                             )
                         },
-                        valueText = {
-                            when (it) {
-                                ThumbnailRoundness.None -> stringResource(R.string.none)
-                                ThumbnailRoundness.Light -> stringResource(R.string.light)
-                                ThumbnailRoundness.Heavy -> stringResource(R.string.heavy)
-                                ThumbnailRoundness.Medium -> stringResource(R.string.medium)
-                            }
-                        },
+                        valueText = { it.text },
                         modifier = Modifier.padding(start = if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor) 25.dp else 0.dp)
                     )
             }
@@ -833,15 +795,7 @@ fun AppearanceSettings(
                 title = stringResource(R.string.timelinesize),
                 selectedValue = playerTimelineSize,
                 onValueSelected = { playerTimelineSize = it },
-                valueText = {
-                    when (it) {
-                        PlayerTimelineSize.Small -> stringResource(R.string.small)
-                        PlayerTimelineSize.Medium -> stringResource(R.string.medium)
-                        PlayerTimelineSize.Big -> stringResource(R.string.big)
-                        PlayerTimelineSize.Biggest -> stringResource(R.string.biggest)
-                        PlayerTimelineSize.Expanded -> stringResource(R.string.expanded)
-                    }
-                }
+                valueText = { it.text }
             )
 
         if (search.input.isBlank() || stringResource(R.string.pinfo_type).contains(
@@ -855,12 +809,7 @@ fun AppearanceSettings(
                 onValueSelected = {
                     playerInfoType = it
                 },
-                valueText = {
-                    when (it) {
-                        PlayerInfoType.Modern -> stringResource(R.string.pcontrols_modern)
-                        PlayerInfoType.Essential -> stringResource(R.string.pcontrols_essential)
-                    }
-                },
+                valueText = { it.text },
             )
             SettingsDescription(text = stringResource(R.string.pinfo_album_and_artist_name))
 
@@ -897,12 +846,7 @@ fun AppearanceSettings(
                 onValueSelected = {
                     miniPlayerType = it
                 },
-                valueText = {
-                    when (it) {
-                        MiniPlayerType.Modern -> stringResource(R.string.pcontrols_modern)
-                        MiniPlayerType.Essential -> stringResource(R.string.pcontrols_essential)
-                    }
-                },
+                valueText = { it.text },
             )
 
         if (search.input.isBlank() || stringResource(R.string.player_swap_controls_with_timeline).contains(
@@ -926,7 +870,7 @@ fun AppearanceSettings(
                 title = stringResource(R.string.timeline),
                 selectedValue = playerTimelineType,
                 onValueSelected = { playerTimelineType = it },
-                valueText = { it.textName }
+                valueText = { it.text }
             )
 
         if (search.input.isBlank() || stringResource(R.string.transparentbar).contains(
@@ -952,12 +896,7 @@ fun AppearanceSettings(
                 onValueSelected = {
                     playerControlsType = it
                 },
-                valueText = {
-                    when (it) {
-                        PlayerControlsType.Modern -> stringResource(R.string.pcontrols_modern)
-                        PlayerControlsType.Essential -> stringResource(R.string.pcontrols_essential)
-                    }
-                },
+                valueText = { it.text },
             )
 
 
@@ -973,15 +912,7 @@ fun AppearanceSettings(
                     playerPlayButtonType = it
                     lastPlayerPlayButtonType = it
                 },
-                valueText = {
-                    when (it) {
-                        PlayerPlayButtonType.Disabled -> stringResource(R.string.vt_disabled)
-                        PlayerPlayButtonType.Default -> stringResource(R.string._default)
-                        PlayerPlayButtonType.Rectangular -> stringResource(R.string.rectangular)
-                        PlayerPlayButtonType.Square -> stringResource(R.string.square)
-                        PlayerPlayButtonType.CircularRibbed -> stringResource(R.string.circular_ribbed)
-                    }
-                },
+                valueText = { it.text },
             )
 
         if (search.input.isBlank() || stringResource(R.string.buttonzoomout).contains(
@@ -1008,17 +939,7 @@ fun AppearanceSettings(
                 onValueSelected = {
                     iconLikeType = it
                 },
-                valueText = {
-                    when (it) {
-                        IconLikeType.Essential -> stringResource(R.string.pcontrols_essential)
-                        IconLikeType.Apple -> stringResource(R.string.icon_like_apple)
-                        IconLikeType.Breaked -> stringResource(R.string.icon_like_breaked)
-                        IconLikeType.Gift -> stringResource(R.string.icon_like_gift)
-                        IconLikeType.Shape -> stringResource(R.string.icon_like_shape)
-                        IconLikeType.Striped -> stringResource(R.string.icon_like_striped)
-                        IconLikeType.Brilliant -> stringResource(R.string.icon_like_brilliant)
-                    }
-                },
+                valueText = { it.text },
             )
 
         /*
@@ -1255,14 +1176,7 @@ fun AppearanceSettings(
                 onValueSelected = {
                     backgroundProgress = it
                 },
-                valueText = {
-                    when (it) {
-                        BackgroundProgress.Player -> stringResource(R.string.player)
-                        BackgroundProgress.MiniPlayer -> stringResource(R.string.minimized_player)
-                        BackgroundProgress.Both -> stringResource(R.string.both)
-                        BackgroundProgress.Disabled -> stringResource(R.string.vt_disabled)
-                    }
-                },
+                valueText = { it.text }
             )
 
 

@@ -24,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -115,59 +116,19 @@ fun HeaderPlaceholder(
     }
 }
 
-/*
-@SuppressLint("SuspiciousIndentation")
 @Composable
-fun HeaderWithIcon (
+fun HeaderWithIcon(
     title: String,
-    modifier: Modifier,
-    @DrawableRes iconId: Int,
+    icon: Painter,
     showIcon: Boolean = true,
     enabled: Boolean = true,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
-){
+) {
     Row (
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically,
-    ){
-
-            HalfHeader(
-                title = title,
-                modifier = Modifier
-                    .fillMaxSize(0.9f)
-            )
-
-            if (showIcon)
-            SecondaryButton(
-                iconId = iconId,
-                enabled = enabled,
-                onClick = onClick,
-            )
-
-
-
-    }
-}
- */
-
-@SuppressLint("SuspiciousIndentation")
-@Composable
-fun HeaderWithIcon (
-    title: String,
-    modifier: Modifier,
-    @DrawableRes iconId: Int,
-    showIcon: Boolean = true,
-    enabled: Boolean = true,
-    onClick: () -> Unit
-){
-    //val disableIconButtonOnTop by rememberPreference(disableIconButtonOnTopKey, false)
-    Row (
-        horizontalArrangement = Arrangement.End,
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            //.requiredHeight(Dimensions.halfheaderHeight)
-            .padding(all = 8.dp)
-
+        modifier = modifier.padding( all = 8.dp )
     ){
 
         BasicText(
@@ -185,15 +146,34 @@ fun HeaderWithIcon (
                 .fillMaxSize(if( showIcon && UiType.ViMusic.isCurrent() ) 0.9f else 1f)
         )
 
-        if ( showIcon && UiType.ViMusic.isCurrent() &&
-            ( NavigationBarPosition.Left.isCurrent() || NavigationBarPosition.Right.isCurrent()) )
+        val isLeftOrRight = NavigationBarPosition.Left.isCurrent() || NavigationBarPosition.Right.isCurrent()
+        if ( showIcon && UiType.ViMusic.isCurrent() && isLeftOrRight )
             SecondaryButton(
-                iconId = iconId,
+                icon = icon,
                 enabled = enabled,
                 onClick = onClick,
             )
-
     }
+}
+
+@SuppressLint("SuspiciousIndentation")
+@Composable
+fun HeaderWithIcon (
+    title: String,
+    modifier: Modifier,
+    @DrawableRes iconId: Int,
+    showIcon: Boolean = true,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+){
+    HeaderWithIcon(
+        title,
+        painterResource( iconId ),
+        showIcon,
+        enabled,
+        modifier,
+        onClick
+    )
 }
 
 @Composable

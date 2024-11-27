@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import it.fast4x.rimusic.ui.styling.primaryButton
@@ -45,24 +46,35 @@ fun SecondaryCircleButton(
 @Composable
 fun SecondaryButton(
     onClick: () -> Unit,
-    @DrawableRes iconId: Int,
+    icon: Painter,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
     Box(
-        modifier = modifier
-            //.clip(CircleShape)
-            .clickable(enabled = enabled, onClick = onClick)
-            //.background(colorPalette.primaryButton)
-            .size(36.dp)
+        modifier = modifier.size( 36.dp )
+                           .clickable(enabled = enabled, onClick = onClick)
     ) {
         Image(
-            painter = painterResource(iconId),
+            painter = icon,
             contentDescription = null,
             colorFilter = ColorFilter.tint(colorPalette().text),
-            modifier = Modifier
-                .align(Alignment.Center)
-                .size(22.dp)
+            modifier = Modifier.align( Alignment.Center )
+                               .size( 22.dp )
         )
     }
+}
+
+@Composable
+fun SecondaryButton(
+    onClick: () -> Unit,
+    @DrawableRes iconId: Int,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    SecondaryButton(
+        onClick,
+        painterResource( iconId ),
+        modifier,
+        enabled
+    )
 }

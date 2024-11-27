@@ -378,20 +378,7 @@ fun DataSettings() {
 
                     restartService = true
                 },
-                valueText = {
-                    when (it) {
-                        CoilDiskCacheMaxSize.Custom -> stringResource(R.string.custom)
-                        CoilDiskCacheMaxSize.`32MB` -> "32MB"
-                        CoilDiskCacheMaxSize.`64MB` -> "64MB"
-                        CoilDiskCacheMaxSize.`128MB` -> "128MB"
-                        CoilDiskCacheMaxSize.`256MB`-> "256MB"
-                        CoilDiskCacheMaxSize.`512MB`-> "512MB"
-                        CoilDiskCacheMaxSize.`1GB`-> "1GB"
-                        CoilDiskCacheMaxSize.`2GB` -> "2GB"
-                        CoilDiskCacheMaxSize.`4GB` -> "4GB"
-                        CoilDiskCacheMaxSize.`8GB` -> "8GB"
-                    }
-                }
+                valueText = { it.text }
             )
             RestartPlayerService(restartService, onRestart = { restartService = false } )
 
@@ -460,20 +447,7 @@ fun DataSettings() {
 
                     restartService = true
                 },
-                valueText = {
-                    when (it) {
-                        ExoPlayerDiskCacheMaxSize.Disabled -> stringResource(R.string.turn_off)
-                        ExoPlayerDiskCacheMaxSize.Unlimited -> stringResource(R.string.unlimited)
-                        ExoPlayerDiskCacheMaxSize.Custom -> stringResource(R.string.custom)
-                        ExoPlayerDiskCacheMaxSize.`32MB` -> "32MB"
-                        ExoPlayerDiskCacheMaxSize.`512MB` -> "512MB"
-                        ExoPlayerDiskCacheMaxSize.`1GB` -> "1GB"
-                        ExoPlayerDiskCacheMaxSize.`2GB` -> "2GB"
-                        ExoPlayerDiskCacheMaxSize.`4GB` -> "4GB"
-                        ExoPlayerDiskCacheMaxSize.`8GB` -> "8GB"
-
-                    }
-                }
+                valueText = { it.text }
             )
             RestartPlayerService(restartService, onRestart = { restartService = false } )
 
@@ -531,19 +505,7 @@ fun DataSettings() {
                     exoPlayerDiskDownloadCacheMaxSize = it
                     restartService = true
                 },
-                valueText = {
-                    when (it) {
-                        ExoPlayerDiskDownloadCacheMaxSize.Disabled -> stringResource(R.string.turn_off)
-                        ExoPlayerDiskDownloadCacheMaxSize.Unlimited -> stringResource(R.string.unlimited)
-                        ExoPlayerDiskDownloadCacheMaxSize.`32MB` -> "32MB"
-                        ExoPlayerDiskDownloadCacheMaxSize.`512MB` -> "512MB"
-                        ExoPlayerDiskDownloadCacheMaxSize.`1GB` -> "1GB"
-                        ExoPlayerDiskDownloadCacheMaxSize.`2GB` -> "2GB"
-                        ExoPlayerDiskDownloadCacheMaxSize.`4GB` -> "4GB"
-                        ExoPlayerDiskDownloadCacheMaxSize.`8GB` -> "8GB"
-
-                    }
-                }
+                valueText = { it.text }
             )
             RestartPlayerService(restartService, onRestart = { restartService = false } )
 
@@ -556,12 +518,7 @@ fun DataSettings() {
                 exoPlayerCacheLocation = it
                 restartService = true
             },
-            valueText = {
-                when (it) {
-                    ExoPlayerCacheLocation.Private -> stringResource(R.string.cache_location_private)
-                    ExoPlayerCacheLocation.System -> stringResource(R.string.cache_location_system)
-                }
-            }
+            valueText = { it.text }
         )
 
         SettingsDescription(stringResource(R.string.info_private_cache_location_can_t_cleaned))

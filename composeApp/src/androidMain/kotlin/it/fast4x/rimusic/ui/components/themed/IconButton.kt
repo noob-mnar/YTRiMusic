@@ -13,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -41,16 +42,17 @@ fun HeaderIconButton(
 
 @Composable
 fun IconButton(
-    onClick: () -> Unit,
-    @DrawableRes icon: Int,
+    icon: Painter,
     color: Color,
-    modifier: Modifier = Modifier,
+    description: String? = null,
     enabled: Boolean = true,
-    indication: Indication? = null
+    indication: Indication? = null,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
 ) {
     Image(
-        painter = painterResource(icon),
-        contentDescription = null,
+        painter = icon,
+        contentDescription = description,
         colorFilter = ColorFilter.tint(color),
         modifier = Modifier
             .clickable(
@@ -60,6 +62,26 @@ fun IconButton(
                 onClick = onClick
             )
             .then(modifier)
+    )
+}
+
+@Composable
+fun IconButton(
+    onClick: () -> Unit,
+    @DrawableRes icon: Int,
+    color: Color,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    indication: Indication? = null
+) {
+    IconButton(
+        painterResource( icon ),
+        color,
+        null,
+        enabled,
+        indication,
+        modifier,
+        onClick
     )
 }
 

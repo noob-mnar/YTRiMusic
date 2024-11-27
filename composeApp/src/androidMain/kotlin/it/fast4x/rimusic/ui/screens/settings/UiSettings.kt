@@ -846,14 +846,7 @@ fun UiSettings(
                     audioQualityFormat = it
                     restartService = true
                 },
-                valueText = {
-                    when (it) {
-                        AudioQualityFormat.Auto -> stringResource(R.string.audio_quality_automatic)
-                        AudioQualityFormat.High -> stringResource(R.string.audio_quality_format_high)
-                        AudioQualityFormat.Medium -> stringResource(R.string.audio_quality_format_medium)
-                        AudioQualityFormat.Low -> stringResource(R.string.audio_quality_format_low)
-                    }
-                }
+                valueText = { it.text }
             )
 
             RestartPlayerService(restartService, onRestart = { restartService = false } )
@@ -878,16 +871,7 @@ fun UiSettings(
                 title = stringResource(R.string.min_listening_time),
                 selectedValue = exoPlayerMinTimeForEvent,
                 onValueSelected = { exoPlayerMinTimeForEvent = it },
-                valueText = {
-                    when (it) {
-                        ExoPlayerMinTimeForEvent.`10s` -> "10s"
-                        ExoPlayerMinTimeForEvent.`15s` -> "15s"
-                        ExoPlayerMinTimeForEvent.`20s` -> "20s"
-                        ExoPlayerMinTimeForEvent.`30s` -> "30s"
-                        ExoPlayerMinTimeForEvent.`40s` -> "40s"
-                        ExoPlayerMinTimeForEvent.`60s` -> "60s"
-                    }
-                }
+                valueText = { it.text }
             )
             SettingsDescription(text = stringResource(R.string.is_min_list_time_for_tips_or_quick_pics))
         }
@@ -897,19 +881,7 @@ fun UiSettings(
                 title = stringResource(R.string.exclude_songs_with_duration_limit),
                 selectedValue = excludeSongWithDurationLimit,
                 onValueSelected = { excludeSongWithDurationLimit = it },
-                valueText = {
-                    when (it) {
-                        DurationInMinutes.Disabled -> stringResource(R.string.vt_disabled)
-                        DurationInMinutes.`3` -> "3m"
-                        DurationInMinutes.`5` -> "5m"
-                        DurationInMinutes.`10` -> "10m"
-                        DurationInMinutes.`15` -> "15m"
-                        DurationInMinutes.`20` -> "20m"
-                        DurationInMinutes.`25` -> "25m"
-                        DurationInMinutes.`30` -> "30m"
-                        DurationInMinutes.`60` -> "60m"
-                    }
-                }
+                valueText = { it. text }
             )
             SettingsDescription(text = stringResource(R.string.exclude_songs_with_duration_limit_description))
         }
@@ -919,19 +891,7 @@ fun UiSettings(
                 title = stringResource(R.string.pause_between_songs),
                 selectedValue = pauseBetweenSongs,
                 onValueSelected = { pauseBetweenSongs = it },
-                valueText = {
-                    when (it) {
-                        PauseBetweenSongs.`0` -> "0s"
-                        PauseBetweenSongs.`5` -> "5s"
-                        PauseBetweenSongs.`10` -> "10s"
-                        PauseBetweenSongs.`15` -> "15s"
-                        PauseBetweenSongs.`20` -> "20s"
-                        PauseBetweenSongs.`30` -> "30s"
-                        PauseBetweenSongs.`40` -> "40s"
-                        PauseBetweenSongs.`50` -> "50s"
-                        PauseBetweenSongs.`60` -> "60s"
-                    }
-                }
+                valueText = { it.text }
             )
 
         if (search.input.isBlank() || stringResource(R.string.player_pause_on_volume_zero).contains(search.input,true))
@@ -1026,19 +986,7 @@ fun UiSettings(
                 title = stringResource(R.string.max_songs_in_queue),
                 selectedValue = maxSongsInQueue,
                 onValueSelected = { maxSongsInQueue = it },
-                valueText = {
-                    when (it) {
-                        MaxSongs.Unlimited -> stringResource(R.string.unlimited)
-                        MaxSongs.`50` -> MaxSongs.`50`.name
-                        MaxSongs.`100` -> MaxSongs.`100`.name
-                        MaxSongs.`200` -> MaxSongs.`200`.name
-                        MaxSongs.`300` -> MaxSongs.`300`.name
-                        MaxSongs.`500` -> MaxSongs.`500`.name
-                        MaxSongs.`1000` -> MaxSongs.`1000`.name
-                        MaxSongs.`2000` -> MaxSongs.`2000`.name
-                        MaxSongs.`3000` -> MaxSongs.`3000`.name
-                    }
-                }
+                valueText = { it.text }
             )
 
         if (search.input.isBlank() || stringResource(R.string.discover).contains(
@@ -1068,9 +1016,7 @@ fun UiSettings(
                 title = stringResource(R.string.now_playing_indicator),
                 selectedValue = nowPlayingIndicator,
                 onValueSelected = { nowPlayingIndicator = it },
-                valueText = {
-                    it.textName
-                }
+                valueText = { it.text }
             )
 
         if (search.input.isBlank() || stringResource(R.string.persistent_queue).contains(search.input,true)) {
@@ -1419,16 +1365,7 @@ fun UiSettings(
                        else -> {}
                    }
                 },
-                valueText = {
-                    when (it) {
-                        ColorPaletteName.Default -> stringResource(R.string._default)
-                        ColorPaletteName.Dynamic -> stringResource(R.string.dynamic)
-                        ColorPaletteName.PureBlack -> stringResource(R.string.theme_pure_black)
-                        ColorPaletteName.ModernBlack -> stringResource(R.string.theme_modern_black)
-                        ColorPaletteName.MaterialYou -> stringResource(R.string.theme_material_you)
-                        ColorPaletteName.Customized -> stringResource(R.string.theme_customized)
-                    }
-                }
+                valueText = { it.text }
             )
 
         AnimatedVisibility(visible = colorPaletteName == ColorPaletteName.Customized) {
@@ -1624,14 +1561,7 @@ fun UiSettings(
                     colorPaletteMode = it
                     //if (it == ColorPaletteMode.PitchBlack) colorPaletteName = ColorPaletteName.ModernBlack
                 },
-                valueText = {
-                    when (it) {
-                        ColorPaletteMode.Dark -> stringResource(R.string.dark)
-                        ColorPaletteMode.Light -> stringResource(R.string._light)
-                        ColorPaletteMode.System -> stringResource(R.string.system)
-                        ColorPaletteMode.PitchBlack -> stringResource(R.string.theme_mode_pitch_black)
-                    }
-                }
+                valueText = { it.text }
             )
 
         if (search.input.isBlank() || stringResource(R.string.navigation_bar_position).contains(search.input,true))
@@ -1642,14 +1572,7 @@ fun UiSettings(
                 // As of version 0.6.53, changing navigation bar to top or bottom
                 // while using ViMusic theme breaks the UI
                 isEnabled = uiType != UiType.ViMusic,
-                valueText = {
-                    when (it) {
-                        NavigationBarPosition.Left -> stringResource(R.string.direction_left)
-                        NavigationBarPosition.Right -> stringResource(R.string.direction_right)
-                        NavigationBarPosition.Top -> stringResource(R.string.direction_top)
-                        NavigationBarPosition.Bottom -> stringResource(R.string.direction_bottom)
-                    }
-                }
+                valueText = { it.text }
             )
 
         if (search.input.isBlank() || stringResource(R.string.navigation_bar_type).contains(search.input,true))
@@ -1657,12 +1580,7 @@ fun UiSettings(
                 title = stringResource(R.string.navigation_bar_type),
                 selectedValue = navigationBarType,
                 onValueSelected = { navigationBarType = it },
-                valueText = {
-                    when (it) {
-                        NavigationBarType.IconAndText -> stringResource(R.string.icon_and_text)
-                        NavigationBarType.IconOnly -> stringResource(R.string.only_icon)
-                    }
-                }
+                valueText = { it.text }
             )
 
         if (search.input.isBlank() || stringResource(R.string.player_position).contains(search.input,true))
@@ -1670,12 +1588,7 @@ fun UiSettings(
                 title = stringResource(R.string.player_position),
                 selectedValue = playerPosition,
                 onValueSelected = { playerPosition = it },
-                valueText = {
-                    when (it) {
-                        PlayerPosition.Top -> stringResource(R.string.position_top)
-                        PlayerPosition.Bottom -> stringResource(R.string.position_bottom)
-                    }
-                }
+                valueText = { it.text }
             )
 
         if (search.input.isBlank() || stringResource(R.string.menu_style).contains(search.input,true))
@@ -1683,12 +1596,7 @@ fun UiSettings(
                 title = stringResource(R.string.menu_style),
                 selectedValue = menuStyle,
                 onValueSelected = { menuStyle = it },
-                valueText = {
-                    when (it) {
-                        MenuStyle.Grid -> stringResource(R.string.style_grid)
-                        MenuStyle.List -> stringResource(R.string.style_list)
-                    }
-                }
+                valueText = { it.text }
             )
 
         if (search.input.isBlank() || stringResource(R.string.message_type).contains(search.input,true))
@@ -1696,12 +1604,7 @@ fun UiSettings(
                 title = stringResource(R.string.message_type),
                 selectedValue = messageType,
                 onValueSelected = { messageType = it },
-                valueText = {
-                    when (it) {
-                        MessageType.Modern -> stringResource(R.string.message_type_modern)
-                        MessageType.Essential -> stringResource(R.string.message_type_essential)
-                    }
-                }
+                valueText = { it.text }
             )
 
         if (search.input.isBlank() || stringResource(R.string.default_page).contains(search.input,true))
@@ -1709,17 +1612,7 @@ fun UiSettings(
                 title = stringResource(R.string.default_page),
                 selectedValue = indexNavigationTab,
                 onValueSelected = {indexNavigationTab = it},
-                valueText = {
-                    when (it) {
-                        HomeScreenTabs.Default -> stringResource(R.string._default)
-                        HomeScreenTabs.QuickPics -> stringResource(R.string.quick_picks)
-                        HomeScreenTabs.Songs -> stringResource(R.string.songs)
-                        HomeScreenTabs.Albums -> stringResource(R.string.albums)
-                        HomeScreenTabs.Artists -> stringResource(R.string.artists)
-                        HomeScreenTabs.Playlists -> stringResource(R.string.playlists)
-                        HomeScreenTabs.Search -> stringResource(R.string.search)
-                    }
-                }
+                valueText = { it.text }
             )
 
         if (search.input.isBlank() || stringResource(R.string.transition_effect).contains(search.input,true))
@@ -1727,16 +1620,7 @@ fun UiSettings(
                 title = stringResource(R.string.transition_effect),
                 selectedValue = transitionEffect,
                 onValueSelected = { transitionEffect = it },
-                valueText = {
-                    when (it) {
-                        TransitionEffect.None -> stringResource(R.string.none)
-                        TransitionEffect.Expand -> stringResource(R.string.te_expand)
-                        TransitionEffect.Fade -> stringResource(R.string.te_fade)
-                        TransitionEffect.Scale -> stringResource(R.string.te_scale)
-                        TransitionEffect.SlideVertical -> stringResource(R.string.te_slide_vertical)
-                        TransitionEffect.SlideHorizontal -> stringResource(R.string.te_slide_horizontal)
-                    }
-                }
+                valueText = { it.text }
             )
 
         if ( UiType.ViMusic.isCurrent() ) {
@@ -1782,12 +1666,7 @@ fun UiSettings(
                 title = stringResource(R.string.settings_use_font_type),
                 selectedValue = fontType,
                 onValueSelected = { fontType = it },
-                valueText = {
-                    when (it) {
-                        FontType.Rubik -> FontType.Rubik.name
-                        FontType.Poppins -> FontType.Poppins.name
-                    }
-                }
+                valueText = { it.text }
             )
 
         if (search.input.isBlank() || stringResource(R.string.use_system_font).contains(search.input,true))

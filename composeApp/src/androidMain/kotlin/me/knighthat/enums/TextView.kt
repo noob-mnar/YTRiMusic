@@ -6,8 +6,9 @@ import androidx.compose.ui.res.stringResource
 
 interface TextView {
 
-    @get:StringRes
     val textId: Int
+        @StringRes
+        get() = throw UnsupportedOperationException( "Please use [${this::class.simpleName}#text] directly!" )
 
     val text: String
         @Composable

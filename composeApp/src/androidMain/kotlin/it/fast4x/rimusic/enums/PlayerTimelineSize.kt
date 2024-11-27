@@ -1,9 +1,21 @@
 package it.fast4x.rimusic.enums
 
-enum class PlayerTimelineSize( val size: Int ) {
-    Small( 90 ),
-    Medium( 55 ),
-    Big( 30 ),
-    Biggest( 20 ),
-    Expanded( 0 );
+import androidx.annotation.StringRes
+import it.fast4x.rimusic.R
+import me.knighthat.enums.TextView
+
+enum class PlayerTimelineSize(
+    val size: Int,
+    @field:StringRes override val textId: Int
+): TextView {
+
+    Small( 90, R.string.small ),
+
+    Medium( 55, R.string.medium ),
+
+    Big( 30, R.string.big ),
+
+    Biggest( 20, R.string.biggest ),
+
+    Expanded( 0, R.string.expanded );
 }

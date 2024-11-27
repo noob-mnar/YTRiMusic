@@ -32,15 +32,7 @@ fun StatisticsScreen(
     val saveableStateHolder = rememberSaveableStateHolder()
 
     val (tabIndex, onTabIndexChanged) = rememberSaveable {
-        mutableStateOf(when (statisticsType) {
-            StatisticsType.Today -> 0
-            StatisticsType.OneWeek -> 1
-            StatisticsType.OneMonth -> 2
-            StatisticsType.ThreeMonths -> 3
-            StatisticsType.SixMonths -> 4
-            StatisticsType.OneYear -> 5
-            StatisticsType.All -> 6
-        })
+        mutableStateOf( statisticsType.ordinal )
     }
 
     PersistMapCleanup(tagPrefix = "${statisticsType.name}/")
@@ -61,18 +53,7 @@ fun StatisticsScreen(
                 }
             ) { currentTabIndex ->
                 saveableStateHolder.SaveableStateProvider(key = currentTabIndex) {
-                    val type: StatisticsType =
-                        when( currentTabIndex ) {
-                            0 -> StatisticsType.Today
-                            1 -> StatisticsType.OneWeek
-                            2 -> StatisticsType.OneMonth
-                            3 -> StatisticsType.ThreeMonths
-                            4 -> StatisticsType.SixMonths
-                            5 -> StatisticsType.OneYear
-                            else -> StatisticsType.All
-                        }
-
-                    StatisticsPage( navController, type )
+                    StatisticsPage( navController, StatisticsType.fromTabIndex( currentTabIndex ) )
                 }
             }
 }

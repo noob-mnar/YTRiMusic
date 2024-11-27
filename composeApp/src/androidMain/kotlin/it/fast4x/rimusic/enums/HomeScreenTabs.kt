@@ -1,12 +1,25 @@
 package it.fast4x.rimusic.enums
 
-enum class HomeScreenTabs( val index: Int ) {
-    Default( 100 ),
-    QuickPics( 0 ),
-    Songs( 1 ),
-    Artists( 2 ),
-    Albums( 3 ),
-    Playlists( 4 ),
-    Search( 5 );
+import androidx.annotation.StringRes
+import it.fast4x.rimusic.R
+import me.knighthat.enums.TextView
 
+enum class HomeScreenTabs(
+    val index: Int,
+    @field:StringRes override val textId: Int
+): TextView {
+
+    Default( 100, R.string._default ),
+
+    QuickPics( 0, R.string.quick_picks ),
+
+    Songs( 1, R.string.songs ),
+
+    Artists( 2, R.string.artists ),
+
+    Albums( 3, R.string.albums ),
+
+    Playlists( 4, R.string.playlists ),
+
+    Search( 5, R.string.search );
 }
