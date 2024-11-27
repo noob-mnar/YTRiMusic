@@ -805,4 +805,6 @@
     <string name="good_afternoon">Добрый день</string>
     <string name="good_evening">Добрый вечер</string>
     <string name="good_night">Доброй ночи</string>
+    <string name="playing_song_not_found">Playing song is not on current list</string>
+    <string name="no_song_to_shuffle">Cannot shuffle empty list</string>
 </resources>

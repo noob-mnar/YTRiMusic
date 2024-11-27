@@ -3,12 +3,14 @@ package it.fast4x.rimusic.utils
 import android.content.Context
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
+import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.MaxSongs
 import it.fast4x.rimusic.service.modern.PlayerServiceModern
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import me.knighthat.appContext
 
 @UnstableApi
 fun playShuffledSongs( mediaItems: List<MediaItem>, context: Context, binder: PlayerServiceModern.Binder? ) {
@@ -17,9 +19,8 @@ fun playShuffledSongs( mediaItems: List<MediaItem>, context: Context, binder: Pl
 
     // Send message saying that there's no song to play
     if( mediaItems.isEmpty() ) {
-        // TODO: add this string to R.string
         SmartMessage(
-            message = "There's no song to play",
+            message = appContext().resources.getString( R.string.no_song_to_shuffle ),
             context = context
         )
         return

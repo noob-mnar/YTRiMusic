@@ -64,8 +64,7 @@ class LocateComponent private constructor(
                   songs().map { it.mediaId }.indexOf( mediaItem.mediaId ).let {
                       if( it == -1 )      // Playing song isn't inside [songs()]
                           SmartMessage(
-                              // TODO Add this string to strings.xml
-                              message = "Couldn't find playing song on current list",
+                              message = appContext().resources.getString( R.string.playing_song_not_found ),
                               context = appContext(),
                               type = PopupType.Warning
                           )
