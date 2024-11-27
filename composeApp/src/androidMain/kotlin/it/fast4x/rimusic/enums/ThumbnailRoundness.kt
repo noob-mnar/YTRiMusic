@@ -5,19 +5,14 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 
-enum class ThumbnailRoundness {
-    None,
-    Light,
-    Medium,
-    Heavy;
+enum class ThumbnailRoundness( val radius: Int ) {
+    None( 0 ),
+    Light( 8 ),
+    Medium( 12 ),
+    Heavy( 16 );
 
-    fun shape(): Shape {
-        return when (this) {
-            None -> RectangleShape
-            Light -> RoundedCornerShape(8.dp)
-            Medium -> RoundedCornerShape(12.dp)
-            Heavy -> RoundedCornerShape(16.dp)
-        }
+    fun shape(): Shape = when (this) {
+        None -> RectangleShape
+        else -> RoundedCornerShape(this.radius.dp)
     }
-
 }

@@ -1,20 +1,12 @@
 package it.fast4x.rimusic.enums
 
-enum class ExoPlayerMinTimeForEvent {
-    `10s`,
-    `15s`,
-    `20s`,
-    `30s`,
-    `40s`,
-    `60s`;
+enum class ExoPlayerMinTimeForEvent( val asSeconds: Int ) {
+    `10s`( 10 ),
+    `15s`( 15 ),
+    `20s`( 25 ),
+    `30s`( 30 ),
+    `40s`( 40 ),
+    `60s`( 60 );
 
-    val ms: Long
-        get() = when (this) {
-            `10s` -> 10
-            `15s` -> 15
-            `20s` -> 20
-            `30s` -> 30
-            `40s` -> 40
-            `60s` -> 60
-        } * 1000L
+    val asMillis: Long = this.asSeconds * 1000L
 }

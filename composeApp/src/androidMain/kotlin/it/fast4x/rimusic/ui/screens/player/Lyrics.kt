@@ -887,7 +887,7 @@ fun Lyrics(
                                     BasicText(
                                         text = translatedText,
                                         style = TextStyle (
-                                            textAlign = lyricsAlignment.selected,
+                                            textAlign = lyricsAlignment.textAlign,
                                         ).merge(
                                         when (fontSize) {
                                             LyricsFontSize.Light ->
@@ -922,7 +922,7 @@ fun Lyrics(
                                     BasicText(
                                         text = translatedText,
                                         style = TextStyle (
-                                            textAlign = lyricsAlignment.selected,
+                                            textAlign = lyricsAlignment.textAlign,
                                         ).merge(
                                             when (fontSize) {
                                             LyricsFontSize.Light ->
@@ -1022,7 +1022,7 @@ fun Lyrics(
                                     BasicText(
                                         text = translatedText,
                                         style = TextStyle(
-                                            textAlign = lyricsAlignment.selected,
+                                            textAlign = lyricsAlignment.textAlign,
                                             brush = if (colorPaletteMode == ColorPaletteMode.Light) brushrainbow else brushrainbowdark
                                         ).merge(
                                             when (fontSize) {
@@ -1102,7 +1102,7 @@ fun Lyrics(
                                         BasicText(
                                             text = translatedText,
                                             style = TextStyle(
-                                                textAlign = lyricsAlignment.selected,
+                                                textAlign = lyricsAlignment.textAlign,
                                                 drawStyle = Stroke(
                                                     width = if (fontSize == LyricsFontSize.Large)
                                                         if (lyricsOutline == LyricsOutline.White) 3.0f
@@ -1241,7 +1241,7 @@ fun Lyrics(
                                         BasicText(
                                             text = translatedText,
                                             style = TextStyle(
-                                                textAlign = lyricsAlignment.selected,
+                                                textAlign = lyricsAlignment.textAlign,
                                                 brush = brushrainbowdark,
                                                 drawStyle = Stroke(
                                                     width = if (fontSize == LyricsFontSize.Large) if (index == synchronizedLyrics.index) 5.0f else 4f
@@ -1289,7 +1289,7 @@ fun Lyrics(
                                         BasicText(
                                             text = translatedText,
                                             style = TextStyle(
-                                                textAlign = lyricsAlignment.selected,
+                                                textAlign = lyricsAlignment.textAlign,
                                                 shadow = Shadow(
                                                     color = if (index == synchronizedLyrics.index)
                                                         if (lyricsColor == LyricsColor.Thememode) Color.White.copy(
@@ -1463,7 +1463,7 @@ fun Lyrics(
                                 BasicText(
                                     text = translatedText,
                                     style = TextStyle(
-                                        textAlign = lyricsAlignment.selected,
+                                        textAlign = lyricsAlignment.textAlign,
                                     ).merge(
                                      when (fontSize) {
                                         LyricsFontSize.Light ->
@@ -1487,7 +1487,7 @@ fun Lyrics(
                                 BasicText(
                                     text = translatedText,
                                     style = TextStyle(
-                                        textAlign = lyricsAlignment.selected,
+                                        textAlign = lyricsAlignment.textAlign,
                                     ).merge(
                                     when (fontSize) {
                                         LyricsFontSize.Light ->
@@ -1533,7 +1533,7 @@ fun Lyrics(
                                 BasicText(
                                     text = translatedText,
                                     style = TextStyle(
-                                        textAlign = lyricsAlignment.selected,
+                                        textAlign = lyricsAlignment.textAlign,
                                         brush = if (colorPaletteMode == ColorPaletteMode.Light) brushrainbow else brushrainbowdark
                                     ).merge(
                                         when (fontSize) {
@@ -1569,7 +1569,7 @@ fun Lyrics(
                                     BasicText(
                                         text = translatedText,
                                         style = TextStyle(
-                                            textAlign = lyricsAlignment.selected,
+                                            textAlign = lyricsAlignment.textAlign,
                                             drawStyle = Stroke(
                                                 width = if (fontSize == LyricsFontSize.Large)
                                                     if (lyricsOutline == LyricsOutline.White) 3.0f
@@ -1645,7 +1645,7 @@ fun Lyrics(
                                     BasicText(
                                         text = translatedText,
                                         style = TextStyle(
-                                            textAlign = lyricsAlignment.selected,
+                                            textAlign = lyricsAlignment.textAlign,
                                             brush = brushrainbowdark,
                                             drawStyle = Stroke(
                                                 width = if (fontSize == LyricsFontSize.Large) 5.0f

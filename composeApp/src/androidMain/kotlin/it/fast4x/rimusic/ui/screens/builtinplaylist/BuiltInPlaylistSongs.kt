@@ -372,7 +372,7 @@ fun BuiltInPlaylistSongs(
 
 
         if (relatedSongsRecommendationResult != null) {
-            for (index in 0..recommendationsNumber.number) {
+            for ( index in 0..recommendationsNumber.toInt() ) {
                 positionsRecommendationList.add((0..songs.size).random())
             }
         }
@@ -513,7 +513,7 @@ fun BuiltInPlaylistSongs(
                         BuiltInPlaylist.Favorites -> stringResource(R.string.favorites)
                         BuiltInPlaylist.Downloaded -> stringResource(R.string.downloaded)
                         BuiltInPlaylist.Offline -> stringResource(R.string.cached)
-                        BuiltInPlaylist.Top -> stringResource(R.string.my_playlist_top).format(maxTopPlaylistItems.number)
+                        BuiltInPlaylist.Top -> stringResource(R.string.my_playlist_top).format(maxTopPlaylistItems.toInt())
                     },
                     iconId = R.drawable.search,
                     enabled = true,
@@ -664,8 +664,10 @@ fun BuiltInPlaylistSongs(
                                         onClick = {
                                             if (songs.isNotEmpty()) {
                                                 val itemsLimited =
-                                                    if (songs.size > maxSongsInQueue.number) songs.shuffled()
-                                                        .take(maxSongsInQueue.number.toInt()) else songs
+                                                    if ( songs.size > maxSongsInQueue.toInt() )
+                                                        songs.shuffled().take(maxSongsInQueue.toInt())
+                                                    else
+                                                        songs
                                                 binder?.stopRadio()
                                                 binder?.player?.forcePlayFromBeginning(
                                                     itemsLimited.shuffled().map(Song::asMediaItem)
@@ -1214,9 +1216,10 @@ fun BuiltInPlaylistSongs(
                                 searching = false
                                 filter = null
                                 val itemsLimited =
-                                    if (songs.size > maxSongsInQueue.number) songs.take(
-                                        maxSongsInQueue.number.toInt()
-                                    ) else songs
+                                    if ( songs.size > maxSongsInQueue.toInt() )
+                                        songs.take(maxSongsInQueue.toInt())
+                                    else
+                                        songs
                                 binder?.stopRadio()
                                 binder?.player?.forcePlayAtIndex(
                                     itemsLimited.map(Song::asMediaItem),

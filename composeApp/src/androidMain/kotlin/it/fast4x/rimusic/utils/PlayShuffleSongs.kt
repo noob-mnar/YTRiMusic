@@ -34,9 +34,8 @@ fun playShuffledSongs( mediaItems: List<MediaItem>, context: Context, binder: Pl
     }
 
     val maxSongsInQueue = context.preferences
-        .getEnum( maxSongsInQueueKey, MaxSongs.`500` )
-        .number
-        .toInt()
+                                 .getEnum( maxSongsInQueueKey, MaxSongs.`500` )
+                                 .toInt()
 
     mediaItems.let { songs ->
 

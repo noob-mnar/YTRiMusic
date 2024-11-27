@@ -1,5 +1,6 @@
 package it.fast4x.rimusic.enums
 
+// Default values are in seconds
 enum class PauseBetweenSongs {
     `0`,
     `5`,
@@ -11,17 +12,7 @@ enum class PauseBetweenSongs {
     `50`,
     `60`;
 
-    val number: Long
-        get() = when (this) {
-            `0` -> 0
-            `5` -> 5
-            `10` -> 10
-            `15` -> 15
-            `20` -> 20
-            `30` -> 30
-            `40` -> 40
-            `50` -> 50
-            `60` -> 60
-
-        } * 1000L
+    val asMillis: Long = this.name
+                             .toLong()
+                             .times( 1000 )
 }

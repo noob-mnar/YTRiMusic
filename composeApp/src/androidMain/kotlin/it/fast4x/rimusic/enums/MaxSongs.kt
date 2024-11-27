@@ -11,16 +11,10 @@ enum class MaxSongs {
     `3000`,
     Unlimited;
 
-    val number: Long
-        get() = when (this) {
-            `50` -> 50
-            `100` -> 100
-            `200` -> 200
-            `300` -> 300
-            `500` -> 500
-            `1000` -> 1000
-            `2000` -> 2000
-            `3000` -> 3000
-            Unlimited -> 1000000
-        } * 1L
+    fun toInt(): Int =
+        when( this ) {
+            /** A million is still within [Int.MIN_VALUE] and [Int.MAX_VALUE] */
+            Unlimited -> 1_000_000
+            else -> this.name.toInt()
+        }
 }

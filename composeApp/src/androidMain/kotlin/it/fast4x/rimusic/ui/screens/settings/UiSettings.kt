@@ -1925,9 +1925,7 @@ fun UiSettings(
                 title = stringResource(R.string.statistics_max_number_of_items),
                 selectedValue = recommendationsNumber,
                 onValueSelected = { recommendationsNumber = it },
-                valueText = {
-                    it.number.toString()
-                }
+                valueText = { it.name }
             )
 
         SettingsGroupSpacer()
@@ -1938,9 +1936,7 @@ fun UiSettings(
                 title = stringResource(R.string.statistics_max_number_of_items),
                 selectedValue = maxStatisticsItems,
                 onValueSelected = { maxStatisticsItems = it },
-                valueText = {
-                    it.number.toString()
-                }
+                valueText = { it.name }
             )
 
         if (search.input.isBlank() || stringResource(R.string.listening_time).contains(search.input,true))
@@ -1961,9 +1957,7 @@ fun UiSettings(
                 title = stringResource(R.string.statistics_max_number_of_items),
                 selectedValue = maxTopPlaylistItems,
                 onValueSelected = { maxTopPlaylistItems = it },
-                valueText = {
-                    it.number.toString()
-                }
+                valueText = { it.name }
             )
 
         var resetToDefault by remember { mutableStateOf(false) }

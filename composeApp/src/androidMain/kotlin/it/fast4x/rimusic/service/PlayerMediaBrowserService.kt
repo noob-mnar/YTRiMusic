@@ -23,6 +23,8 @@ import it.fast4x.innertube.models.bodies.SearchBody
 import it.fast4x.innertube.requests.searchPage
 import it.fast4x.innertube.utils.from
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.MONTHLY_PREFIX
+import it.fast4x.rimusic.PINNED_PREFIX
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.MaxTopPlaylistItems
 import it.fast4x.rimusic.models.Album
@@ -30,8 +32,6 @@ import it.fast4x.rimusic.models.Artist
 import it.fast4x.rimusic.models.PlaylistPreview
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongWithContentLength
-import it.fast4x.rimusic.PINNED_PREFIX
-import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.utils.MaxTopPlaylistItemsKey
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.asSong
@@ -310,7 +310,7 @@ class PlayerMediaBrowserService : MediaBrowserServiceCompat(), ServiceConnection
                 .setMediaId(MediaId.top)
                 .setTitle((this as Context).resources.getString(R.string.my_playlist_top)
                     .format((this as Context).preferences.getEnum(MaxTopPlaylistItemsKey,
-                            MaxTopPlaylistItems.`10`).number))
+                            MaxTopPlaylistItems.`10`).toInt()))
                 .setIconUri(uriFor(R.drawable.trending))
                 .build(),
             MediaItem.FLAG_PLAYABLE
@@ -473,7 +473,7 @@ class PlayerMediaBrowserService : MediaBrowserServiceCompat(), ServiceConnection
 
                     MediaId.top -> {
                         val maxTopSongs = preferences.getEnum(MaxTopPlaylistItemsKey,
-                            MaxTopPlaylistItems.`10`).number.toInt()
+                            MaxTopPlaylistItems.`10`).toInt()
 
                         Database.trending(maxTopSongs)
                                 .first()

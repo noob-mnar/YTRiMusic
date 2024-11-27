@@ -21,39 +21,18 @@ enum class MaxTopPlaylistItems {
     `150`,
     `200`;
 
-    val number: Long
-        get() = when (this) {
-            `10` -> 10
-            `20` -> 20
-            `30` -> 30
-            `40` -> 40
-            `50` -> 50
-            `70` -> 70
-            `90` -> 90
-            `100` -> 100
-            `150` -> 150
-            `200` -> 200
-        }
-
+    fun toInt(): Int = this.name.toInt()
 }
 
 enum class TopPlaylistPeriod(
+    val duration: Duration,
     @DrawableRes val iconId: Int
 ): Drawable {
-    PastDay( R.drawable.stat_today ),
-    PastWeek( R.drawable.stat_week ),
-    PastMonth( R.drawable.stat_month),
-    PastYear( R.drawable.stat_year ),
-    AllTime( R.drawable.stat );
-
-    val duration: Duration
-        get() = when (this) {
-            PastDay -> 1.days
-            PastWeek -> 7.days
-            PastMonth -> 30.days
-            PastYear -> 365.days
-            AllTime -> Duration.INFINITE
-        }
+    PastDay( 1.days, R.drawable.stat_today ),
+    PastWeek( 7.days, R.drawable.stat_week ),
+    PastMonth( 30.days, R.drawable.stat_month),
+    PastYear( 365.days, R.drawable.stat_year ),
+    AllTime( Duration.INFINITE, R.drawable.stat );
 
     override val icon: Painter
         @Composable

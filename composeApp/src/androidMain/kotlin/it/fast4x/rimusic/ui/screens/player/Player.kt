@@ -1166,7 +1166,7 @@ fun Player(
                                 val fling = PagerDefaults.flingBehavior(
                                     state = pagerStateQueue,
                                     snapPositionalThreshold = 0.15f,
-                                    pagerSnapDistance = PagerSnapDistance.atMost(showsongs.number)
+                                    pagerSnapDistance = PagerSnapDistance.atMost( showsongs.toInt() )
                                 )
                                 LaunchedEffect(binder.player.currentMediaItemIndex) {
                                     pagerStateQueue.animateScrollToPage(binder.player.currentMediaItemIndex)
@@ -1199,9 +1199,11 @@ fun Player(
                                     override fun Density.calculateMainAxisPageSize(
                                         availableSpace: Int,
                                         pageSpacing: Int
-                                    ): Int {
-                                        return if (showsongs == SongsNumber.`1`) (availableSpace) else ((availableSpace - 2 * pageSpacing) / (showsongs.number))
-                                    }
+                                    ): Int =
+                                        if (showsongs == SongsNumber.`1`)
+                                            availableSpace
+                                        else
+                                            (availableSpace - 2 * pageSpacing) / showsongs.toInt()
                                 }
 
                                 HorizontalPager(

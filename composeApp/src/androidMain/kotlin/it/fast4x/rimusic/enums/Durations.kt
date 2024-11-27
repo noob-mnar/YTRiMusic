@@ -55,45 +55,25 @@ enum class DurationInMinutes {
     `30`,
     `60`;
 
-    val minutesInMilliSeconds: Long get() =
-        when (this) {
-            Disabled -> 0
-            `3` -> 3
-            `5` -> 5
-            `10` -> 10
-            `15` -> 15
-            `20` -> 20
-            `25` -> 25
-            `30` -> 30
-            `60` -> 60
-        } * 3600000L
+    val asMillis: Long = toInt() * 3_600_000L
+
+    fun toInt() =
+        if( this == Disabled )
+            0
+        else
+            this.name.toInt()
 }
 
-enum class DurationInMilliseconds {
-    Disabled,
-    `100ms`,
-    `200ms`,
-    `300ms`,
-    `400ms`,
-    `500ms`,
-    `600ms`,
-    `700ms`,
-    `800ms`,
-    `900ms`,
-    `1000ms`;
-
-    val milliSeconds: Int get() =
-        when (this) {
-            Disabled -> 0
-            `100ms` -> 100
-            `200ms` -> 200
-            `300ms` -> 300
-            `400ms` -> 400
-            `500ms` -> 500
-            `600ms` -> 600
-            `700ms` -> 700
-            `800ms` -> 800
-            `900ms` -> 900
-            `1000ms` -> 1000
-        }
+enum class DurationInMilliseconds( val asMillis: Int ) {
+    Disabled( 0 ),
+    `100ms`( 100 ),
+    `200ms`( 200 ),
+    `300ms`( 300 ),
+    `400ms`( 400 ),
+    `500ms`( 500 ),
+    `600ms`( 600 ),
+    `700ms`( 700 ),
+    `800ms`( 800 ),
+    `900ms`( 900 ),
+    `1000ms`( 1000 );
 }

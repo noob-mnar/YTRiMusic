@@ -459,7 +459,7 @@ class PlayerServiceModern : MediaLibraryService(),
     override fun onRepeatModeChanged(repeatMode: Int) {
         updateNotification()
         preferences.edit {
-            putEnum(queueLoopTypeKey, QueueLoopType.from(repeatMode))
+            putEnum( queueLoopTypeKey, QueueLoopType.fromType(repeatMode) )
         }
     }
 
@@ -487,7 +487,7 @@ class PlayerServiceModern : MediaLibraryService(),
         val minTimeForEvent =
             preferences.getEnum(exoPlayerMinTimeForEventKey, ExoPlayerMinTimeForEvent.`20s`)
 
-        if (totalPlayTimeMs > minTimeForEvent.ms) {
+        if ( totalPlayTimeMs > minTimeForEvent.asMillis ) {
             query {
                 try {
                     Database.insert(
@@ -630,7 +630,7 @@ class PlayerServiceModern : MediaLibraryService(),
         val duration = preferences.getEnum(
             playbackFadeAudioDurationKey,
             DurationInMilliseconds.Disabled
-        ).milliSeconds
+        ).asMillis
         if (isPlaying && !fadeDisabled)
             startFadeAnimator(
                 player = binder.player,
@@ -1194,7 +1194,7 @@ class PlayerServiceModern : MediaLibraryService(),
             val duration = preferences.getEnum(
                 playbackFadeAudioDurationKey,
                 DurationInMilliseconds.Disabled
-            ).milliSeconds
+            ).asMillis
             if (player.isPlaying) {
                 if (fadeDisabled) {
                     player.pause()
