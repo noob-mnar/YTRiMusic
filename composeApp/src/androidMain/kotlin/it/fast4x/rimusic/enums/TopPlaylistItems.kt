@@ -1,9 +1,6 @@
 package it.fast4x.rimusic.enums
 
 import androidx.annotation.DrawableRes
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
 import it.fast4x.rimusic.R
 import me.knighthat.enums.Drawable
 import kotlin.time.Duration
@@ -26,15 +23,11 @@ enum class MaxTopPlaylistItems {
 
 enum class TopPlaylistPeriod(
     val duration: Duration,
-    @DrawableRes val iconId: Int
+    @field:DrawableRes override val iconId: Int
 ): Drawable {
     PastDay( 1.days, R.drawable.stat_today ),
     PastWeek( 7.days, R.drawable.stat_week ),
     PastMonth( 30.days, R.drawable.stat_month),
     PastYear( 365.days, R.drawable.stat_year ),
     AllTime( Duration.INFINITE, R.drawable.stat );
-
-    override val icon: Painter
-        @Composable
-        get() = painterResource( this.iconId )
 }
