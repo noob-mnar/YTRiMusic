@@ -155,11 +155,6 @@ interface Database {
     fun updateAlbumTitle(id: String, title: String): Int
 
     @Transaction
-    @Query("SELECT * FROM Artist WHERE id in (:idsList)")
-    @RewriteQueriesToDropUnusedColumns
-    fun getArtistsList(idsList: List<String>): Flow<List<Artist?>>
-
-    @Transaction
     @Query("SELECT * FROM Song WHERE id in (:idsList) ")
     @RewriteQueriesToDropUnusedColumns
     fun getSongsList(idsList: List<String>): Flow<List<Song>>
@@ -168,9 +163,6 @@ interface Database {
     @Query("SELECT * FROM Song WHERE id in (:idsList) ")
     @RewriteQueriesToDropUnusedColumns
     fun getSongsListNoFlow(idsList: List<String>): List<Song>
-
-    @Query("SELECT thumbnailUrl FROM Song WHERE id in (:idsList) ")
-    fun getSongsListThumbnailUrls(idsList: List<String>): Flow<List<String?>>
 
     @Transaction
     @Query("SELECT * FROM Song WHERE ROWID='wooowww' ")
@@ -235,11 +227,6 @@ interface Database {
     @Query("SELECT * FROM Song WHERE id LIKE '$LOCAL_KEY_PREFIX%'")
     @RewriteQueriesToDropUnusedColumns
     fun songsOnDevice(): Flow<List<Song>>
-
-    @Transaction
-    @Query("SELECT * FROM Song WHERE id LIKE '$LOCAL_KEY_PREFIX%'")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsEntityOnDevice(): Flow<List<SongEntity>>
 
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Transaction
@@ -360,9 +347,6 @@ interface Database {
         }
     }
 
-    @Query("SELECT thumbnailUrl FROM Song WHERE likedAt IS NOT NULL AND id NOT LIKE '$LOCAL_KEY_PREFIX%'  LIMIT 4")
-    fun preferitesThumbnailUrls(): Flow<List<String?>>
-
     @Transaction
     @Query("SELECT Song.*, contentLength FROM Song LEFT JOIN Format ON id = songId WHERE songId = :songId")
     fun songCached(songId: String): Flow<SongWithContentLength?>
@@ -455,9 +439,6 @@ interface Database {
             }
         }
     }
-
-    @Query("SELECT thumbnailUrl FROM Song JOIN Format ON id = songId WHERE contentLength IS NOT NULL AND totalPlayTimeMs > 0  LIMIT 4")
-    fun offlineThumbnailUrls(): Flow<List<String?>>
 
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Transaction
@@ -875,35 +856,11 @@ interface Database {
 
     @Transaction
     @Query("SELECT * FROM Playlist WHERE name LIKE '${MONTHLY_PREFIX}' || :name || '%'  ")
-    fun monthlyPlaylists(name: String?): Flow<List<PlaylistWithSongs?>>
+    fun monthlyPlaylists(name: String?): Flow<List<PlaylistWithSongs>>
 
     @Transaction
     @Query("SELECT id, name, browseId, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist WHERE name LIKE '${MONTHLY_PREFIX}' || :name || '%'  ")
     fun monthlyPlaylistsPreview(name: String?): Flow<List<PlaylistPreview>>
-
-    @RewriteQueriesToDropUnusedColumns
-    @Transaction
-    @Query(
-        """
-        SELECT * FROM SortedSongPlaylistMap SPLM
-        INNER JOIN Song on Song.id = SPLM.songId
-        WHERE playlistId = :id
-        ORDER BY SPLM.position
-        """
-    )
-    fun playlistSongs(id: Long): Flow<List<Song>?>
-
-    @RewriteQueriesToDropUnusedColumns
-    @Transaction
-    @Query(
-        """
-        SELECT * FROM SortedSongPlaylistMap SPLM
-        INNER JOIN Song on Song.id = SPLM.songId
-        WHERE playlistId = :id
-        ORDER BY SPLM.position
-        """
-    )
-    fun songsInPlaylist(id: Long): Flow<List<SongEntity>?>
 
     @Transaction
     @Query("SELECT DISTINCT S.* FROM Song S INNER JOIN SongAlbumMap SM ON S.id=SM.songId " +
@@ -1256,15 +1213,6 @@ interface Database {
     @Query("SELECT id, name, 0 AS size FROM Artist LEFT JOIN SongArtistMap ON id = artistId WHERE songId = :songId")
     fun songArtistInfo(songId: String): List<Info>
 
-    /*
-        @Transaction
-        @Query("SELECT Song.* FROM Event JOIN Song ON Song.id = songId GROUP BY songId ORDER BY SUM(CAST(playTime AS REAL) / (((:now - timestamp) / 86400000) + 1)) DESC LIMIT 1")
-    //    @Query("SELECT Song.* FROM Event JOIN Song ON Song.id = songId GROUP BY songId ORDER BY timestamp DESC LIMIT 1")
-        @RewriteQueriesToDropUnusedColumns
-        fun trending(now: Long = System.currentTimeMillis()): Flow<Song?>
-    //    fun trending(): Flow<Song?>
-     */
-
     @Transaction
     @Query("SELECT Song.* FROM Event JOIN Song ON Song.id = songId WHERE Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' GROUP BY songId ORDER BY SUM(CAST(playTime AS REAL) / (((:now - timestamp) / 86400000) + 1)) DESC LIMIT 1")
     @RewriteQueriesToDropUnusedColumns
@@ -1274,11 +1222,6 @@ interface Database {
     @Query("SELECT Song.* FROM Event JOIN Song ON Song.id = songId WHERE Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' GROUP BY songId ORDER BY SUM(playTime) DESC LIMIT :limit")
     @RewriteQueriesToDropUnusedColumns
     fun trending(limit: Int = 3): Flow<List<Song>>
-
-    @Transaction
-    @Query("SELECT Song.* FROM Event JOIN Song ON Song.id = songId WHERE Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' GROUP BY songId ORDER BY SUM(playTime) DESC LIMIT :limit")
-    @RewriteQueriesToDropUnusedColumns
-    fun trendingSongEntity(limit: Int = 3): Flow<List<SongEntity>>
 
     @Transaction
     @Query("SELECT Song.* FROM Event JOIN Song ON Song.id = songId WHERE (:now - Event.timestamp) <= :period AND Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' GROUP BY songId ORDER BY SUM(playTime) DESC LIMIT :limit")

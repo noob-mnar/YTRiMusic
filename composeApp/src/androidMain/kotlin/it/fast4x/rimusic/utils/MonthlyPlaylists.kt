@@ -35,10 +35,10 @@ fun monthlyPLaylist(playlist: String?): State<PlaylistWithSongs?> {
 }
 
 @Composable
-fun monthlyPLaylists(playlist: String? = ""): State<List<PlaylistWithSongs?>?> {
+fun monthlyPLaylists(playlist: String? = ""): State<List<PlaylistWithSongs>> {
     val monthlyPlaylists = remember {
         Database.monthlyPlaylists(playlist)
-    }.collectAsState(initial = null, context = Dispatchers.IO)
+    }.collectAsState(initial = emptyList(), context = Dispatchers.IO)
 
     return monthlyPlaylists
 }

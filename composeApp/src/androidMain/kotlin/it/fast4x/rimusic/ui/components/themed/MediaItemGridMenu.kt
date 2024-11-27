@@ -50,7 +50,6 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import androidx.navigation.NavController
-import it.fast4x.compose.persist.persistList
 import it.fast4x.innertube.models.NavigationEndpoint
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
@@ -62,7 +61,6 @@ import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.PlaylistSortBy
 import it.fast4x.rimusic.enums.SortOrder
-import it.fast4x.rimusic.models.Artist
 import it.fast4x.rimusic.models.Info
 import it.fast4x.rimusic.models.Playlist
 import it.fast4x.rimusic.models.SongPlaylistMap
@@ -331,7 +329,6 @@ fun MediaItemGridMenu (
         )
     }
 
-    var artistsList by persistList<Artist?>("home/artists")
     var artistIds = remember { mutableListOf("") }
 
     LaunchedEffect(Unit, mediaItem.mediaId) {
@@ -344,7 +341,6 @@ fun MediaItemGridMenu (
             artistsInfo?.forEach { info ->
                 if (info.id.isNotEmpty()) artistIds.add(info.id)
             }
-            Database.getArtistsList(artistIds).collect { artistsList = it }
         }
     }
 
