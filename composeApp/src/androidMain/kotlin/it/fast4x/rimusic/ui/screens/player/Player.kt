@@ -192,7 +192,6 @@ import it.fast4x.rimusic.utils.formatAsDuration
 import it.fast4x.rimusic.utils.formatAsTime
 import it.fast4x.rimusic.utils.getBitmapFromUrl
 import it.fast4x.rimusic.utils.getDownloadState
-import it.fast4x.rimusic.utils.getIconQueueLoopState
 import it.fast4x.rimusic.utils.horizontalFadingEdge
 import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isLandscape
@@ -1482,15 +1481,13 @@ fun Player(
 
                         if (showButtonPlayerLoop)
                             IconButton(
-                                icon = getIconQueueLoopState(queueLoopType),
+                                icon = queueLoopType.icon,
                                 color = colorPalette().accent,
                                 onClick = {
                                     queueLoopType = queueLoopType.next()
                                     if (effectRotationEnabled) isRotated = !isRotated
                                 },
-                                modifier = Modifier
-                                    //.padding(horizontal = 4.dp)
-                                    .size(24.dp)
+                                modifier = Modifier.size( 24.dp )
                             )
 
                         if (showButtonPlayerShuffle)

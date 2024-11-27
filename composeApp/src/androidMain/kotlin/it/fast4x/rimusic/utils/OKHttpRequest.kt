@@ -16,6 +16,7 @@ import java.net.InetSocketAddress
 import java.net.Proxy
 import java.time.Duration
 
+// TODO Migrate to [HttpFetcher] in innertube extension
 class OkHttpRequest(client: OkHttpClient) {
     //internal var client = OkHttpClient()
     internal var client = okHttpClient()

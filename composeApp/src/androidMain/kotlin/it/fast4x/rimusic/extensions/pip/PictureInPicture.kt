@@ -114,7 +114,6 @@ data class PipHandler internal constructor(
     private val exitPip: () -> Boolean?
 ) {
     fun enterPictureInPictureMode() = enterPip() == true
-    fun exitPictureInPictureMode() = exitPip() == true
 }
 
 private val Activity?.pip get() = if (isAtLeastAndroid7) this?.isInPictureInPictureMode == true else false

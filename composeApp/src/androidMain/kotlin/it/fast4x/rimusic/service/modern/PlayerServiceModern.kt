@@ -107,7 +107,6 @@ import it.fast4x.rimusic.utils.audioQualityFormatKey
 import it.fast4x.rimusic.utils.autoLoadSongsInQueueKey
 import it.fast4x.rimusic.utils.broadCastPendingIntent
 import it.fast4x.rimusic.utils.closebackgroundPlayerKey
-import it.fast4x.rimusic.utils.collect
 import it.fast4x.rimusic.utils.discordPersonalAccessTokenKey
 import it.fast4x.rimusic.utils.discoverKey
 import it.fast4x.rimusic.utils.encryptedPreferences
@@ -226,11 +225,6 @@ class PlayerServiceModern : MediaLibraryService(),
     private val currentSong = currentMediaItem.flatMapLatest { mediaItem ->
         Database.song(mediaItem?.mediaId)
     }.stateIn(coroutineScope, SharingStarted.Lazily, null)
-
-    @kotlin.OptIn(ExperimentalCoroutinesApi::class)
-    private val currentFormat = currentMediaItem.flatMapLatest { mediaItem ->
-        mediaItem?.mediaId?.let { Database.format(it) }!!
-    }
 
     var currentSongStateDownload = MutableStateFlow(Download.STATE_STOPPED)
 
@@ -413,17 +407,20 @@ class PlayerServiceModern : MediaLibraryService(),
         MyDownloadHelper.getDownloadManager(this).addListener(downloadListener)
 
         // Ensure that song is updated
-        currentSong.debounce(1000).collect(coroutineScope) { song ->
-            println("PlayerServiceModern onCreate currentSong $song")
-            updateDownloadedState()
-            println("PlayerServiceModern onCreate currentSongIsDownloaded ${currentSongStateDownload.value}")
+        coroutineScope.launch {
+            currentSong.debounce( 1000 ).collect { song ->
 
-            updateNotification()
-            withContext(Dispatchers.Main) {
-                if (song != null) {
-                    updateDiscordPresence()
+                println("PlayerServiceModern onCreate currentSong $song")
+                updateDownloadedState()
+                println("PlayerServiceModern onCreate currentSongIsDownloaded ${currentSongStateDownload.value}")
+
+                updateNotification()
+                withContext(Dispatchers.Main) {
+                    if (song != null) {
+                        updateDiscordPresence()
+                    }
+                    updateWidgets()
                 }
-                updateWidgets()
             }
         }
 
@@ -1014,7 +1011,9 @@ class PlayerServiceModern : MediaLibraryService(),
                     setLikeState(it.likedAt)
                 )
             }.also {
-                currentSong.debounce(1000).collect(coroutineScope) { updateNotification() }
+                coroutineScope.launch {
+                    currentSong.debounce(1000).collect { updateNotification() }
+                }
             }
         }
     }

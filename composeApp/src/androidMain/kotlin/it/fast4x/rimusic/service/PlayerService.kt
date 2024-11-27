@@ -47,7 +47,6 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.common.audio.SonicAudioProcessor
-import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.DataSpec
@@ -93,12 +92,9 @@ import it.fast4x.rimusic.extensions.audiovolume.AudioVolumeObserver
 import it.fast4x.rimusic.extensions.audiovolume.OnAudioVolumeChangedListener
 import it.fast4x.rimusic.extensions.discord.sendDiscordPresence
 import it.fast4x.rimusic.models.Event
-import it.fast4x.rimusic.models.PersistentQueue
-import it.fast4x.rimusic.models.PersistentSong
 import it.fast4x.rimusic.models.QueuedMediaItem
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongEntity
-import it.fast4x.rimusic.models.asMediaItem
 import it.fast4x.rimusic.query
 import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
@@ -184,8 +180,6 @@ import kotlinx.coroutines.withContext
 import me.knighthat.appContext
 import timber.log.Timber
 import java.io.IOException
-import java.io.ObjectInputStream
-import java.io.ObjectOutputStream
 import kotlin.math.roundToInt
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.seconds
@@ -944,137 +938,10 @@ class PlayerService : InvincibleService(),
                 }
             }
         }
-
-        /* // New feature auto start radio in queue
-        if (radio == null) {
-            binder.setupRadio(
-                NavigationEndpoint.Endpoint.Watch(
-                    videoId = player.currentMediaItem?.mediaId
-                )
-            )
-        } else {
-            radio?.let { radio ->
-                if (player.mediaItemCount - player.currentMediaItemIndex <= 3) {
-                    coroutineScope.launch(Dispatchers.Main) {
-                        player.addMediaItems(radio.process())
-                    }
-                }
-            }
-        }
-        */
-    }
-
-    @ExperimentalCoroutinesApi
-    @FlowPreview
-    @UnstableApi
-    private fun maybeRestoreFromDiskPlayerQueue() {
-        if (!isPersistentQueueEnabled) return
-        //Log.d("mediaItem", "QueuePersistentEnabled Restore Initial")
-
-        runCatching {
-            filesDir.resolve("persistentQueue.data").inputStream().use { fis ->
-                ObjectInputStream(fis).use { oos ->
-                    oos.readObject() as PersistentQueue
-                }
-            }
-        }.onSuccess { queue ->
-            //Log.d("mediaItem", "QueuePersistentEnabled Restored queue $queue")
-            //Log.d("mediaItem", "QueuePersistentEnabled Restored ${queue.songMediaItems.size}")
-            runBlocking(Dispatchers.Main) {
-                player.setMediaItems(
-                    queue.songMediaItems.map { song ->
-                        song.asMediaItem.buildUpon()
-                            .setUri(song.asMediaItem.mediaId)
-                            .setCustomCacheKey(song.asMediaItem.mediaId)
-                            .build().apply {
-                                mediaMetadata.extras?.putBoolean("isFromPersistentQueue", true)
-                            }
-                    },
-                    queue.mediaItemIndex,
-                    queue.position
-                )
-
-                player.prepare()
-
-                isNotificationStarted = true
-                kotlin.runCatching {
-                    startForegroundService(this@PlayerService, intent<PlayerService>())
-                }.onFailure {
-                    Timber.e("maybeRestoreFromDiskPlayerQueue PlayerService startForegroundService ${it.stackTraceToString()}")
-                }
-                runCatching {
-                    //startForeground(NotificationId, notification())
-                    notification()?.let {
-                        ServiceCompat.startForeground(
-                            this@PlayerService,
-                            NotificationId,
-                            it,
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
-                            } else {
-                                0
-                            }
-                        )
-                    }
-                }.onFailure {
-                    Timber.e("maybeRestoreFromDiskPlayerQueue PlayerService startForeground ${it.stackTraceToString()}")
-                }
-            }
-
-        }.onFailure {
-            //it.printStackTrace()
-            Timber.e(it.stackTraceToString())
-        }
-
-        //Log.d("mediaItem", "QueuePersistentEnabled Restored ${player.currentTimeline.mediaItems.size}")
-
-    }
-
-    private fun maybeSaveToDiskPlayerQueue() {
-
-        if (!isPersistentQueueEnabled) return
-        //Log.d("mediaItem", "QueuePersistentEnabled Save ${player.currentTimeline.mediaItems.size}")
-
-        val persistentQueue = PersistentQueue(
-            title = "title",
-            songMediaItems = player.currentTimeline.mediaItems.map {
-                PersistentSong(
-                    id = it.mediaId,
-                    title = it.mediaMetadata.title.toString(),
-                    durationText = it.mediaMetadata.extras?.getString("durationText").toString(),
-                    thumbnailUrl = it.mediaMetadata.artworkUri.toString()
-                )
-            },
-            mediaItemIndex = player.currentMediaItemIndex,
-            position = player.currentPosition
-        )
-
-        runCatching {
-            filesDir.resolve("persistentQueue.data").outputStream().use { fos ->
-                ObjectOutputStream(fos).use { oos ->
-                    oos.writeObject(persistentQueue)
-                }
-            }
-        }.onFailure {
-            //it.printStackTrace()
-            Timber.e(it.stackTraceToString())
-
-        }.onSuccess {
-            Log.d("mediaItem", "QueuePersistentEnabled Saved $persistentQueue")
-        }
-
     }
 
     private fun maybeSavePlayerQueue() {
         if (!isPersistentQueueEnabled) return
-        /*
-        if (player.playbackState == Player.STATE_IDLE) {
-            Log.d("mediaItem", "QueuePersistentEnabled playbackstate idle return")
-            return
-        }
-         */
-        //Log.d("mediaItem", "QueuePersistentEnabled Save ${player.currentTimeline.mediaItems.size}")
-        //Log.d("mediaItem", "QueuePersistentEnabled Save initial")
 
         val mediaItems = player.currentTimeline.mediaItems
         val mediaItemIndex = player.currentMediaItemIndex

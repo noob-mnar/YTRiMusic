@@ -75,7 +75,6 @@ import it.fast4x.rimusic.utils.buttonStateKey
 import it.fast4x.rimusic.utils.colorPaletteModeKey
 import it.fast4x.rimusic.utils.colorPaletteNameKey
 import it.fast4x.rimusic.utils.effectRotationKey
-import it.fast4x.rimusic.utils.getIconQueueLoopState
 import it.fast4x.rimusic.utils.getLikeState
 import it.fast4x.rimusic.utils.getUnlikedIcon
 import it.fast4x.rimusic.utils.playNext
@@ -532,17 +531,10 @@ fun ControlsEssential(
 
     )
 
-
-
     IconButton(
-        icon = getIconQueueLoopState(queueLoopType),
+        icon = queueLoopType.icon,
         color = colorPalette().text,
-        onClick = {
-            queueLoopType = queueLoopType.next()
-        },
-        modifier = Modifier
-            //.padding(10.dp)
-            .size(26.dp)
+        onClick = { queueLoopType = queueLoopType.next() },
+        modifier = Modifier.size( 26.dp )
     )
-
 }

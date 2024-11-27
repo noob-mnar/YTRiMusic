@@ -1,6 +1,5 @@
 package it.fast4x.rimusic.utils
 
-//import it.fast4x.rimusic.BuildConfig
 import android.annotation.SuppressLint
 import android.content.ContentUris
 import android.content.Context
@@ -52,68 +51,29 @@ import java.net.Proxy
 import java.text.SimpleDateFormat
 import java.time.Duration
 import java.util.Calendar
-import java.util.Date
 import java.util.GregorianCalendar
 import kotlin.time.Duration.Companion.minutes
 
-
-fun getDateTimeAsFormattedString(dateAsLongInMs: Long): String? {
-    try {
-        return SimpleDateFormat("dd/MM/yyyy").format(Date(dateAsLongInMs))
-    } catch (e: Exception) {
-        return null // parsing exception
-    }
-}
-
-fun getTimestampFromDate(date: String): Long {
-    return try {
-        SimpleDateFormat("dd-MM-yyyy").parse(date).time
-    } catch (e: Exception) {
-        return 0
-    }
-}
-
-fun songToggleLike( song: Song ) {
-    query {
-        if (Database.songExist(song.asMediaItem.mediaId) == 0)
-            Database.insert(song.asMediaItem, Song::toggleLike)
-        //else {
-            if (Database.songliked(song.asMediaItem.mediaId) == 0)
-                Database.like(
-                    song.asMediaItem.mediaId,
-                    System.currentTimeMillis()
-                )
-            else Database.like(
-                song.asMediaItem.mediaId,
-                null
-            )
-        //}
-    }
-}
 
 fun mediaItemToggleLike( mediaItem: MediaItem ) {
     query {
         if (Database.songExist(mediaItem.mediaId) == 0)
             Database.insert(mediaItem, Song::toggleLike)
-        //else {
-            if (Database.songliked(mediaItem.mediaId) == 0)
-                Database.like(
-                    mediaItem.mediaId,
-                    System.currentTimeMillis()
-                )
-            else Database.like(
+
+        if (Database.songliked(mediaItem.mediaId) == 0)
+            Database.like(
                 mediaItem.mediaId,
-                null
+                System.currentTimeMillis()
             )
-        //}
+        else Database.like(
+            mediaItem.mediaId,
+            null
+        )
     }
 }
 
 fun albumItemToggleBookmarked( albumItem: Innertube.AlbumItem ) {
     query {
-        //if (Database.albumExist(albumItem.key) == 0)
-        //    Database.insert(albumItem.asAlbum, Album::toggleLike)
-        //else {
         if (Database.albumBookmarked(albumItem.key) == 0)
             Database.bookmarkAlbum(
                 albumItem.key,
@@ -123,7 +83,6 @@ fun albumItemToggleBookmarked( albumItem: Innertube.AlbumItem ) {
             albumItem.key,
             null
         )
-        //}
     }
 }
 
@@ -134,7 +93,6 @@ val Innertube.AlbumItem.asAlbum: Album
         thumbnailUrl = thumbnail?.url,
         year = year,
         authorsText = authors?.joinToString("") { it.name ?: "" },
-        //shareUrl =
     )
 
 val Innertube.Podcast.EpisodeItem.asMediaItem: MediaItem
@@ -151,10 +109,8 @@ val Innertube.Podcast.EpisodeItem.asMediaItem: MediaItem
                 .setArtworkUri(thumbnail.firstOrNull()?.url?.toUri())
                 .setExtras(
                     bundleOf(
-                        //"albumId" to album?.endpoint?.browseId,
                         "durationText" to durationString,
                         "artistNames" to author,
-                        //"artistIds" to authors?.mapNotNull { it.endpoint?.browseId },
                     )
                 )
 
@@ -217,8 +173,6 @@ val Innertube.VideoItem.asMediaItem: MediaItem
                         "isOfficialMusicVideo" to isOfficialMusicVideo,
                         "isUserGeneratedContent" to isUserGeneratedContent,
                         "isVideo" to true,
-                        // "artistNames" to if (isOfficialMusicVideo) authors?.filter { it.endpoint != null }?.mapNotNull { it.name } else null,
-                        // "artistIds" to if (isOfficialMusicVideo) authors?.mapNotNull { it.endpoint?.browseId } else null,
                     )
                 )
                 .build()

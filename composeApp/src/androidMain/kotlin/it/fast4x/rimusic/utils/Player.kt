@@ -10,7 +10,6 @@ import androidx.media3.common.Player.REPEAT_MODE_ALL
 import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.REPEAT_MODE_ONE
 import androidx.media3.common.Timeline
-import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.DurationInMinutes
@@ -55,20 +54,6 @@ fun Player.shuffleQueue() {
     if (currentMediaItemIndex > 0) removeMediaItems(0, currentMediaItemIndex)
     if (currentMediaItemIndex < mediaItemCount - 1) removeMediaItems(currentMediaItemIndex + 1, mediaItemCount)
     addMediaItems(mediaItems.shuffled())
-}
-
-@SuppressLint("Range")
-@UnstableApi
-fun Player.playAtMedia(mediaItems: List<MediaItem>, mediaId: String) {
-    Log.d("mediaItem-playAtMedia","${mediaItems.size}")
-    if (mediaItems.isEmpty()) return
-    val itemIndex = findMediaItemIndexById(mediaId)
-
-    Log.d("mediaItem-playAtMedia",itemIndex.toString())
-    setMediaItems(mediaItems, itemIndex, C.TIME_UNSET)
-    prepare()
-    playWhenReady = true
-
 }
 
 fun Player.forcePlay(mediaItem: MediaItem) {

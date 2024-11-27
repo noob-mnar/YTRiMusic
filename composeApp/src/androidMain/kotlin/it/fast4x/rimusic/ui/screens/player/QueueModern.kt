@@ -118,7 +118,6 @@ import it.fast4x.rimusic.utils.addNext
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.discoverKey
 import it.fast4x.rimusic.utils.getDownloadState
-import it.fast4x.rimusic.utils.getIconQueueLoopState
 import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isLandscape
 import it.fast4x.rimusic.utils.isNowPlaying
@@ -870,14 +869,11 @@ fun QueueModern(
                             .width(12.dp)
                     )
                     IconButton(
-                        icon = getIconQueueLoopState(queueLoopType),
+                        icon = queueLoopType.icon,
                         color = colorPalette().text,
-                        onClick = {
-                            queueLoopType = queueLoopType.next()
-                        },
-                        modifier = Modifier
-                            .padding(horizontal = 4.dp)
-                            .size(24.dp)
+                        onClick = { queueLoopType = queueLoopType.next() },
+                        modifier = Modifier.padding( horizontal = 4.dp )
+                                           .size( 24.dp )
                     )
 
                     Spacer(
