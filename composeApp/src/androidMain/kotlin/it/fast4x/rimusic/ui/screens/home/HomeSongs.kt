@@ -60,6 +60,7 @@ import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.BuiltInPlaylist
 import it.fast4x.rimusic.enums.DurationInMinutes
+import it.fast4x.rimusic.enums.HomeSongsButton
 import it.fast4x.rimusic.enums.MaxSongs
 import it.fast4x.rimusic.enums.MaxTopPlaylistItems
 import it.fast4x.rimusic.enums.NavigationBarPosition
@@ -156,6 +157,7 @@ import me.knighthat.component.tab.TabHeader
 import me.knighthat.component.tab.toolbar.Button
 import me.knighthat.component.tab.toolbar.DelAllDownloadedDialog
 import me.knighthat.component.tab.toolbar.DownloadAllDialog
+import me.knighthat.component.tab.toolbar.MenuIcon
 import me.knighthat.component.tab.toolbar.SongsShuffle
 import me.knighthat.thumbnailShape
 import me.knighthat.typography
@@ -527,39 +529,30 @@ fun HomeSongs(
             }
 
             // Sticky tab's tool bar
-            TabToolBar.Buttons(
-                mutableListOf<Button>().apply {
-                    this.add(
-                        when( builtInPlaylist ) {
-                            BuiltInPlaylist.Top -> topPlaylists
-                            BuiltInPlaylist.OnDevice -> {
-                                if( showFolders )
-                                    deviceFolderSort
-                                else
-                                    onDeviceSort
-                            }
-                            else -> songSort
-                        }
-                    )
-                    this.add( search )
-                    this.add( locator )
-                    this.add( downloadAllDialog )
-                    this.add( deleteDownloadsDialog )
-                    this.add( deleteSongDialog )
-                    if (builtInPlaylist == BuiltInPlaylist.All)
-                        this.add( hiddenSongs )
-                    this.add( shuffle )
-                    if (builtInPlaylist == BuiltInPlaylist.Favorites)
-                        this.add( randomSorter )
-                    this.add( itemSelector )
-                    this.add( playNext )
-                    this.add( enqueue )
-                    this.add( addToFavorite )
-                    this.add( addToPlaylist )
-                    this.add( exportDialog )
-                    this.add( import )
-                }
+            HomeSongsTabToolBarButtons(
+                builtInPlaylist,
+                topPlaylists,
+                showFolders,
+                deviceFolderSort,
+                onDeviceSort,
+                songSort,
+                search,
+                locator,
+                downloadAllDialog,
+                deleteDownloadsDialog,
+                deleteSongDialog,
+                hiddenSongs,
+                shuffle,
+                randomSorter,
+                itemSelector,
+                playNext,
+                enqueue,
+                addToFavorite,
+                addToPlaylist,
+                exportDialog,
+                import
             )
+
 
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -926,4 +919,108 @@ fun HomeSongs(
                 onClickSearch = onSearchClick
             )
     }
+}
+
+@androidx.annotation.OptIn(UnstableApi::class)
+@Composable
+private fun HomeSongsTabToolBarButtons(
+    builtInPlaylist: BuiltInPlaylist,
+    topPlaylists: PeriodSelector,
+    showFolders: Boolean,
+    deviceFolderSort: Sort<OnDeviceFolderSortBy>,
+    onDeviceSort: Sort<OnDeviceSongSortBy>,
+    songSort: Sort<SongSortBy>,
+    search: Search,
+    locator: LocateComponent,
+    downloadAllDialog: DownloadAllDialog,
+    deleteDownloadsDialog: DelAllDownloadedDialog,
+    deleteSongDialog: DelSongDialog,
+    hiddenSongs: HiddenSongs,
+    shuffle: SongsShuffle,
+    randomSorter: Button,
+    itemSelector: ItemSelector,
+    playNext: MenuIcon,
+    enqueue: MenuIcon,
+    addToFavorite: MenuIcon,
+    addToPlaylist: PlaylistsMenu,
+    exportDialog: ExportSongsToCSVDialog,
+    import: ImportSongsFromCSV
+) {
+    val isCustomButtonOrder by rememberPreference("home_songs_is_custom_button_order", false)
+    val buttonOrder = mutableListOf<Button>()
+
+    val sortOrTopButton = when (builtInPlaylist) {
+        BuiltInPlaylist.Top -> topPlaylists
+        BuiltInPlaylist.OnDevice -> {
+            if (showFolders)
+                deviceFolderSort
+            else
+                onDeviceSort
+        }
+        else -> songSort
+    }
+
+    val basicButtonOrder = listOf<Button>(
+        sortOrTopButton, search, locator, downloadAllDialog,
+        deleteDownloadsDialog, deleteSongDialog, shuffle, itemSelector,
+        playNext, enqueue, addToFavorite, addToPlaylist, exportDialog, import
+    )
+
+    if(isCustomButtonOrder) {
+
+        // todo (correct) string add to keys
+        val customButtonOrder by rememberPreference("home_songs_custom_button_order",
+            HomeSongsButton.entries.toList()
+        )
+
+        val homeSongsButtonEnumToButton = customButtonOrder?.map {
+            when (it) {
+                HomeSongsButton.SortOrTop -> sortOrTopButton
+                HomeSongsButton.Search -> search
+                HomeSongsButton.Locator -> locator
+                HomeSongsButton.DownloadAll -> downloadAllDialog
+                HomeSongsButton.DeleteDownloads -> deleteDownloadsDialog
+                HomeSongsButton.DeleteSong -> deleteSongDialog
+                HomeSongsButton.HiddenSongs -> hiddenSongs
+                HomeSongsButton.Shuffle -> shuffle
+                HomeSongsButton.RandomSorter -> randomSorter
+                HomeSongsButton.ItemSelector -> itemSelector
+                HomeSongsButton.PlayNext -> playNext
+                HomeSongsButton.Enqueue -> enqueue
+                HomeSongsButton.AddToFavorite -> addToFavorite
+                HomeSongsButton.AddToPlaylist -> addToPlaylist
+                HomeSongsButton.Export -> exportDialog
+                HomeSongsButton.Import -> import
+            }
+        }?.toMutableList()
+
+        when(builtInPlaylist){
+            BuiltInPlaylist.All ->  {
+                homeSongsButtonEnumToButton?.remove(randomSorter)
+
+            }
+            BuiltInPlaylist.Favorites -> {
+                homeSongsButtonEnumToButton?.remove(hiddenSongs)
+            }
+            else -> {
+                homeSongsButtonEnumToButton?.remove(randomSorter)
+                homeSongsButtonEnumToButton?.remove(hiddenSongs)
+            }
+        }
+        buttonOrder.addAll(homeSongsButtonEnumToButton ?: listOf())
+    } else {
+        val defaultButtonOrder = basicButtonOrder.toMutableList()
+
+        when(builtInPlaylist){
+            BuiltInPlaylist.All ->  {
+                defaultButtonOrder.add(defaultButtonOrder.indexOf(shuffle), hiddenSongs)
+            }
+            BuiltInPlaylist.Favorites -> {
+                defaultButtonOrder.add(defaultButtonOrder.indexOf(itemSelector), randomSorter)
+            }
+            else -> {}
+        }
+        buttonOrder.addAll(defaultButtonOrder)
+    }
+    TabToolBar.Buttons(buttonOrder)
 }

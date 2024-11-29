@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.edit
 import com.google.gson.Gson
 import it.fast4x.innertube.Innertube
+import it.fast4x.rimusic.enums.HomeSongsButton
 import it.fast4x.rimusic.models.Song
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.encodeToString
@@ -381,6 +382,28 @@ inline fun <reified T : Json> rememberPreference(key: String, defaultValue: T, j
     }
 }
 */
+
+@Composable
+fun rememberPreference(key: String, defaultValue: List<HomeSongsButton>?): MutableState<List<HomeSongsButton>?>{
+    val context = LocalContext.current
+    val json = Json.encodeToString(defaultValue)
+    return remember {
+        mutableStatePreferenceOf(
+            try {
+                context.preferences.getString(key, json)
+                    ?.let { Json.decodeFromString<List<HomeSongsButton>>(it) }
+            } catch (e: Exception) {
+                Timber.e("RememberPreference HomeSongsPage Error: ${ e.stackTraceToString() }")
+                null
+            }
+        ) {
+            context.preferences.edit { putString(
+                key,
+                Json.encodeToString(it)
+            ) }
+        }
+    }
+}
 
 @Composable
 fun rememberPreference(key: String, defaultValue: Song?): MutableState<Song?> {
