@@ -287,8 +287,6 @@ dependencies {
     implementation(libs.palette)
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.datasource.okhttp)
-    implementation(libs.appcompat)
-    implementation(libs.appcompat.resources)
     implementation(libs.media)
     implementation(libs.material)
     implementation(libs.material3)
