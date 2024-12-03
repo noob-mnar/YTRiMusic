@@ -756,23 +756,14 @@ fun UiSettings(
     Column(
         modifier = Modifier
             .background(colorPalette().background0)
-            //.fillMaxSize()
             .fillMaxHeight()
             .fillMaxWidth(
-                if (navigationBarPosition == NavigationBarPosition.Left ||
-                    navigationBarPosition == NavigationBarPosition.Top ||
-                    navigationBarPosition == NavigationBarPosition.Bottom
-                ) 1f
-                else Dimensions.contentWidthRightBar
+                if( NavigationBarPosition.Right.isCurrent() )
+                    Dimensions.contentWidthRightBar
+                else
+                    1f
             )
-            .verticalScroll(rememberScrollState())
-            /*
-            .padding(
-                LocalPlayerAwareWindowInsets.current
-                    .only(WindowInsetsSides.Vertical + WindowInsetsSides.End)
-                    .asPaddingValues()
-            )
-             */
+            .verticalScroll( rememberScrollState() )
     ) {
         HeaderWithIcon(
             title = stringResource(R.string.user_interface),
